@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% load filtros %}
+
+
+{% block title %}Detalle Cliente{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        Detalle de Cliente: {{ cliente.nombre }}
+        {% if ultima_revision and ultima_revision.check_alerts %}
+        <span class="badge bg-warning text-dark ms-2" data-bs-toggle="tooltip" data-bs-placement="right"
+              title="{{ ultima_revision.check_alerts }}">
+            ⚠ Riesgo
+        </span>
+        {% endif %}
+    </h1>
+    {% with alertas=ultima_revision.check_alerts %}
+    {% if alertas %}
+    <div class="alert alert-warning">
+        <strong>Alertas detectadas:</strong>
+        <ul class="mb-0">
+            {% for alerta in alertas %}
+            <li>{{ alerta }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class="row">
+        <div class="col-md-4">
+            {% if cliente.foto %}
+            <img src="{{ cliente.foto.url }}" class="img-fluid rounded shadow">
+            {% else %}
+            <div class="text-muted">Sin foto disponible</div>
+            {% endif %}
+        </div>
+        <div class="col-12 col-md-8">
+            <div class="row mt-4">
+
+                <table class="table table-bordered">
+                    <tr>
+                        <th>ID</th>
+                        <td>{{ cliente.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nombre</th>
+                        <td>{{ cliente.nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>{{ cliente.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono</th>
+                        <td>{{ cliente.telefono }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha nacimiento</th>
+                        <td>{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Dirección</th>
+                        <td>{{ cliente.direccion }}</td>
+                    </tr>
+                    <tr>
+                        <th>Género</th>
+                        <td>{{ cliente.get_genero_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Membresía activa</th>
+                        <td>{% if cliente.membresia_activa %}Sí{% else %}No{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>Vencimiento membresía</th>
+                        <td>{{ cliente.fecha_vencimiento_membresia|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Programa</th>
+                        <td>
+                            {{ cliente.programa.nombre }}
+                            <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-warning">Cambiar
+                                programa</a>
+                        </td>
+                    </tr>
+                    {% with cliente.dietas_asignadas.last as ultima_dieta %}
+                    {% if ultima_dieta %}
+                    <tr>
+                        <th>Dieta asignada</th>
+                        <td>
+                            {{ ultima_dieta.dieta.nombre }}
+                            <small class="text-muted d-block">desde {{ ultima_dieta.fecha_inicio }}</small>
+                            <div class="mt-2">
+                                <a href="{% url 'ver_dieta' ultima_dieta.dieta.id %}"
+                                   class="btn btn-sm btn-outline-primary">Ver dieta</a>
+                                <a href="{% url 'asignar_dieta_directo' cliente.id %}"
+                                   class="btn btn-sm btn-outline-success">Asignar nueva</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endwith %}
+                </table>
+
+
+            </div>
+
+            <h4 class="mt-4">Comparativa de Medidas Corporales</h4>
+            {% if ultima_revision %}
+            <table class="table table-striped align-middle">
+                <thead>
+                <tr>
+                    <th>Medida</th>
+                    <th>Inicial</th>
+                    <th>Última Revisión ({{ ultima_revision.fecha }})</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th>Peso (kg)</th>
+                    <td>{{ cliente.peso_corporal }}</td>
+                    <td>
+                        {% with inicial=cliente.peso_corporal revision=ultima_revision.peso_corporal %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Grasa corporal (%)</th>
+                    <td>{{ cliente.grasa_corporal }}</td>
+                    <td>
+                        {% with inicial=cliente.grasa_corporal revision=ultima_revision.grasa_corporal %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Cintura (cm)</th>
+                    <td>{{ cliente.cintura }}</td>
+                    <td>
+                        {% with inicial=cliente.cintura revision=ultima_revision.cintura %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Pecho (cm)</th>
+                    <td>{{ cliente.pecho }}</td>
+                    <td>
+                        {% with inicial=cliente.pecho revision=ultima_revision.pecho %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Bíceps (cm)</th>
+                    <td>{{ cliente.biceps }}</td>
+                    <td>
+                        {% with inicial=cliente.biceps revision=ultima_revision.biceps %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Muslos (cm)</th>
+                    <td>{{ cliente.muslos }}</td>
+                    <td>
+                        {% with inicial=cliente.muslos revision=ultima_revision.muslos %}
+                        {% include "clientes/partials/comparador.html" %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                <!-- Agrega más medidas si usas hombro, cuello, etc. -->
+                </tbody>
+            </table>
+            <div class="text-end mb-3">
+                <a href="{% url 'agregar_revision' cliente.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Añadir revisión
+                </a>
+                <a href="{% url 'lista_revisiones' cliente.id %}" class="btn btn-outline-secondary btn-sm">
+                    📋 Ver historial completo
+                </a>
+            </div>
+            <p class="text-muted">Sin revisiones registradas.</p>
+
+            {% else %}
+            <div class="text-end mb-3">
+                <a href="{% url 'agregar_revision' cliente.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Añadir revisión
+                </a>
+                <a href="{% url 'lista_revisiones' cliente.id %}" class="btn btn-outline-secondary btn-sm">
+                    📋 Ver historial completo
+                </a>
+            </div>
+            <p class="text-muted">Sin revisiones registradas.</p>
+            {% endif %}
+            <h4 class="mt-5">Progreso en Gráficas</h4>
+            <canvas id="graficaProgreso" height="120"></canvas>
+
+            <script>
+                const ctx = document.getElementById('graficaProgreso').getContext('2d');
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ fechas|safe }},
+                        datasets: [
+                            {
+                                label: 'Peso (kg)',
+                                data: {{ pesos|safe }},
+                                borderColor: 'blue',
+                                tension: 0.2
+                            },
+                            {
+                                label: 'Grasa corporal (%)',
+                                data: {{ grasas|safe }},
+                                borderColor: 'red',
+                                tension: 0.2
+                            },
+                            {
+                                label: 'Cintura (cm)',
+                                data: {{ cinturas|safe }},
+                                borderColor: 'green',
+                                tension: 0.2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Evolución de medidas'
+                            }
+                        }
+                    }
+                });
+            </script>
+            <!-- graficas -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <canvas id="graficoPeso"></canvas>
+                <canvas id="graficoGrasa"></canvas>
+                <canvas id="graficoCintura"></canvas>
+            </div>
+
+            <script>
+                const clienteId = "{{ cliente.id }}";
+
+                fetch(`/clientes/datos-graficas/${clienteId}/`)  // <--- OJO: añade /clientes/ delante
+                  .then(response => response.json())
+                  .then(data => {
+                    console.log('Datos:', data);
+
+                    const ctxPeso = document.getElementById('graficoPeso').getContext('2d');
+                    const ctxGrasa = document.getElementById('graficoGrasa').getContext('2d');
+                    const ctxCintura = document.getElementById('graficoCintura').getContext('2d');
+
+                    new Chart(ctxPeso, {
+                      type: 'line',
+                      data: {
+                        labels: data.fechas,
+                        datasets: [{ label: 'Peso (kg)', data: data.pesos }]
+                      }
+                    });
+
+                    new Chart(ctxGrasa, {
+                      type: 'line',
+                      data: {
+                        labels: data.fechas,
+                        datasets: [{ label: 'Grasa corporal (%)', data: data.grasas }]
+                      }
+                    });
+
+                    new Chart(ctxCintura, {
+                      type: 'line',
+                      data: {
+                        labels: data.fechas,
+                        datasets: [{ label: 'Cintura (cm)', data: data.cinturas }]
+                      }
+                    });
+                });
+            </script>
+
+
+            <!-- fin de graficas -->
+            <hr>
+            <h4>Historial de Dietas</h4>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Dieta</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Observaciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for cd in cliente.dietas_asignadas.all %}
+                <tr>
+                    <td>{{ cd.dieta.nombre }}</td>
+                    <td>{{ cd.fecha_inicio }}</td>
+                    <td>{% if cd.fecha_fin %}{{ cd.fecha_fin }}{% else %}<em>Actual</em>{% endif %}</td>
+                    <td>{{ cd.observaciones|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-muted">Sin historial de dietas.</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+
+
+            <div class="mt-4">
+
+                <a href="{% url 'clientes_index' %}" class="btn btn-secondary mt-3">Volver a la lista</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

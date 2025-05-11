@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Programas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Programas</h2>
+    <a href="{% url 'agregar_programa' %}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Agregar Programa
+    </a>
+</div>
+
+<ul class="list-group">
+    {% for programa in programas %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>{{ programa.nombre }}</strong> - {{ programa.descripcion }}
+        </div>
+        <a href="{% url 'detalle_programa' programa.id %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-eye"></i> Ver Rutinas
+        </a>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted">No hay programas registrados.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Rutina{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold mb-0">{{ rutina.nombre }}</h2>
+        <a href="{% url 'agregar_ejercicio' rutina.id %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Agregar Ejercicio
+        </a>
+    </div>
+
+    {% if rutina.rutinaejercicio_set.all %}
+    <table class="table table-striped">
+        <thead class="table-dark">
+        <tr>
+            <th>Nombre</th>
+            <th>Grupo Muscular</th>
+            <th>Equipo</th>
+            <th>Series</th>
+            <th>Repeticiones</th>
+            <th>Peso (kg)</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for rutina_ejercicio in rutina.rutinaejercicio_set.all %}
+        <tr>
+            <td>{{ rutina_ejercicio.ejercicio.nombre }}</td>
+            <td>{{ rutina_ejercicio.ejercicio.grupo_muscular }}</td>
+            <td>{{ rutina_ejercicio.ejercicio.equipo }}</td>
+            <td>{{ rutina_ejercicio.series }}</td>
+            <td>{{ rutina_ejercicio.repeticiones }}</td>
+            <td>{{ rutina_ejercicio.peso_kg }}</td>
+            <td>
+                <a href="{% url 'editar_rutina_ejercicio' rutina_ejercicio.id %}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-pencil-square"></i> Editar
+                </a>
+                <a href="{% url 'eliminar_rutina_ejercicio' rutina_ejercicio.id %}" class="btn btn-sm btn-danger"
+                   onclick="return confirm('¿Estás seguro de eliminar este ejercicio?');">
+                    <i class="bi bi-trash"></i> Eliminar
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">Esta rutina no tiene ejercicios asignados.</p>
+    {% endif %}
+
+    <a href="{% url 'detalle_programa' rutina.programa.id %}" class="btn btn-secondary mt-3">
+        <i class="bi bi-arrow-left"></i> Volver al Programa
+    </a>
+</div>
+{% endblock %}

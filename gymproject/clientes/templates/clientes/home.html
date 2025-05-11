@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="mb-4">Bienvenido al Sistema del Gimnasio</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <a href="/clientes/" class="btn btn-primary btn-lg w-100 mb-3">Gestión de Clientes</a>
+            <a href="/rutinas/" class="btn btn-success btn-lg w-100 mb-3">Programas</a>
+            <a href="/dietas/" class="btn btn-warning btn-lg w-100 mb-3">Dietas</a>
+            <a href="/anuncios/" class="btn btn-danger btn-lg w-100 mb-3">Tablón de Anuncios</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

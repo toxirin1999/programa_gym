@@ -1,0 +1,74 @@
+from django.db import models
+from rutinas.models import Programa
+
+
+class RevisionProgreso(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='revisiones')
+    fecha = models.DateField(auto_now_add=True)
+    peso_corporal = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    grasa_corporal = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cintura = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    pecho = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    biceps = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    muslos = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    observaciones = models.TextField(null=True, blank=True)
+    hombro = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cuello = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    antebrazos = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    caderas = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    gemelos = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        ordering = ['fecha']
+
+    def check_alerts(self):
+        alertas = []
+        if self.grasa_corporal and self.grasa_corporal > 30:
+            alertas.append("Grasa corporal alta")
+        if self.peso_corporal and self.peso_corporal < 50:
+            alertas.append("Peso corporal muy bajo")
+        return alertas if alertas else None
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.fecha}"
+
+
+class Cliente(models.Model):
+    nombre = models.CharField(max_length=100)
+    email = models.EmailField()
+    telefono = models.CharField(max_length=20)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    genero = models.CharField(max_length=10, choices=[('M', 'Masculino'), ('F', 'Femenino')], blank=True)
+    programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)  # ✅ nuevo campo
+    fecha_registro = models.DateField(auto_now_add=True)
+    membresia_activa = models.BooleanField(default=True)
+    fecha_vencimiento_membresia = models.DateField(null=True, blank=True)
+
+    # Campos físicos
+    peso_corporal = models.FloatField(null=True, blank=True, help_text="kg")
+    grasa_corporal = models.FloatField(null=True, blank=True, help_text="%")
+    cintura = models.FloatField(null=True, blank=True, help_text="cm")
+    pecho = models.FloatField(null=True, blank=True, help_text="cm")
+    hombro = models.FloatField(null=True, blank=True, help_text="cm")
+    cuello = models.FloatField(null=True, blank=True, help_text="cm")
+    biceps = models.FloatField(null=True, blank=True, help_text="cm")
+    antebrazos = models.FloatField(null=True, blank=True, help_text="cm")
+    caderas = models.FloatField(null=True, blank=True, help_text="cm")
+    muslos = models.FloatField(null=True, blank=True, help_text="cm")
+    gemelos = models.FloatField(null=True, blank=True, help_text="cm")
+
+    # Foto
+    foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.id} - {self.nombre}"
+
+
+class Medida(models.Model):
+    nombre = models.CharField(max_length=100)
+    valor = models.FloatField(null=True, blank=True)
+    unidad = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.nombre}: {self.valor} {self.unidad}"

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load form_tags %}
+
+{% block title %}{{ cliente.id|default:"Agregar" }} Cliente{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3">{{ cliente.id|default:"Agregar" }} Cliente</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-6 mb-3">{{ form.nombre.label_tag }} {{ form.nombre|add_class:"form-control" }}</div>
+            <div class="col-md-6 mb-3">{{ form.programa.label_tag }} {{ form.programa|add_class:"form-select" }}</div>
+            <div class="col-md-6 mb-3">{{ form.email.label_tag }} {{ form.email|add_class:"form-control" }}</div>
+            <div class="col-md-6 mb-3">{{ form.telefono.label_tag }} {{ form.telefono|add_class:"form-control" }}</div>
+            <div class="col-md-6 mb-3">{{ form.fecha_nacimiento.label_tag }} {{
+                form.fecha_nacimiento|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6 mb-3">{{ form.direccion.label_tag }} {{ form.direccion|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6 mb-3">{{ form.genero.label_tag }} {{ form.genero|add_class:"form-select" }}</div>
+            <div class="col-md-6 mb-3">{{ form.membresia_activa.label_tag }} {{
+                form.membresia_activa|add_class:"form-check-input" }}
+            </div>
+            <div class="col-md-6 mb-3">{{ form.fecha_vencimiento_membresia.label_tag }} {{
+                form.fecha_vencimiento_membresia|add_class:"form-control" }}
+            </div>
+        </div>
+
+        <h4 class="mt-4">Medidas Corporales</h4>
+        <div class="row">
+            <div class="col-md-4 mb-3">{{ form.peso_corporal.label_tag }} {{ form.peso_corporal|add_class:"form-control"
+                }}
+            </div>
+            <div class="col-md-4 mb-3">{{ form.grasa_corporal.label_tag }} {{
+                form.grasa_corporal|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4 mb-3">{{ form.cintura.label_tag }} {{ form.cintura|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.pecho.label_tag }} {{ form.pecho|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.hombro.label_tag }} {{ form.hombro|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.cuello.label_tag }} {{ form.cuello|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.biceps.label_tag }} {{ form.biceps|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.antebrazos.label_tag }} {{ form.antebrazos|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4 mb-3">{{ form.caderas.label_tag }} {{ form.caderas|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.muslos.label_tag }} {{ form.muslos|add_class:"form-control" }}</div>
+            <div class="col-md-4 mb-3">{{ form.gemelos.label_tag }} {{ form.gemelos|add_class:"form-control" }}</div>
+        </div>
+
+        <h4 class="mt-4">Foto</h4>
+        <div class="mb-3">{{ form.foto.label_tag }} {{ form.foto|add_class:"form-control" }}</div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-check-circle"></i> Guardar
+        </button>
+        <a href="{% url 'clientes_index' %}" class="btn btn-secondary w-100 mt-2">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}
