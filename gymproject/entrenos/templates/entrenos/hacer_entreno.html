@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Hacer Entreno{% endblock %}
+
+{% block content %}
+<h4 class="mt-4 mb-4">
+    <i class="bi bi-clipboard-check me-2"></i> Entrenos asignados a clientes
+</h4>
+
+<p class="text-muted">Total: {{ clientes|length }} clientes</p>
+
+<div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle bg-white shadow-sm rounded">
+        <thead class="table-light">
+        <tr>
+            <th>Cliente</th>
+            <th>Programa</th>
+            <th>Rutina actual</th>
+            <th>Acción</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for cliente in clientes %}
+        <tr>
+            <td>{{ cliente.nombre }}</td>
+            <td>
+                {% if cliente.programa %}
+                {{ cliente.programa.nombre }}
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary">No asignado</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if cliente.rutina_actual %}
+                {{ cliente.rutina_actual.nombre }}
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary">No asignada</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if cliente.rutina_actual %}
+                <a href="{% url 'entreno_anterior' cliente.id cliente.rutina_actual.id %}?cliente_id={{ cliente.id }}"
+                   class="btn btn-outline-success btn-sm d-inline-flex align-items-center"
+                   data-bs-toggle="tooltip" title="Iniciar rutina asignada al cliente">
+                    <i class="bi bi-play-circle me-1"></i> Ver siguiente entreno
+                </a>
+                {% else %}
+                <span class="text-muted">N/A</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+
+{% endblock %}

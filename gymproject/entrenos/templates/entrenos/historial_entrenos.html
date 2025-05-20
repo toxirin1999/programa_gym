@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Entrenos{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+            {{ form.cliente.label_tag }} {{ form.cliente }}
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </div>
+        {% if cliente %}
+        <div class="col-md-2">
+            <a href="{% url 'historial_entrenos' %}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+        {% endif %}
+    </div>
+</form>
+{% if cliente %}
+<h5 class="mb-3">Mostrando entrenos de: {{ cliente.nombre }}</h5>
+{% endif %}
+
+{% if messages %}
+<div class="mt-3">
+    {% for message in messages %}
+    <div class="alert alert-success">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+</div>
+{% endif %}
+{% if entrenos and cliente_id %}
+<h4>Historial de: {{ entrenos.0.cliente.nombre }}</h4>
+{% endif %}
+<h2 class="mb-4">Historial de Entrenos</h2>
+
+{% for entreno in entrenos %}<div class="border rounded p-3 mb-4 shadow-sm bg-white">
+<form method="post" action="{% url 'eliminar_entreno' entreno.id %}" class="text-end">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-sm btn-outline-danger mb-2">🗑 Eliminar</button>
+</form>
+    <h5 class="mb-1">{{ entreno.cliente.nombre }} - {{ entreno.rutina.nombre }}</h5>
+    <small class="text-muted">Fecha: {{ entreno.fecha }}</small>
+
+    {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
+    <ul class="mt-2">
+        {% with volumen_total_entreno=0 %}
+        {% for grupo in series_por_ejercicio %}
+        {% with total_volumen=0 %}
+        <li>
+            <strong>{{ grupo.grouper.nombre }}</strong>:
+            {% for serie in grupo.list %}
+                <span class="badge text-bg-light me-1">
+                    Serie {{ serie.serie_numero }} — {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
+                </span>
+                {% with parcial=serie.repeticiones|default_if_none:0|add:"0"|floatformat:0|floatformat:2 %}
+                    {% with carga=parcial|floatformat:2|floatformat:0|add:"0"|floatformat:0 %}
+                        {% with total_volumen=total_volumen|add:serie.repeticiones|add:0 %}
+                            {% with volumen_total_entreno=volumen_total_entreno|add:serie.repeticiones|add:0 %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endwith %}
+            {% endfor %}
+            <br><small class="text-muted">Volumen total: {{ total_volumen }} kg</small>
+        </li>
+        {% endwith %}
+        {% empty %}
+        <li class="text-muted">Sin series registradas.</li>
+        {% endfor %}
+        <li class="mt-2 fw-bold">
+            {% if volumen_total_entreno > 15000 %}
+            <span class="text-danger">🔴 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
+            {% elif volumen_total_entreno > 8000 %}
+            <span class="text-warning">🟡 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
+            {% else %}
+            <span class="text-success">🟢 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
+            {% endif %}
+        </li>
+        <div class="small text-muted mb-1">
+          {% if volumen_total_entreno > 15000 %}🔴 Carga intensa
+          {% elif volumen_total_entreno > 8000 %}🟡 Carga moderada
+          {% else %}🟢 Carga ligera
+          {% endif %}
+        </div>
+        <div class="progress my-2" style="height: 20px;">
+          <div class="progress-bar {% if volumen_total_entreno > 15000 %}bg-danger{% elif volumen_total_entreno > 8000 %}bg-warning{% else %}bg-success{% endif %}"
+               role="progressbar"
+               style="width: {{ volumen_total_entreno|floatformat:0|divisibleby:200 }}%;"
+               aria-valuenow="{{ volumen_total_entreno|default:0 }}" aria-valuemin="0" aria-valuemax="20000">
+            {{ volumen_total_entreno }} kg ({{ volumen_total_entreno|divisibleby:200 }}%)
+          </div>
+        </div>
+        {% endwith %}
+    </ul>
+</div>
+{% empty %}
+<p>No hay entrenamientos registrados.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,318 @@
+from rutinas.models import Rutina
+from django.db.models import Avg, Sum
+from .models import PlanPersonalizado
+from clientes.models import Cliente
+from rutinas.models import Rutina, RutinaEjercicio, Ejercicio
+from clientes.models import Cliente
+from rutinas.models import Rutina
+from clientes.models import Cliente
+from django import forms
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+from django.contrib import messages
+from .forms import SeleccionClienteForm, DetalleEjercicioForm
+from .models import EntrenoRealizado, SerieRealizada
+from rutinas.models import Rutina, RutinaEjercicio, Ejercicio
+from clientes.models import Cliente
+from .forms import FiltroClienteForm
+from decimal import Decimal
+
+from django.shortcuts import redirect, get_object_or_404
+from .models import EntrenoRealizado
+import copy
+
+
+def entrenos_filtrados(request, rango):
+    hoy = date.today()
+
+    if rango == "hoy":
+        queryset = EntrenoRealizado.objects.filter(fecha=hoy)
+        titulo = "Entrenamientos de hoy"
+    elif rango == "semana":
+        inicio = hoy - timedelta(days=hoy.weekday())
+        queryset = EntrenoRealizado.objects.filter(fecha__gte=inicio)
+        titulo = "Entrenamientos de esta semana"
+    elif rango == "mes":
+        inicio = hoy.replace(day=1)
+        queryset = EntrenoRealizado.objects.filter(fecha__gte=inicio)
+        titulo = "Entrenamientos de este mes"
+    elif rango == "anio":
+        inicio = hoy.replace(month=1, day=1)
+        queryset = EntrenoRealizado.objects.filter(fecha__gte=inicio)
+        titulo = "Entrenamientos de este año"
+    else:
+        queryset = EntrenoRealizado.objects.all()
+        titulo = "Todos los entrenamientos"
+
+    queryset = queryset.select_related('cliente', 'rutina').order_by('-fecha')
+
+    return render(request, 'entrenos/entrenos_filtrados.html', {
+        'entrenos': queryset,
+        'titulo': titulo
+    })
+
+
+def historial_entrenos(request):
+    form = FiltroClienteForm(request.GET or None)
+    entrenos = EntrenoRealizado.objects.select_related('cliente', 'rutina').prefetch_related('series__ejercicio')
+
+    if form.is_valid() and form.cleaned_data['cliente']:
+        cliente = form.cleaned_data['cliente']
+        entrenos = entrenos.filter(cliente=cliente)
+    else:
+        cliente = None
+
+    entrenos = entrenos.order_by('-fecha')
+
+    return render(request, 'entrenos/historial_entrenos.html', {
+        'entrenos': entrenos,
+        'form': form,
+        'cliente': cliente
+    })
+
+
+from rutinas.models import RutinaEjercicio  # Asegúrate de importar esto si aún no lo haces
+
+
+def empezar_entreno(request, rutina_id):
+    rutina = get_object_or_404(Rutina.objects.prefetch_related('rutinaejercicio_set__ejercicio'), id=rutina_id)
+    cliente_id = request.GET.get('cliente_id')
+    cliente_inicial = None
+    if cliente_id and cliente_id.isdigit():
+        try:
+            cliente_inicial = Cliente.objects.get(id=int(cliente_id))
+        except Cliente.DoesNotExist:
+            cliente_inicial = None
+
+    ejercicios_forms = []
+    cliente_form = None
+
+    if request.method == 'POST':
+        cliente_form = SeleccionClienteForm(request.POST)
+        ejercicios_validos = True
+
+        for asignacion in rutina.rutinaejercicio_set.select_related('ejercicio'):
+            ejercicio = copy.copy(asignacion.ejercicio)
+            form = DetalleEjercicioForm(request.POST, prefix=str(ejercicio.id))
+            ejercicios_forms.append((ejercicio, form))
+
+        if cliente_form.is_valid():
+            cliente = cliente_form.cleaned_data['cliente']
+            if not isinstance(cliente, Cliente):
+                try:
+                    cliente = Cliente.objects.get(id=int(cliente))
+                except (ValueError, Cliente.DoesNotExist, TypeError):
+                    messages.error(request, "⚠️ Cliente inválido. No se puede continuar.")
+                    return redirect('hacer_entreno')
+            entreno = EntrenoRealizado.objects.create(cliente=cliente, rutina=rutina)
+
+            for ejercicio, _ in ejercicios_forms:
+                i = 1
+                while True:
+                    reps_key = f"{ejercicio.id}_reps_{i}"
+                    peso_key = f"{ejercicio.id}_peso_{i}"
+                    completado_key = f"{ejercicio.id}_completado_{i}"
+                    reps = request.POST.get(reps_key)
+                    peso = request.POST.get(peso_key)
+                    completado = request.POST.get(completado_key) == "1"
+                    if reps is None or peso is None:
+                        break
+                    if reps.strip() == '' and peso.strip() == '':
+                        i += 1
+                        continue
+                    SerieRealizada.objects.create(
+                        entreno=entreno,
+                        ejercicio=ejercicio,
+                        serie_numero=i,
+                        repeticiones=int(reps),
+                        peso_kg=float(peso),
+                        completado=completado
+                    )
+                    i += 1
+
+            # Adaptación del plan personalizado
+            for ejercicio, _ in ejercicios_forms:
+                plan_existente = PlanPersonalizado.objects.filter(
+                    cliente__id=getattr(cliente, 'id', None),
+                    ejercicio=ejercicio,
+                    rutina__id=getattr(rutina, 'id', None)
+                ).first()
+                reps_objetivo = (
+                    plan_existente.repeticiones_objetivo
+                    if plan_existente else
+                    RutinaEjercicio.objects.filter(rutina=rutina, ejercicio=ejercicio).first().repeticiones
+                )
+                series = SerieRealizada.objects.filter(entreno=entreno, ejercicio=ejercicio)
+                total_series = series.count()
+                series_completas = all(
+                    s.completado and s.repeticiones == reps_objetivo
+                    for s in series
+                )
+                if series_completas and total_series > 0:
+                    total_peso = series.aggregate(Sum('peso_kg'))['peso_kg__sum'] or 0
+                    promedio_peso = total_peso / total_series
+                    nuevo_peso = round(promedio_peso * Decimal("1.10"), 1)
+                    plan, created = PlanPersonalizado.objects.get_or_create(cliente=cliente,
+                                                                            ejercicio=ejercicio,
+                                                                            rutina__id=getattr(rutina, 'id', None),
+                                                                            defaults={
+                                                                                'repeticiones_objetivo': reps_objetivo,
+                                                                                'peso_objetivo': nuevo_peso
+                                                                            }
+                                                                            )
+                    if not created and plan.peso_objetivo != nuevo_peso:
+                        plan.peso_objetivo = nuevo_peso
+                        plan.save()
+            messages.success(request, "✅ Entreno guardado con éxito.")
+            rutinas_ordenadas = cliente.programa.rutinas.order_by('orden')
+            rutinas = list(rutinas_ordenadas)
+            try:
+                index = rutinas.index(rutina)
+                siguiente = rutinas[(index + 1) % len(rutinas)]
+                cliente.rutina_actual = siguiente
+                cliente.save()
+                if siguiente == rutinas[0]:
+                    messages.success(request,
+                                     f"✅ Entreno guardado. ¡Ciclo completado! Se reinicia con: {siguiente.nombre}")
+                else:
+                    messages.success(request, f"✅ Entreno guardado. Se asignó la siguiente rutina: {siguiente.nombre}")
+            except (ValueError, ZeroDivisionError):
+                messages.warning(request, "⚠️ No se pudo determinar la siguiente rutina.")
+            if request.method != 'POST':
+    return redirect('hacer_entreno')
+    cliente_form = SeleccionClienteForm(initial={'cliente': cliente_inicial})
+
+    if cliente_form is not None:
+    cliente_form.fields['cliente'].widget = forms.HiddenInput()
+    datos_previos = {}
+
+    if cliente_inicial:
+        ultimo_entreno = (
+            EntrenoRealizado.objects
+            .filter(cliente=cliente_inicial, rutina=rutina)
+            .order_by('-id')
+            .prefetch_related('series__ejercicio')
+            .first()
+        )
+        if ultimo_entreno:
+            for serie in ultimo_entreno.series.all():
+                datos_previos.setdefault(serie.ejercicio.id, []).append({
+                    'repeticiones': serie.repeticiones,
+                    'peso_kg': serie.peso_kg
+                })
+
+    for asignacion in rutina.rutinaejercicio_set.select_related('ejercicio'):
+        ejercicio = copy.copy(asignacion.ejercicio)
+        previas = datos_previos.get(ejercicio.id, [])
+
+        plan = None
+        if isinstance(cliente_inicial, Cliente):
+            plan = PlanPersonalizado.objects.filter(
+                cliente__id=getattr(cliente_inicial, 'id', None),
+                ejercicio=ejercicio,
+                rutina__id=getattr(rutina, 'id', None)
+            ).first()
+
+        if plan:
+            reps_plan = plan.repeticiones_objetivo
+            peso_plan = plan.peso_objetivo
+            adaptado = True
+        else:
+            reps_plan = asignacion.repeticiones
+            peso_plan = asignacion.peso_kg
+            adaptado = False
+
+        initial_data = {
+            'series': len(previas) if previas else asignacion.series,
+            'repeticiones': previas[0]['repeticiones'] if previas else reps_plan,
+            'peso_kg': previas[0]['peso_kg'] if previas else peso_plan,
+            'completado': True,
+            'ejercicio_id': ejercicio.id,
+        }
+
+        form = DetalleEjercicioForm(initial=initial_data, prefix=str(ejercicio.id))
+        num_series = len(previas) if previas else asignacion.series
+        ejercicio.series_datos = []
+
+        for idx in range(num_series):
+            serie_data = {
+                'repeticiones': previas[idx]['repeticiones'] if idx < len(previas) else reps_plan,
+                'peso_kg': previas[idx]['peso_kg'] if idx < len(previas) else peso_plan,
+                'numero': idx + 1,
+                'adaptado': adaptado,
+                'peso_adaptado': adaptado
+            }
+            ejercicio.series_datos.append(serie_data)
+
+        ejercicios_forms.append((ejercicio, form))
+
+    return render(request, 'entrenos/empezar_entreno.html', {
+        'rutina': rutina,
+        'cliente_form': cliente_form,
+        'ejercicios_forms': ejercicios_forms,
+        'cliente_inicial': cliente_inicial
+    })
+
+
+def hacer_entreno(request):
+    clientes = Cliente.objects.select_related('programa', 'rutina_actual').all()
+    return render(request, 'entrenos/hacer_entreno.html', {
+        'clientes': clientes
+    })
+
+
+def eliminar_entreno(request, pk):
+    if request.method == 'POST':
+        entreno = get_object_or_404(EntrenoRealizado, pk=pk)
+        entreno.delete()
+    return redirect('historial_entrenos')
+
+
+def mostrar_entreno_anterior(request, cliente_id, rutina_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    rutina = get_object_or_404(Rutina, id=rutina_id)
+
+    # Último entreno realizado
+    entreno_anterior = (
+        EntrenoRealizado.objects
+        .filter(cliente=cliente, rutina=rutina)
+        .prefetch_related('series__ejercicio')
+        .order_by('-fecha', '-id')
+        .first()
+    )
+
+    # Plan personalizado o rutina original
+    ejercicios_planificados = []
+    for asignacion in rutina.rutinaejercicio_set.select_related('ejercicio'):
+        ejercicio = asignacion.ejercicio
+
+        plan = PlanPersonalizado.objects.filter(
+            cliente__id=getattr(cliente, 'id', None),
+            ejercicio=ejercicio,
+            rutina__id=getattr(rutina, 'id', None)
+        ).first()
+
+        peso_base = asignacion.peso_kg
+        peso_adaptado = False
+        peso_objetivo = peso_base
+
+        if plan and plan.peso_objetivo != peso_base:
+            peso_objetivo = plan.peso_objetivo
+            peso_adaptado = True
+
+        ejercicios_planificados.append({
+            'nombre': ejercicio.nombre,
+            'series': asignacion.series,
+            'repeticiones': asignacion.repeticiones,
+            'peso_kg': peso_objetivo,
+            'peso_adaptado': peso_adaptado,
+            'peso_base': peso_base
+        })
+
+    # ✅ Return asegurado
+    return render(request, 'entrenos/entreno_anterior.html', {
+        'cliente': cliente,
+        'rutina': rutina,
+        'entreno': entreno_anterior,
+        'plan': ejercicios_planificados
+    })

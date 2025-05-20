@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Último Entreno de {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Último entreno de {{ cliente.nombre }} — {{ rutina.nombre }}</h2>
+
+    {% if entreno %}
+    <div class="border rounded p-3 mb-4 shadow-sm bg-white">
+        <small class="text-muted">Fecha: {{ entreno.fecha }}</small>
+        {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
+
+        <ul class="mt-2">
+            {% with volumen_total_entreno=0 %}
+            {% for grupo in series_por_ejercicio %}
+            {% with total_volumen=0 %}
+            <li>
+                <strong>{{ grupo.grouper.nombre }}</strong>:
+                {% for serie in grupo.list %}
+                <span class="badge text-bg-light me-1">
+                        Serie {{ serie.serie_numero }} — {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
+                    </span>
+                {% endfor %}
+            </li>
+            {% endwith %}
+            {% empty %}
+            <li class="text-muted">Sin series registradas.</li>
+            {% endfor %}
+            {% endwith %}
+        </ul>
+    </div>
+    {% if plan %}
+    <h4 class="mt-5">Plan próximo entreno</h4>
+    <div class="border rounded p-3 shadow-sm bg-light">
+        <ul class="mb-0">
+            {% for ejercicio in plan %}
+            <li>
+                <strong>{{ ejercicio.nombre }}</strong>:
+                {{ ejercicio.series }} series de {{ ejercicio.repeticiones }} reps @
+                {{ ejercicio.peso_kg }} kg
+                {% if ejercicio.peso_adaptado %}
+                <span class="badge rounded-pill bg-success text-white ms-2">
+                💪 Peso aumentado desde {{ ejercicio.peso_base }} kg (↑10%)
+            </span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+
+    {% else %}
+
+    <p class="text-muted">Este cliente aún no ha realizado esta rutina.</p>
+    {% endif %}
+
+    <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}" class="btn btn-success">
+        Empezar nuevo entreno
+    </a>
+</div>
+{% endblock %}
