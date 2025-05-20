@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-
+<!--#Agregar un nuevo programa-->
 {% block title %}Agregar Rutina{% endblock %}
 
 {% block content %}
-<h2>Agregar rutina al programa {{ programa.nombre }}</h2>
+<h2>Agregar Programa {{ programa.nombre }} a:</h2>
 
 <form method="post">
     {% csrf_token %}

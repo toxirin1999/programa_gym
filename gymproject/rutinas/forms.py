@@ -1,5 +1,7 @@
 from django import forms
 from .models import Programa, Ejercicio, Rutina, RutinaEjercicio
+from django import forms
+from .models import Programa
 
 
 class RutinaEjercicioForm(forms.ModelForm):
@@ -22,10 +24,11 @@ class RutinaEjercicioForm(forms.ModelForm):
 class ProgramaForm(forms.ModelForm):
     class Meta:
         model = Programa
-        fields = ['nombre', 'descripcion']
+        fields = ['nombre', 'tipo', 'icono']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Hipertrofia, Fuerza...'}),
+            'icono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'piernas.png'}),
         }
 
 

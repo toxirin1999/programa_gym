@@ -1,26 +1,28 @@
+/* Tipografía principal */
 body {
-    background-color: #ffffff;
-    color: #1d1d1f;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
 }
+
 
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
 }
 
+/* Tarjetas limpias */
 .card {
-    background-color: #f5f5f7;
     border: none;
-    border-radius: 20px;
-    padding: 15px;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
-
+/* Encabezado de tarjeta */
+.card-header {
+    background-color: #fff3ed;
+    color: #e5745e;
+    font-weight: 600;
+    border-bottom: 1px solid #f0f0f0;
+}
 .card .value {
     color: #ff2d55;
     font-weight: 700;
@@ -71,6 +73,27 @@ input, select, textarea {
     padding: 10px;
     width: 100%;
 }
+/* Inputs */
+input[type="text"],
+input[type="email"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+    border-radius: 8px !important;
+    border: 1px solid #ced4da;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #e5745e;
+    box-shadow: 0 0 0 0.1rem rgba(229, 116, 94, 0.25);
+    outline: none;
+}
+
 
 input::placeholder, textarea::placeholder {
     color: #d2d2d7;  /* color de placeholder gris */
@@ -80,6 +103,13 @@ input:focus, select:focus, textarea:focus {
     border-color: #ff2d55;
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(255, 45, 85, 0.25);
+}
+/* Formularios */
+form {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 .form-control {
     background-color: #f5f5f7;
@@ -128,4 +158,78 @@ input:focus, select:focus, textarea:focus {
 
 .btn-danger:hover {
     background-color: #c1271c;
+}
+/* Estilo para .btn-fucsia (hereda de Apple coral) */
+.btn-fucsia {
+    background-color: #e5745e;
+    border: none;
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-fucsia:hover {
+    background-color: #d45f48;
+}
+
+/* Badge suave */
+.badge {
+    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 0.4em 0.6em;
+}
+
+/* Canvas de gráficas */
+canvas {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Tooltips */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+}
+
+/* Botones extra amplios */
+button,
+.btn {
+    font-size: 1rem;
+    font-weight: 500;
+}
+.bg-light-success { background-color: #e6fff1; }
+.bg-light-danger { background-color: #ffe6e6; }
+<style>
+    .icono-opcion {
+        border-radius: 50%;
+        padding: 4px;
+        transition: border-color 0.3s;
+        cursor: pointer;
+    }
+    .icono-opcion.selected {
+        border: 2px solid #0d6efd; /* azul Bootstrap */
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .icono-label {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+    }
+</style>
+.selected {
+    border: 2px solid #ff6600;
+    box-shadow: 0 0 5px #ff6600;
+}
+.circle {
+    font-size: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

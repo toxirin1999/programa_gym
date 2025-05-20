@@ -26,6 +26,7 @@ urlpatterns = [
     path('clientes/', include('clientes.urls')),
     path('rutinas/', include('rutinas.urls')),
     path('dietas/', include('dietas.urls')),
+    path('entrenos/', include('entrenos.urls')),  # <-- añade esta línea
     path('anuncios/', include('anuncios.urls')),
     path('panel/', clientes_views.dashboard, name='dashboard'),
 ]

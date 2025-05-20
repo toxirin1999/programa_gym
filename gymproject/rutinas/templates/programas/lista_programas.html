@@ -1,27 +1,112 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Lista de Programas{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Programas</h2>
-    <a href="{% url 'agregar_programa' %}" class="btn btn-success">
-        <i class="bi bi-plus-lg"></i> Agregar Programa
-    </a>
+<div class="container">
+
+    <!-- Título y botón -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Programas</h2>
+        <a href="{% url 'agregar_programa' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Agregar Programa
+        </a>
+    </div>
+
+    <!-- Buscador -->
+    <form method="get" class="mb-3">
+        <input type="text" name="buscar" class="form-control" placeholder="Buscar programa..."
+               value="{{ request.GET.buscar }}">
+    </form>
+
+    <!-- Lista de programas -->
+    <ul class="list-group shadow-sm">
+        {% for programa in page_obj %}
+        <li class="list-group-item d-flex justify-content-between align-items-center hoverable">
+            <div class="d-flex align-items-center">
+                <img src="{% static 'img/programas/' %}{{ programa.icono|default:'default.png' }}"
+                     alt="icono" class="rounded-circle me-3" width="40" height="40">
+                <div>
+                    <strong>{{ programa.nombre }}</strong><br>
+                    <small class="text-muted">Creado el {{ programa.fecha_creacion|date:"d M Y" }}</small>
+                    {% if programa.tipo %}
+                    <span class="badge bg-info ms-2">{{ programa.tipo }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="btn-group" role="group">
+                    <!-- Ver Rutinas -->
+                    <a href="{% url 'detalle_programa' programa.id %}" class="btn btn-outline-primary btn-sm"
+                       data-bs-toggle="tooltip" title="Ver Rutinas">
+                        <i class="bi bi-eye"></i>
+                    </a>
+
+                    <!-- Eliminar -->
+                    <form action="{% url 'eliminar_programa' programa.id %}" method="post"
+                          onsubmit="return confirm('¿Seguro que quieres eliminar este programa?');"
+                          style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip"
+                                title="Eliminar Programa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">No hay programas registrados.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&buscar={{ request.GET.buscar }}">Anterior</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}&buscar={{ request.GET.buscar }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&buscar={{ request.GET.buscar }}">Siguiente</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 
-<ul class="list-group">
-    {% for programa in programas %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-            <strong>{{ programa.nombre }}</strong> - {{ programa.descripcion }}
-        </div>
-        <a href="{% url 'detalle_programa' programa.id %}" class="btn btn-primary btn-sm">
-            <i class="bi bi-eye"></i> Ver Rutinas
-        </a>
-    </li>
-    {% empty %}
-    <li class="list-group-item text-muted">No hay programas registrados.</li>
-    {% endfor %}
-</ul>
+<!-- Estilos adicionales -->
+<style>
+    .hoverable:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+</style>
+
+<!-- Tooltip Bootstrap -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
 {% endblock %}

@@ -3,6 +3,14 @@ from .forms import ProgramaForm, EjercicioForm, RutinaForm, RutinaEjercicioForm
 from .models import Programa, Ejercicio, Rutina
 from django.contrib import messages
 from clientes.models import Cliente
+from .models import RutinaEjercicio
+from django.contrib import messages
+
+import os
+from django.conf import settings
+from .models import Programa
+from .forms import ProgramaForm
+from django.shortcuts import render, get_object_or_404, redirect
 
 
 def eliminar_rutina(request, rutina_id):
@@ -70,9 +78,25 @@ def eliminar_programa(request, programa_id):
     return redirect('lista_programas')  # asegúrate de que este nombre coincida con tu urls.py
 
 
+from django.core.paginator import Paginator
+
+
 def lista_programas(request):
+    buscar = request.GET.get("buscar", "")
     programas = Programa.objects.all()
-    return render(request, 'programas/lista_programas.html', {'programas': programas})
+    if buscar:
+        programas = programas.filter(nombre__icontains=buscar)
+
+    paginator = Paginator(programas, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "./programas/lista_programas.html", {"page_obj": page_obj})
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Programa
+from .forms import ProgramaForm
 
 
 def agregar_programa(request):
@@ -83,7 +107,7 @@ def agregar_programa(request):
             return redirect('lista_programas')
     else:
         form = ProgramaForm()
-    return render(request, 'programas/agregar_programa.html', {'form': form})
+    return render(request, 'programas/form_programa.html', {'form': form, 'titulo': 'Agregar Programa'})
 
 
 def index(request):
@@ -169,7 +193,21 @@ def agregar_rutina(request, programa_id):
 
 def editar_rutina_ejercicio(request, pk):
     ejercicio = get_object_or_404(RutinaEjercicio, pk=pk)
-    # lógica para editar...
+
+    if request.method == 'POST':
+        form = RutinaEjercicioForm(request.POST, instance=ejercicio)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✅ Cambios guardados correctamente.")
+            return redirect('detalle_rutina', rutina_id=ejercicio.rutina.id)
+
+    else:
+        form = RutinaEjercicioForm(instance=ejercicio)
+
+    return render(request, 'rutinas/editar_rutina_ejercicio.html', {
+        'form': form,
+        'ejercicio': ejercicio
+    })
 
 
 def eliminar_rutina_ejercicio(request, pk):
@@ -178,15 +216,25 @@ def eliminar_rutina_ejercicio(request, pk):
 
 
 def agregar_ejercicio_general(request):
-    if request.method == 'POST':
-        form = EjercicioForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('lista_ejercicios')
-    else:
-        form = EjercicioForm()
+    programa = get_object_or_404(Programa, id=id)
+    form = ProgramaForm(request.POST or None, instance=programa)
 
-    return render(request, 'rutinas/agregar.html', {'form': form})
+    # Listar íconos disponibles
+    iconos_dir = os.path.join(settings.BASE_DIR, 'static', 'img', 'programas')
+    iconos = sorted([
+        archivo for archivo in os.listdir(iconos_dir)
+        if archivo.endswith(('.png', '.jpg', '.jpeg', '.svg'))
+    ])
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('lista_programas')
+
+    return render(request, 'programas/editar_programa.html', {
+        'form': form,
+        'iconos': iconos,
+        'programa': programa
+    })
 
 
 def editar_programa(request, programa_id):
@@ -195,11 +243,10 @@ def editar_programa(request, programa_id):
         form = ProgramaForm(request.POST, instance=programa)
         if form.is_valid():
             form.save()
-            messages.success(request, 'El programa ha sido actualizado correctamente.')
-            return redirect('detalle_programa', programa_id=programa.id)
+            return redirect('lista_programas')
     else:
         form = ProgramaForm(instance=programa)
-    return render(request, 'programas/editar_programa.html', {'form': form, 'programa': programa})
+    return render(request, 'programas/form_programa.html', {'form': form, 'titulo': 'Editar Programa'})
 
 
 def eliminar_programa(request, programa_id):
