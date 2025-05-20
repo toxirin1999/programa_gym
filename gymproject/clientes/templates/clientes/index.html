@@ -1,24 +1,72 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Lista de Clientes{% endblock %}
 
+<link rel="stylesheet" href="{% static 'custom.css' %}">
 {% block content %}
 <div class="container mt-4">
     <h2 class="fw-bold mb-3">Clientes</h2>
 
-    {% if clientes %}
-    <ul class="list-group">
-        {% for cliente in clientes %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
+    <!-- Filtro por nombre, programa y género -->
+    <form method="get" class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" name="nombre" placeholder="Buscar por nombre" class="form-control" value="{{ request.GET.nombre }}">
+        </div>
+        <div class="col-md-4">
+            <select name="programa" class="form-select">
+                <option value="">Todos los programas</option>
+                {% for programa in programas %}
+                <option value="{{ programa.id }}" {% if request.GET.programa == programa.id|stringformat:"s" %}selected{% endif %}>
+                    {{ programa.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="genero" class="form-select">
+                <option value="">Todos los géneros</option>
+                <option value="M" {% if request.GET.genero == "M" %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if request.GET.genero == "F" %}selected{% endif %}>Femenino</option>
+            </select>
+        </div>
+        <div class="col-md-12 mt-2 d-flex justify-content-between align-items-center">
             <div>
-                <strong><td>
-    {{ cliente.nombre }}
+                <span id="alerta-contador" class="badge bg-warning text-dark"></span>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'clientes_index' %}" class="btn btn-secondary">Limpiar</a>
+                <button type="button" id="toggle-alerts" class="btn btn-outline-warning btn-sm ms-2">
+                    👀 Mostrar solo clientes en riesgo
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if clientes %}
+    <ul class="list-group shadow-sm rounded overflow-hidden">
+        {% for cliente in clientes %}
+        <li class="list-group-item d-flex justify-content-between align-items-center
     {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
-        <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
-           data-bs-toggle="tooltip"
-           title="{{ cliente.ultima_revision.check_alerts }}"></i>
+        cliente-riesgo list-group-item-warning
+    {% endif %}">
+            <div>
+                <strong>
+
+                    {{ cliente.nombre }}
+
+{% if cliente.proximo_registro_peso %}
+    {% if cliente.proximo_registro_peso <= today %}
+        <i class="bi bi-calendar-x-fill text-danger ms-2" title="Peso atrasado para {{ cliente.proximo_registro_peso }}"></i>
+    {% else %}
+        <i class="bi bi-calendar-event-fill text-warning ms-2" title="Próximo peso: {{ cliente.proximo_registro_peso }}"></i>
     {% endif %}
-</td></strong><br>
+{% endif %}
+                    {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
+                        <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
+                           data-bs-toggle="tooltip" title="{{ cliente.ultima_revision.check_alerts }}"></i>
+                    {% endif %}
+                </strong><br>
                 <small>Email: {{ cliente.email }} | Teléfono: {{ cliente.telefono }}</small><br>
                 {% if cliente.programa %}
                 <span class="badge bg-primary mt-1">Programa: {{ cliente.programa.nombre }}</span>
@@ -26,17 +74,16 @@
                 <span class="badge bg-secondary mt-1">Sin programa asignado</span>
                 {% endif %}
                 {% if cliente.ultima_dieta %}
-    <span class="badge bg-success mt-1">Dieta: {{ cliente.ultima_dieta.dieta.nombre }}</span>
-{% else %}
-    <span class="badge bg-secondary mt-1">Sin dieta asignada</span>
-{% endif %}
-
+                <span class="badge bg-success mt-1">Dieta: {{ cliente.ultima_dieta.dieta.nombre }}</span>
+                {% else %}
+                <span class="badge bg-secondary mt-1">Sin dieta asignada</span>
+                {% endif %}
             </div>
             <div>
                 <a href="{% url 'detalle_cliente' cliente.id %}" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-eye"></i> Ver
                 </a>
-                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-warning">
+                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-success">
                     <i class="bi bi-pencil-square"></i> Editar
                 </a>
                 <a href="{% url 'eliminar_cliente' cliente.id %}" class="btn btn-sm btn-outline-danger"
@@ -57,123 +104,33 @@
         </a>
     </div>
 </div>
-<form method="get" class="row mb-3">
-    <div class="col-md-4">
-        <input type="text" name="nombre" placeholder="Buscar por nombre" class="form-control" value="{{ request.GET.nombre }}">
-    </div>
-    <div class="col-md-4">
-        <select name="programa" class="form-select">
-            <option value="">Todos los programas</option>
-            {% for programa in programas %}
-            <option value="{{ programa.id }}" {% if request.GET.programa == programa.id|stringformat:"s" %}selected{% endif %}>{{ programa.nombre }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-4">
-        <select name="genero" class="form-select">
-            <option value="">Todos los géneros</option>
-            <option value="M" {% if request.GET.genero == "M" %}selected{% endif %}>Masculino</option>
-            <option value="F" {% if request.GET.genero == "F" %}selected{% endif %}>Femenino</option>
-        </select>
-    </div>
-    <div class="col-md-12 mt-2">
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-        <a href="{% url 'clientes_index' %}" class="btn btn-secondary">Limpiar</a>
-    </div>
 
-    <!-- filtro clientes con riesgo -->
-    <span id="alerta-contador" class="badge bg-warning text-dark ms-2"></span>
-
-
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-    <div>
-        <h4 class="mb-0">Listado de Clientes</h4>
-        <small id="alerta-contador" class="text-muted"></small>
-    </div>
-    <button id="toggle-alerts" class="btn btn-outline-warning btn-sm">
-        👀 Mostrar solo clientes en riesgo
-    </button>
-</div>
-
-
-    <div class="mb-3 d-flex justify-content-between">
-    <h4>Listado de Clientes</h4>
-    <button id="toggle-alerts" class="btn btn-outline-warning btn-sm">
-        👀 Mostrar solo clientes en riesgo
-    </button>
-</div>
-    <tr {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}class="table-warning"{% endif %}>
-    <td>
-        {{ cliente.nombre }}
-        {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
-            <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
-               data-bs-toggle="tooltip"
-               title="{{ cliente.ultima_revision.check_alerts }}"></i>
-        {% endif %}
-    </td>
-    <!-- otras columnas -->
-</tr>
+<!-- Script de filtrado por riesgo -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggle-alerts");
-    let soloAlertas = false;
-
-    toggleBtn.addEventListener("click", function () {
-        soloAlertas = !soloAlertas;
-
-        document.querySelectorAll("table tbody tr").forEach(row => {
-            if (soloAlertas) {
-                if (!row.classList.contains("table-warning")) {
-                    row.style.display = "none";
-                } else {
-                    row.style.display = "";
-                }
-            } else {
-                row.style.display = "";
-            }
-        });
-
-        toggleBtn.textContent = soloAlertas
-            ? "🔁 Mostrar todos los clientes"
-            : "👀 Mostrar solo clientes en riesgo";
-    });
-});
-</script>
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggle-alerts");
     const alertaContador = document.getElementById("alerta-contador");
-    const filas = document.querySelectorAll("table tbody tr");
+    const clientes = document.querySelectorAll(".list-group-item");
 
     let soloAlertas = false;
 
     function actualizarContador() {
-        let total = filas.length;
-        let conRiesgo = 0;
-        filas.forEach(row => {
-            if (row.classList.contains("table-warning")) conRiesgo++;
-        });
+        const total = clientes.length;
+        const conRiesgo = document.querySelectorAll(".cliente-riesgo").length;
 
         let texto = `🟡 ${conRiesgo} cliente${conRiesgo !== 1 ? 's' : ''} en riesgo`;
-
-        if (soloAlertas) {
-            texto += ` (mostrando solo alertas)`;
-        } else {
-            texto += ` (de ${total} en total)`;
-        }
-
+        texto += soloAlertas ? ` (mostrando solo alertas)` : ` (de ${total} en total)`;
         alertaContador.textContent = texto;
     }
 
     toggleBtn.addEventListener("click", function () {
         soloAlertas = !soloAlertas;
 
-        filas.forEach(row => {
-            if (soloAlertas) {
-                row.style.display = row.classList.contains("table-warning") ? "" : "none";
-            } else {
-                row.style.display = "";
-            }
+        clientes.forEach(item => {
+            const esRiesgo = item.classList.contains("cliente-riesgo");
+            item.style.display = soloAlertas
+                ? (esRiesgo ? "" : "none")
+                : "";
         });
 
         toggleBtn.textContent = soloAlertas
@@ -183,13 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
         actualizarContador();
     });
 
-    actualizarContador();  // al cargar la página
+    actualizarContador();
 });
 </script>
-
-
-    <!-- fin del filtro -->
-</form>
-
-
 {% endblock %}

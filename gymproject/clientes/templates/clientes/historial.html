@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Historial de {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h4 class="mt-5">📋 Historial de entrenamientos</h4>
+
+    <p class="text-muted">
+        💪 Total de entrenamientos: <strong>{{ total_entrenos }}</strong><br>
+        📈 Promedio semanal: <strong>{{ promedio_semanal }}</strong>
+    </p>
+
+    {% if historial_semanal %}
+    <div class="accordion" id="accordionHistorial">
+        {% for semana_inicio, entrenos in historial_semanal.items %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                <button class="accordion-button {% if not forloop.last %}collapsed{% endif %}" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse-{{ forloop.counter }}"
+                        aria-expanded="{{ forloop.last|yesno:'true,false' }}"
+                        aria-controls="collapse-{{ forloop.counter }}">
+                    <i class="bi bi-calendar-week me-2"></i>
+                    Semana del {{ semana_inicio|date:"d M" }} al {{ semana_inicio|add:"6"|date:"d M" }} —
+                    <strong>{{ entrenos|length }} entreno{{ entrenos|length|pluralize }}</strong>
+                </button>
+            </h2>
+            <div id="collapse-{{ forloop.counter }}"
+                 class="accordion-collapse collapse {% if forloop.last %}show{% endif %}"
+                 aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionHistorial">
+                <div class="accordion-body">
+                    {% for entreno in entrenos %}
+                    <div class="border rounded p-3 mb-3 bg-light-subtle">
+                        <strong>{{ entreno.rutina.nombre }}</strong>
+                        <small class="text-muted">— {{ entreno.fecha|date:"d M Y" }}</small>
+                        <ul class="mt-2">
+                            {% for detalle in entreno.detalles.all|dictsortreversed:"completado" %}
+                            <li>
+                                {{ detalle.ejercicio.nombre }} — {{ detalle.series }}x{{ detalle.repeticiones }} @
+                                {{ detalle.peso_kg }} kg
+                                {% if detalle.completado %}
+                                <span class="badge bg-success-subtle text-success ms-2"><i
+                                        class="bi bi-check-circle"></i></span>
+                                {% else %}
+                                <span class="badge bg-danger-subtle text-danger ms-2"><i
+                                        class="bi bi-x-circle"></i></span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                    <!-- Ejemplo de progreso semanal -->
+                    <div class="text-muted small">
+                        ✅ {{ entrenos|length }} entrenamientos esta semana
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-5">
+        <h5>📊 Entrenos por semana</h5>
+        <canvas id="chartEntrenos" height="100"></canvas>
+    </div>
+
+    <div class="mt-5">
+        <h5>📈 Volumen semanal (series × reps × kg)</h5>
+        <canvas id="chartVolumen" height="100"></canvas>
+    </div>
+
+    <div class="mt-5">
+        <a href="{% url 'exportar_historial' cliente.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Exportar historial
+        </a>
+    </div>
+
+    {% else %}
+    <p class="text-muted">Este cliente no tiene entrenamientos registrados aún.</p>
+    {% endif %}
+</div>
+
+<script>
+    const data = {{ grafico_data|safe }};
+
+    // Entrenos por semana
+    new Chart(document.getElementById('chartEntrenos'), {
+        type: 'bar',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Entrenos',
+                data: data.entrenos,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} entrenos`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Volumen por semana
+    new Chart(document.getElementById('chartVolumen'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Volumen total',
+                data: data.volumen,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} kg totales`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

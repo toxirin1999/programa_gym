@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load form_tags %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block title %}{{ cliente.id|default:"Agregar" }} Cliente{% endblock %}
 
@@ -14,27 +16,38 @@
             <div class="col-md-6 mb-3">{{ form.programa.label_tag }} {{ form.programa|add_class:"form-select" }}</div>
             <div class="col-md-6 mb-3">{{ form.email.label_tag }} {{ form.email|add_class:"form-control" }}</div>
             <div class="col-md-6 mb-3">{{ form.telefono.label_tag }} {{ form.telefono|add_class:"form-control" }}</div>
-            <div class="col-md-6 mb-3">{{ form.fecha_nacimiento.label_tag }} {{
-                form.fecha_nacimiento|add_class:"form-control" }}
+            <div class="col-md-6 mb-3">
+                {{ form.fecha_nacimiento.label_tag }}
+                {{ form.fecha_nacimiento|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.proximo_registro_peso.label_tag }}
+                {{ form.proximo_registro_peso|add_class:"form-control" }}
             </div>
             <div class="col-md-6 mb-3">{{ form.direccion.label_tag }} {{ form.direccion|add_class:"form-control" }}
             </div>
             <div class="col-md-6 mb-3">{{ form.genero.label_tag }} {{ form.genero|add_class:"form-select" }}</div>
-            <div class="col-md-6 mb-3">{{ form.membresia_activa.label_tag }} {{
-                form.membresia_activa|add_class:"form-check-input" }}
+            <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                    {{ form.membresia_activa|add_class:"form-check-input" }}
+                    {{ form.membresia_activa.label_tag }}
+                </div>
             </div>
-            <div class="col-md-6 mb-3">{{ form.fecha_vencimiento_membresia.label_tag }} {{
-                form.fecha_vencimiento_membresia|add_class:"form-control" }}
+            <div class="col-md-6 mb-3">
+                {{ form.fecha_vencimiento_membresia.label_tag }}
+                {{ form.fecha_vencimiento_membresia|add_class:"form-control" }}
             </div>
         </div>
 
         <h4 class="mt-4">Medidas Corporales</h4>
         <div class="row">
-            <div class="col-md-4 mb-3">{{ form.peso_corporal.label_tag }} {{ form.peso_corporal|add_class:"form-control"
-                }}
+            <div class="col-md-4 mb-3">
+                {{ form.peso_corporal.label_tag }}
+                {{ form.peso_corporal|add_class:"form-control" }}
             </div>
-            <div class="col-md-4 mb-3">{{ form.grasa_corporal.label_tag }} {{
-                form.grasa_corporal|add_class:"form-control" }}
+            <div class="col-md-4 mb-3">
+                {{ form.grasa_corporal.label_tag }}
+                {{ form.grasa_corporal|add_class:"form-control" }}
             </div>
             <div class="col-md-4 mb-3">{{ form.cintura.label_tag }} {{ form.cintura|add_class:"form-control" }}</div>
             <div class="col-md-4 mb-3">{{ form.pecho.label_tag }} {{ form.pecho|add_class:"form-control" }}</div>

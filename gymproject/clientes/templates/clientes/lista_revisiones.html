@@ -26,6 +26,8 @@
         <th>Fecha</th>
         <th>Peso (kg)</th>
         <th>Grasa Corporal (%)</th>
+        <th>Acciones</th>
+
     </tr>
     </thead>
     <tbody>
@@ -34,6 +36,13 @@
         <td>{{ r.fecha }}</td>
         <td>{{ r.peso_corporal }}</td>
         <td>{{ r.grasa_corporal }}</td>
+        <td>
+            <form method="post" action="{% url 'eliminar_revision' r.id %}"
+                  onsubmit="return confirm('¿Eliminar esta revisión?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Eliminar</button>
+            </form>
+        </td>
     </tr>
     {% endfor %}
     </tbody>

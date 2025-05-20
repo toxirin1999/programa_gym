@@ -3,6 +3,57 @@
 {% block title %}Dashboard Clientes{% endblock %}
 
 {% block content %}
+<h1 class="mb-4">📊 Panel de Entrenamientos</h1>
+<div class="mb-4">
+    <h5>💪 Total de entrenamientos: <strong>{{ entr_total }}</strong></h5>
+    <h6 class="text-muted">📈 Promedio por semana: <strong>{{ prom_sem }}</strong></h6>
+</div>
+<div class="row mb-4 text-center">
+    <div class="col-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6>Hoy</h6>
+                <p class="fs-4 mb-1">{{ entr_hoy }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6>Esta semana</h6>
+                <p class="fs-4 mb-1">{{ entr_semana }}</p>
+                <small class="text-muted">Prom: {{ prom_sem }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6>Este mes</h6>
+                <p class="fs-4 mb-1">{{ entr_mes }}</p>
+                <small class="text-muted">Prom: {{ prom_mes }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6>Este año</h6>
+                <p class="fs-4 mb-1">{{ entr_anio }}</p>
+                <small class="text-muted">Prom: {{ prom_anio }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm bg-primary text-white">
+            <div class="card-body">
+                <h6>Total entrenos</h6>
+                <p class="fs-1 mb-0">{{ entr_total }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="container">
     <h1 class="mb-4">📊 Panel de Control</h1>
@@ -18,7 +69,7 @@
         </div>
     </div>
 
-    <h4 class="mt-5">⚠ Clientes con Alertas Agrupadas</h4>
+    <h4 class="mt-5">⚠ Clientes con Alertas </h4>
 
     {% if alertas_por_tipo %}
     <ul class="list-group mb-4">
@@ -46,10 +97,25 @@
 
 </div>
 
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📈 Comparar Clientes</h5>
+        <p class="card-text">Accede a la herramienta para comparar la evolución de múltiples clientes en un solo
+            gráfico.</p>
+        <a href="{% url 'comparar_clientes' %}" class="btn btn-sm btn-primary">Ir a comparación</a>
+    </div>
+</div>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📈 Gestionar Ejercicios</h5>
+        <p class="card-text">Accede a la herramienta para añadir ejercicios.</p>
+        <a href="{% url 'lista_ejercicios' %}" class="btn btn-info w-100 mb-3">Ir a los ejercicios</a>
+    </div>
+</div>
+
 <div class="container">
-    <a href="{% url 'lista_ejercicios' %}" class="btn btn-info w-100 mb-3">
-        <i class="bi bi-barbell"></i> Gestionar Ejercicios
-    </a>
+
+
     <h1 class="mb-4">Dashboard de Clientes</h1>
 
     <div class="row text-center">

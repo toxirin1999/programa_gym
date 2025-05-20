@@ -1,5 +1,37 @@
 from django.db import models
+from django.conf import settings
 from rutinas.models import Programa
+from rutinas.models import Rutina
+from dietas.models import Dieta  # asegúrate de tener esto importado
+
+
+class DietaAsignada(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='dietas_asignadas_clientes')
+
+    dieta = models.ForeignKey(Dieta, on_delete=models.CASCADE)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField(null=True, blank=True)
+    observaciones = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.dieta.nombre} ({self.fecha_inicio})"
+
+
+class ObjetivoCliente(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='objetivos')
+    medida = models.CharField(max_length=20, choices=[
+        ('peso', 'Peso (kg)'),
+        ('grasa', 'Grasa corporal (%)'),
+        ('cintura', 'Cintura (cm)'),
+    ])
+    valor = models.FloatField()
+    fecha = models.DateField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('cliente', 'medida')
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.get_medida_display()}: {self.valor}"
 
 
 class RevisionProgreso(models.Model):
@@ -41,9 +73,11 @@ class Cliente(models.Model):
     direccion = models.CharField(max_length=255, blank=True)
     genero = models.CharField(max_length=10, choices=[('M', 'Masculino'), ('F', 'Femenino')], blank=True)
     programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)  # ✅ nuevo campo
+    rutina_actual = models.ForeignKey(Rutina, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_registro = models.DateField(auto_now_add=True)
     membresia_activa = models.BooleanField(default=True)
     fecha_vencimiento_membresia = models.DateField(null=True, blank=True)
+    proximo_registro_peso = models.DateField(null=True, blank=True)
 
     # Campos físicos
     peso_corporal = models.FloatField(null=True, blank=True, help_text="kg")
