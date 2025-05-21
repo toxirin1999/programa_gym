@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Resumen del Entreno{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Resumen del Entreno - {{ entreno.cliente.nombre }}</h2>
+<p><strong>Rutina:</strong> {{ entreno.rutina.nombre }}</p>
+<p><strong>Fecha:</strong> {{ entreno.fecha }}</p>
+<hr>
+
+<div class="alert alert-light border mb-4">
+    <h5 class="mb-2">Resumen general</h5>
+    <ul class="mb-0">
+        <li><strong>Total ejercicios:</strong> {{ resumen.total }}</li>
+        <li class="text-success">💪 Adaptados: {{ resumen.adaptados }}</li>
+        <li class="text-danger">❌ No adaptados: {{ resumen.no_adaptados }}</li>
+        <li class="text-info">ℹ️ Nuevos: {{ resumen.nuevos }}</li>
+    </ul>
+</div>
+{% if acciones_estancamiento %}
+<div class="alert alert-warning border shadow-sm mb-4">
+    <h5 class="mb-3">🔁 Ajustes automáticos por estancamiento</h5>
+    <ul class="mb-0">
+        {% for accion in acciones_estancamiento %}
+        <li>
+            <strong>{{ accion.nombre }}</strong>: peso reducido a <strong>{{ accion.nuevo_peso }} kg</strong>
+            <span class="text-muted small">(razón: {{ accion.razon }})</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% for nombre_ejercicio, series in series_por_ejercicio.items %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        {% with eid=series.0.ejercicio.id %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">{{ nombre_ejercicio }}</h5>
+            {% if eid in adaptados_ids %}
+            <span class="badge bg-success">💪 Adaptado</span>
+            {% elif eid in no_adaptados_ids %}
+            <span class="badge bg-danger">❌ No adaptado</span>
+            {% elif eid in ejercicios_nuevos_ids %}
+            <span class="badge bg-info text-dark">ℹ️ Nuevo</span>
+            {% endif %}
+        </div>
+
+        <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Serie</th>
+                <th>Reps</th>
+                <th>Peso (kg)</th>
+                <th>Completado</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for serie in series %}
+            <tr class="{% if not serie.completado %}table-warning{% endif %}">
+                <td>{{ serie.serie_numero }}</td>
+                <td>{{ serie.repeticiones }}</td>
+                <td>{{ serie.peso_kg }}</td>
+                <td>{% if serie.completado %}✅{% else %}❌{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% with adaptacion=adaptados_dict|get_item:eid %}
+        {% if adaptacion %}
+        {% with nuevo=adaptacion.nuevo_peso anterior=adaptacion.peso_anterior %}
+        {% with diferencia=nuevo|percent_diff:anterior %}
+        <p class="small mt-2 mb-0">
+            ✅ <strong>Plan actualizado:</strong> {{ nuevo }} kg
+            {% if diferencia > 0 %}
+            <span class="text-success">📈 ↑ +{{ diferencia }}% desde {{ anterior }} kg</span>
+            {% elif diferencia < 0 %}
+            <span class="text-danger">📉 ↓ {{ diferencia|absval }}% desde {{ anterior }} kg</span>
+            {% else %}
+            <span class="text-muted">(sin cambio)</span>
+            {% endif %}
+        </p>
+        {% endwith %}
+        {% endwith %}
+        {% endif %}
+        {% endwith %}
+
+        {% if eid in no_adaptados_ids %}
+        <p class="text-danger small mt-2 mb-0">
+            ❌ No se adaptó el plan — no se cumplió el rendimiento mínimo.
+        </p>
+        {% elif eid in ejercicios_nuevos_ids %}
+        <p class="text-info small mt-2 mb-0">
+            ℹ️ Primera vez realizando este ejercicio — se usó el plan base.
+        </p>
+        {% endif %}
+        {% endwith %}
+        {% if alertas_estancamiento %}
+        <div class="alert alert-warning border shadow-sm mb-4">
+            <h5 class="mb-3">🔁 Ajustes por estancamiento</h5>
+            {% for alerta in alertas_estancamiento %}
+            <div class="mb-3">
+                <strong>{{ alerta.nombre }}</strong>:
+                Peso reducido de {{ alerta.peso_anterior }}kg a {{ alerta.nuevo_peso }}kg
+                <div class="small text-muted mt-1">
+                    <strong>Historial:</strong>
+                    <ul>
+                        {% for entreno in alerta.historial %}
+                        <li>
+                            {{ entreno.fecha }}:
+                            {{ entreno.porcentaje_completado|floatformat:0 }}% completado,
+                            {{ entreno.peso_promedio }}kg
+                            {% if entreno.fue_fallo %}(Fallo){% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endfor %}
+
+<a href="{% url 'hacer_entreno' %}" class="btn btn-outline-primary w-100">Volver a entrenar</a>
+{% endblock %}

@@ -22,10 +22,16 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="card-title mb-0">{{ ejercicio.nombre }}</h5>
+                    {% if ejercicio.series_datos.0.fallo_anterior %}
+                    <span class="text-warning small">⚠️ Entreno anterior incompleto</span>
+                    {% endif %}
+
                     <small class="text-muted">{{ ejercicio.grupo_muscular }} - {{ ejercicio.equipo }}</small>
                     {% if ejercicio.series_datos.0.adaptado %}
                     <span class="text-warning small">⭐ Adaptado</span>
+
                     {% endif %}
+
                 </div>
             </div>
 

@@ -36,11 +36,6 @@ class Programa(models.Model):
     rutina = models.ForeignKey(Rutina, on_delete=models.CASCADE)
 
 
-class Cliente(models.Model):
-    nombre = models.CharField(max_length=100)
-    programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)
-
-
 class SerieRealizada(models.Model):
     entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='series')
     ejercicio = models.ForeignKey('rutinas.Ejercicio', on_delete=models.CASCADE)
@@ -51,10 +46,9 @@ class SerieRealizada(models.Model):
 
 
 class PlanPersonalizado(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    ejercicio = models.ForeignKey(Ejercicio, on_delete=models.CASCADE)
-    rutina = models.ForeignKey(Rutina, on_delete=models.CASCADE, null=True, blank=True)
-
+    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
+    ejercicio = models.ForeignKey('rutinas.Ejercicio', on_delete=models.CASCADE)
+    rutina = models.ForeignKey('rutinas.Rutina', on_delete=models.CASCADE, null=True, blank=True)
     repeticiones_objetivo = models.PositiveIntegerField(default=10)
     peso_objetivo = models.FloatField(default=0)
 
