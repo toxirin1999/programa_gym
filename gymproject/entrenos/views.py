@@ -1,13 +1,18 @@
 from datetime import date, timedelta
-from decimal import Decimal
+from collections import defaultdict
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 import copy
+from decimal import Decimal, getcontext
+from datetime import date
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
 from django import forms
 from django.db.models import Avg, Sum
-
+from django.db import transaction
 from rutinas.models import Rutina, RutinaEjercicio, Ejercicio
 from clientes.models import Cliente
 from .models import EntrenoRealizado, SerieRealizada, PlanPersonalizado
@@ -140,137 +145,166 @@ def crear_entreno(entreno, ejercicios_forms, request, cliente, rutina):
             i += 1
 
 
+from django.db import transaction
+from decimal import Decimal
+
+from datetime import date
+from django.core.serializers.json import DjangoJSONEncoder
+
+from decimal import Decimal, getcontext
+from datetime import date
+from django.core.serializers.json import DjangoJSONEncoder
+
+from decimal import Decimal, getcontext
+from django.db import transaction
+
+from decimal import Decimal, getcontext
+from django.db import transaction
+
+
 def adaptar_plan_personalizado(entreno, ejercicios_forms, cliente, rutina, request):
     """
-    Adapta el plan personalizado del cliente basado en su rendimiento.
-    Mantiene un conteo individual de fallos por cada ejercicio.
+    Versión final con reinicio de contador después de reducción
     """
-    try:
-        cliente_real = Cliente.objects.get(id=entreno.cliente_id)
-        print(f"\nProcesando cliente: {cliente_real.nombre}")
-    except Exception as e:
-        print(f"❌ Error al obtener cliente: {str(e)}")
-        return
+    # Configurar precisión decimal
+    getcontext().prec = 8
 
-    # Inicializar estructuras de seguimiento
-    if 'ejercicios_estancados' not in request.session:
-        request.session['ejercicios_estancados'] = {}
-
-    ejercicios_estancados = request.session['ejercicios_estancados']
-    rutina_id = str(rutina.id) if isinstance(rutina, Rutina) else rutina
-
-    for ejercicio, _ in ejercicios_forms:
+    with transaction.atomic():
         try:
-            ejercicio_obj = ejercicio if isinstance(ejercicio, Ejercicio) else Ejercicio.objects.get(id=ejercicio)
-            ejercicio_id = str(ejercicio_obj.id)
-
-            print(f"\nProcesando ejercicio: {ejercicio_obj.nombre} (ID: {ejercicio_id})")
-
-            # Obtener o inicializar el registro de seguimiento para este ejercicio
-            ejercicio_key = f"{cliente_real.id}_{rutina_id}_{ejercicio_id}"
-            if ejercicio_key not in ejercicios_estancados:
-                ejercicios_estancados[ejercicio_key] = {
-                    'nombre': ejercicio_obj.nombre,
-                    'fallos_consecutivos': 0,
-                    'historial': []
-                }
-
-            registro_ejercicio = ejercicios_estancados[ejercicio_key]
-
-            # Obtener plan y objetivo
-            plan = PlanPersonalizado.objects.filter(
-                cliente_id=cliente_real.id,
-                ejercicio_id=ejercicio_obj.id,
-                rutina_id=rutina.id
-            ).first()
-
-            asignacion = RutinaEjercicio.objects.filter(
-                rutina_id=rutina.id,
-                ejercicio_id=ejercicio_obj.id
-            ).first()
-
-            if not asignacion:
-                print("No hay asignación para este ejercicio")
-                continue
-
-            reps_objetivo = plan.repeticiones_objetivo if plan else asignacion.repeticiones
-            print(f"Repeticiones objetivo: {reps_objetivo}")
-
-            # Analizar series del entreno actual
-            series_actuales = SerieRealizada.objects.filter(
-                entreno=entreno,
-                ejercicio=ejercicio_obj
-            )
-
-            total_series = series_actuales.count()
-            series_completadas = sum(
-                1 for s in series_actuales
-                if s.completado and s.repeticiones >= reps_objetivo - 1
-            )
-
-            porcentaje_completado = series_completadas / total_series if total_series > 0 else 0
-            fue_fallo = porcentaje_completado < 0.75
-            peso_promedio = sum(s.peso_kg for s in series_actuales) / total_series if total_series > 0 else 0
-
-            # Actualizar historial
-            registro_ejercicio['historial'].append({
-                'entreno_id': entreno.id,
-                'fecha': entreno.fecha,
-                'porcentaje_completado': porcentaje_completado,
-                'peso_promedio': float(peso_promedio),
-                'fue_fallo': fue_fallo
-            })
-
-            # Mantener solo los últimos 3 entrenos en el historial
-            registro_ejercicio['historial'] = registro_ejercicio['historial'][-3:]
-
-            # Actualizar contador de fallos consecutivos
-            if fue_fallo:
-                registro_ejercicio['fallos_consecutivos'] += 1
-                print(f"Fallos consecutivos: {registro_ejercicio['fallos_consecutivos']}")
-            else:
-                registro_ejercicio['fallos_consecutivos'] = 0
-                print("Reiniciando contador de fallos (entreno exitoso)")
-
-            # Verificar si aplica reducción de peso
-            if registro_ejercicio['fallos_consecutivos'] >= 3:
-                nuevo_peso = round(peso_promedio * Decimal("0.90"), 1)
-                print(f"Reducción de peso aplicada: {peso_promedio}kg → {nuevo_peso}kg")
-
-                # Actualizar plan
-                PlanPersonalizado.objects.update_or_create(
-                    cliente_id=cliente_real.id,
-                    ejercicio_id=ejercicio_obj.id,
-                    rutina_id=rutina.id,
-                    defaults={
-                        'repeticiones_objetivo': reps_objetivo,
-                        'peso_objetivo': nuevo_peso
-                    }
-                )
-
-                # Registrar alerta
-                if 'alertas_estancamiento' not in request.session:
-                    request.session['alertas_estancamiento'] = []
-
-                request.session['alertas_estancamiento'].append({
-                    'ejercicio_id': ejercicio_obj.id,
-                    'nombre': ejercicio_obj.nombre,
-                    'nuevo_peso': float(nuevo_peso),
-                    'peso_anterior': float(peso_promedio),
-                    'razon': '3 fallos consecutivos',
-                    'historial': registro_ejercicio['historial']
-                })
-
-                # Reiniciar contador después de aplicar corrección
-                registro_ejercicio['fallos_consecutivos'] = 0
-
-            # Guardar cambios en la sesión
-            request.session.modified = True
-
+            cliente_real = Cliente.objects.get(id=entreno.cliente_id)
+            print(f"\nProcesando cliente: {cliente_real.nombre}")
         except Exception as e:
-            print(
-                f"Error procesando ejercicio {ejercicio_obj.nombre if 'ejercicio_obj' in locals() else 'UNKNOWN'}: {str(e)}")
-            continue
+            print(f"❌ Error al obtener cliente: {str(e)}")
+            return
+
+        # Inicializar estructuras de seguimiento
+        session_key = f'adaptacion_{cliente_real.id}_{rutina.id}'
+        if session_key not in request.session:
+            request.session[session_key] = {}
+
+        datos_adaptacion = request.session[session_key]
+
+        for ejercicio, _ in ejercicios_forms:
+            try:
+                ejercicio_obj = ejercicio if isinstance(ejercicio, Ejercicio) else Ejercicio.objects.get(id=ejercicio)
+                ejercicio_id = str(ejercicio_obj.id)
+
+                print(f"\n--- Procesando ejercicio: {ejercicio_obj.nombre} ---")
+
+                # Obtener o inicializar registro para este ejercicio
+                if ejercicio_id not in datos_adaptacion:
+                    datos_adaptacion[ejercicio_id] = {
+                        'nombre': ejercicio_obj.nombre,
+                        'fallos_consecutivos': 0,
+                        'historial': []
+                    }
+
+                registro = datos_adaptacion[ejercicio_id]
+
+                # Obtener configuración actual del ejercicio
+                try:
+                    asignacion = RutinaEjercicio.objects.get(
+                        rutina=rutina,
+                        ejercicio=ejercicio_obj
+                    )
+                    plan, created = PlanPersonalizado.objects.get_or_create(
+                        cliente=cliente_real,
+                        ejercicio=ejercicio_obj,
+                        rutina=rutina,
+                        defaults={
+                            'repeticiones_objetivo': asignacion.repeticiones,
+                            'peso_objetivo': Decimal(str(asignacion.peso_kg))
+                        }
+                    )
+                except RutinaEjercicio.DoesNotExist:
+                    print(f"No hay asignación para {ejercicio_obj.nombre} en esta rutina")
+                    continue
+
+                # Guardar peso anterior antes de cualquier modificación
+                peso_anterior = Decimal(str(plan.peso_objetivo))
+                print(f"Peso actual: {float(peso_anterior)}kg")
+                print(f"Fallos consecutivos actuales: {registro['fallos_consecutivos']}")
+
+                # Analizar rendimiento
+                series = SerieRealizada.objects.filter(
+                    entreno=entreno,
+                    ejercicio=ejercicio_obj
+                )
+                total_series = series.count()
+
+                if total_series == 0:
+                    print("No hay series registradas")
+                    continue
+
+                series_completadas = sum(
+                    1 for s in series
+                    if s.completado and s.repeticiones >= plan.repeticiones_objetivo
+                )
+                porcentaje_exito = float(series_completadas) / float(total_series)
+                fue_exitoso = porcentaje_exito >= 0.8
+
+                # Calcular peso promedio del entreno actual
+                peso_promedio = sum(Decimal(str(s.peso_kg)) for s in series) / Decimal(str(total_series))
+                print(f"Peso promedio en este entreno: {float(peso_promedio)}kg")
+
+                # Actualizar historial de rendimiento
+                registro['historial'].append({
+                    'fecha': entreno.fecha.isoformat(),
+                    'porcentaje_exito': porcentaje_exito,
+                    'peso_promedio': float(peso_promedio),
+                    'fue_exitoso': fue_exitoso
+                })
+                registro['historial'] = registro['historial'][-3:]  # Mantener solo últimos 3
+
+                # Lógica de adaptación
+                if fue_exitoso:
+                    # Aumentar peso y reiniciar contador
+                    nuevo_peso = (peso_anterior * Decimal('1.10')).quantize(Decimal('0.1'))
+                    plan.peso_objetivo = nuevo_peso
+                    plan.save()
+                    registro['fallos_consecutivos'] = 0  # Reiniciar contador
+
+                    print(f"✅ ÉXITO - Peso aumentado a {float(nuevo_peso)}kg | Contador reiniciado")
+
+                    if 'adaptaciones_positivas' not in request.session:
+                        request.session['adaptaciones_positivas'] = []
+                    request.session['adaptaciones_positivas'].append({
+                        'ejercicio_id': ejercicio_obj.id,
+                        'nombre': ejercicio_obj.nombre,
+                        'peso_anterior': float(peso_anterior),
+                        'nuevo_peso': float(nuevo_peso)
+                    })
+                else:
+                    # Incrementar contador de fallos
+                    registro['fallos_consecutivos'] += 1
+                    print(f"❌ FALLO - Conteo actual: {registro['fallos_consecutivos']}/3")
+
+                    # Verificar si aplica reducción
+                    if registro['fallos_consecutivos'] >= 3:
+                        nuevo_peso = (peso_promedio * Decimal('0.90')).quantize(Decimal('0.1'))
+                        plan.peso_objetivo = nuevo_peso
+                        plan.save()
+                        registro['fallos_consecutivos'] = 0  # Reiniciar contador después de reducción
+
+                        print(f"🔽 REDUCCIÓN APLICADA - Nuevo peso: {float(nuevo_peso)}kg | Contador reiniciado")
+
+                        if 'adaptaciones_negativas' not in request.session:
+                            request.session['adaptaciones_negativas'] = []
+                        request.session['adaptaciones_negativas'].append({
+                            'ejercicio_id': ejercicio_obj.id,
+                            'nombre': ejercicio_obj.nombre,
+                            'peso_anterior': float(peso_promedio),
+                            'nuevo_peso': float(nuevo_peso),
+                            'razon': '3 fallos consecutivos'
+                        })
+
+                # Actualizar sesión
+                request.session.modified = True
+
+            except Exception as e:
+                print(
+                    f"Error procesando {ejercicio_obj.nombre if 'ejercicio_obj' in locals() else 'UNKNOWN'}: {str(e)}")
+                continue
 
 
 def actualizar_rutina_cliente(cliente, rutina):
@@ -420,6 +454,12 @@ def empezar_entreno(request, rutina_id):
             adaptado = True
 
             num_series = asignacion.series
+            registro_fallos = 0
+            session_key = f'adaptacion_{cliente_inicial.id}_{rutina.id}'
+            if session_key in request.session:
+                registro = request.session[session_key].get(str(ejercicio.id))
+                if registro:
+                    registro_fallos = registro.get('fallos_consecutivos', 0)
             ejercicio.series_datos = []
 
             for idx in range(num_series):
@@ -429,7 +469,8 @@ def empezar_entreno(request, rutina_id):
                     'numero': idx + 1,
                     'adaptado': True,
                     'peso_adaptado': True,
-                    'fallo_anterior': ejercicio.id in fallos_anteriores
+                    'fallo_anterior': ejercicio.id in fallos_anteriores,
+                    'fallos_consecutivos': registro_fallos
                 })
 
         else:
@@ -446,7 +487,9 @@ def empezar_entreno(request, rutina_id):
                     'peso_kg': previas[idx]['peso_kg'] if idx < len(previas) else peso_plan,
                     'numero': idx + 1,
                     'adaptado': False,
-                    'peso_adaptado': False
+                    'peso_adaptado': False,
+                    'fallo_anterior': ejercicio.id in fallos_anteriores,
+                    'fallos_consecutivos': registro_fallos
                 })
 
         initial_data = {
@@ -589,6 +632,8 @@ def resumen_entreno(request, entreno_id):
     no_adaptados_ids = [a['ejercicio_id'] for a in no_adaptados]
     adaptados_dict = {a['ejercicio_id']: a for a in adaptaciones}
     alertas_estancados = request.session.get('alertas_estancados', [])
+    adaptaciones_positivas = request.session.pop('adaptaciones_positivas', [])
+    adaptaciones_negativas = request.session.pop('adaptaciones_negativas', [])
     print("CONTENIDO DE ALERTAS ESTANCADOS:", alertas_estancados)
     print("ALERTAS ESTANCADOS:", request.session.get('alertas_estancados', []))
     alertas_ids = [a['ejercicio_id'] for a in alertas_estancados]
@@ -628,6 +673,45 @@ def resumen_entreno(request, entreno_id):
     resumen['nuevos'] = len(ejercicio_ids_en_entreno - set(adaptados_ids) - set(no_adaptados_ids))
     acciones_estancamiento = request.session.pop('acciones_estancamiento', [])
 
+    graficos_por_ejercicio = {}
+
+    for nombre, series in series_por_ejercicio.items():
+        ejercicio = series[0].ejercicio
+        historial = SerieRealizada.objects.filter(
+            ejercicio=ejercicio,
+            entreno__cliente=entreno.cliente
+        ).order_by('entreno__fecha')
+
+        datos_por_fecha = defaultdict(list)
+        for s in historial:
+            datos_por_fecha[s.entreno.fecha].append(float(s.peso_kg))
+
+        fechas = []
+        promedios = []
+        for fecha, pesos in datos_por_fecha.items():
+            fechas.append(fecha.isoformat())
+            promedios.append(round(sum(pesos) / len(pesos), 1))
+
+        graficos_por_ejercicio[ejercicio.id] = {
+            'labels': fechas,
+            'data': promedios
+        }
+
+    context = {
+        'entreno': entreno,
+        'series_por_ejercicio': series_por_ejercicio,
+        'adaptados_ids': adaptados_ids,
+        'adaptados_dict': adaptados_dict,
+        'no_adaptados_ids': no_adaptados_ids,
+        'ejercicios_nuevos_ids': list(ejercicio_ids_en_entreno - set(adaptados_ids) - set(no_adaptados_ids)),
+        'resumen': resumen,
+        'alertas_ids': alertas_ids,
+        'alertas_dict': alertas_dict,
+        'acciones_estancamiento': request.session.pop('acciones_estancamiento', [])
+    }
+
+    context['graficos_por_ejercicio'] = json.dumps(graficos_por_ejercicio, cls=DjangoJSONEncoder)
+
     return render(request, 'entrenos/resumen_entreno.html', {
         'entreno': entreno,
         'series_por_ejercicio': series_por_ejercicio,
@@ -639,4 +723,6 @@ def resumen_entreno(request, entreno_id):
         'alertas_ids': alertas_ids,
         'alertas_dict': alertas_dict,
         'acciones_estancamiento': acciones_estancamiento,
+        'adaptaciones_positivas': adaptaciones_positivas,
+        'adaptaciones_negativas': adaptaciones_negativas,
     })

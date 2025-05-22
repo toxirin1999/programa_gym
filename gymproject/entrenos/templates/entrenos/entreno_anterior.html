@@ -1,63 +1,100 @@
 {% extends 'base.html' %}
+{% load entreno_tags %}  <!-- ¡Esta línea es crucial! -->
 
 {% block title %}Último Entreno de {{ cliente.nombre }}{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Último entreno de {{ cliente.nombre }} — {{ rutina.nombre }}</h2>
+    <!-- Encabezado mejorado -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Último entreno de {{ cliente.nombre }}</h2>
+        <span class="badge bg-primary fs-6">{{ rutina.nombre }}</span>
+    </div>
 
     {% if entreno %}
-    <div class="border rounded p-3 mb-4 shadow-sm bg-white">
-        <small class="text-muted">Fecha: {{ entreno.fecha }}</small>
-        {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
-
-        <ul class="mt-2">
-            {% with volumen_total_entreno=0 %}
-            {% for grupo in series_por_ejercicio %}
-            {% with total_volumen=0 %}
-            <li>
-                <strong>{{ grupo.grouper.nombre }}</strong>:
-                {% for serie in grupo.list %}
-                <span class="badge text-bg-light me-1">
-                        Serie {{ serie.serie_numero }} — {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
-                    </span>
-                {% endfor %}
-            </li>
-            {% endwith %}
-            {% empty %}
-            <li class="text-muted">Sin series registradas.</li>
-            {% endfor %}
-            {% endwith %}
-        </ul>
+    <!-- Fecha con icono -->
+    <div class="d-flex mb-4">
+        <span class="text-muted"><i class="bi bi-calendar-check me-2"></i>{{ entreno.fecha|date:"d M Y" }}</span>
     </div>
+
+    <!-- Tarjeta de series realizadas -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-list-check me-2"></i>Series realizadas</h5>
+            <ul class="list-group list-group-flush">
+                {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
+                {% for grupo in series_por_ejercicio %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6>{{ grupo.grouper.nombre }}</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                {% for serie in grupo.list %}
+                                <span class="badge bg-light text-dark border">
+                                    #{{ serie.serie_numero }}: {{ serie.repeticiones }}×{{ serie.peso_kg }}kg
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="badge bg-info text-dark">
+                            Total: {{ grupo.list|sum_volumen }}kg
+                        </span>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">Sin series registradas.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Plan próximo entreno -->
     {% if plan %}
-    <h4 class="mt-5">Plan próximo entreno</h4>
-    <div class="border rounded p-3 shadow-sm bg-light">
-        <ul class="mb-0">
-            {% for ejercicio in plan %}
-            <li>
-                <strong>{{ ejercicio.nombre }}</strong>:
-                {{ ejercicio.series }} series de {{ ejercicio.repeticiones }} reps @
-                {{ ejercicio.peso_kg }} kg
-                {% if ejercicio.peso_adaptado %}
-                <span class="badge rounded-pill bg-success text-white ms-2">
-                💪 Peso aumentado desde {{ ejercicio.peso_base }} kg (↑10%)
-            </span>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-arrow-up-circle me-2"></i>Plan próximo entreno</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for ejercicio in plan %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ ejercicio.nombre }}</strong>
+                            <div class="text-muted small">
+                                {{ ejercicio.series }}×{{ ejercicio.repeticiones }} @ {{ ejercicio.peso_kg }}kg
+                            </div>
+                        </div>
+                        {% if ejercicio.peso_adaptado %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-arrow-up"></i> +10% ({{ ejercicio.peso_base }}kg → {{ ejercicio.peso_kg }}kg)
+                        </span>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     {% endif %}
-
 
     {% else %}
-
-    <p class="text-muted">Este cliente aún no ha realizado esta rutina.</p>
+    <!-- Mensaje cuando no hay entrenos -->
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>Este cliente aún no ha realizado esta rutina.
+    </div>
     {% endif %}
 
-    <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}" class="btn btn-success">
-        Empezar nuevo entreno
-    </a>
+    <!-- Botón de acción principal -->
+    <div class="d-grid gap-2 mt-4">
+        <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}"
+           class="btn btn-success btn-lg py-3">
+            <i class="bi bi-plus-circle me-2"></i>Empezar nuevo entreno
+        </a>
+    </div>
 </div>
+
+<!-- Incluir Bootstrap Icons si no están en tu base.html -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
 {% endblock %}

@@ -22,6 +22,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="card-title mb-0">{{ ejercicio.nombre }}</h5>
+                    {% if ejercicio.series_datos.0.fallos_consecutivos > 0 %}
+                    <span class="badge bg-warning text-dark ms-2">
+                    {{ ejercicio.series_datos.0.fallos_consecutivos }} fallos consecutivos
+                    </span>
+                    {% endif %}
                     {% if ejercicio.series_datos.0.fallo_anterior %}
                     <span class="text-warning small">⚠️ Entreno anterior incompleto</span>
                     {% endif %}

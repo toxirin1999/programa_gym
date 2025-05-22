@@ -2,130 +2,429 @@
 {% load static %}
 {% load custom_filters %}
 
-{% block title %}Resumen del Entreno{% endblock %}
+{% block title %}Resumen del Entreno - {{ entreno.cliente.nombre }}{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Resumen del Entreno - {{ entreno.cliente.nombre }}</h2>
-<p><strong>Rutina:</strong> {{ entreno.rutina.nombre }}</p>
-<p><strong>Fecha:</strong> {{ entreno.fecha }}</p>
-<hr>
-
-<div class="alert alert-light border mb-4">
-    <h5 class="mb-2">Resumen general</h5>
-    <ul class="mb-0">
-        <li><strong>Total ejercicios:</strong> {{ resumen.total }}</li>
-        <li class="text-success">💪 Adaptados: {{ resumen.adaptados }}</li>
-        <li class="text-danger">❌ No adaptados: {{ resumen.no_adaptados }}</li>
-        <li class="text-info">ℹ️ Nuevos: {{ resumen.nuevos }}</li>
-    </ul>
-</div>
-{% if acciones_estancamiento %}
-<div class="alert alert-warning border shadow-sm mb-4">
-    <h5 class="mb-3">🔁 Ajustes automáticos por estancamiento</h5>
-    <ul class="mb-0">
-        {% for accion in acciones_estancamiento %}
-        <li>
-            <strong>{{ accion.nombre }}</strong>: peso reducido a <strong>{{ accion.nuevo_peso }} kg</strong>
-            <span class="text-muted small">(razón: {{ accion.razon }})</span>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-{% for nombre_ejercicio, series in series_por_ejercicio.items %}
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
-        {% with eid=series.0.ejercicio.id %}
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">{{ nombre_ejercicio }}</h5>
-            {% if eid in adaptados_ids %}
-            <span class="badge bg-success">💪 Adaptado</span>
-            {% elif eid in no_adaptados_ids %}
-            <span class="badge bg-danger">❌ No adaptado</span>
-            {% elif eid in ejercicios_nuevos_ids %}
-            <span class="badge bg-info text-dark">ℹ️ Nuevo</span>
-            {% endif %}
+<div class="container-fluid mt-4">
+    <div class="card border-0 shadow">
+        <!-- Encabezado mejorado -->
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">Resumen del Entreno</h4>
+                    <p class="mb-0 small">{{ entreno.cliente.nombre }}</p>
+                </div>
+                <div class="text-end">
+                    <p class="mb-0 small">{{ entreno.fecha|date:"l, j F Y" }}</p>
+                    <p class="mb-0"><strong>{{ entreno.rutina.nombre }}</strong></p>
+                </div>
+            </div>
         </div>
 
-        <table class="table table-sm table-bordered align-middle">
-            <thead class="table-light">
-            <tr>
-                <th>Serie</th>
-                <th>Reps</th>
-                <th>Peso (kg)</th>
-                <th>Completado</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for serie in series %}
-            <tr class="{% if not serie.completado %}table-warning{% endif %}">
-                <td>{{ serie.serie_numero }}</td>
-                <td>{{ serie.repeticiones }}</td>
-                <td>{{ serie.peso_kg }}</td>
-                <td>{% if serie.completado %}✅{% else %}❌{% endif %}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <div class="card-body">
+            <!-- Barra de progreso general -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">
+                        {{ series|length }} series • {{ completadas }} completadas ({{ porcentaje_completado|floatformat:0 }}%)
+                    </span>
+                    <span class="text-muted small">
+                        Peso promedio: {{ promedio|floatformat:1 }} kg
+                    </span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success"
+                         role="progressbar"
+                         style="width: {{ porcentaje_completado }}%;"
+                         aria-valuenow="{{ porcentaje_completado }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+            <hr>
 
-        {% with adaptacion=adaptados_dict|get_item:eid %}
-        {% if adaptacion %}
-        {% with nuevo=adaptacion.nuevo_peso anterior=adaptacion.peso_anterior %}
-        {% with diferencia=nuevo|percent_diff:anterior %}
-        <p class="small mt-2 mb-0">
-            ✅ <strong>Plan actualizado:</strong> {{ nuevo }} kg
-            {% if diferencia > 0 %}
-            <span class="text-success">📈 ↑ +{{ diferencia }}% desde {{ anterior }} kg</span>
-            {% elif diferencia < 0 %}
-            <span class="text-danger">📉 ↓ {{ diferencia|absval }}% desde {{ anterior }} kg</span>
-            {% else %}
-            <span class="text-muted">(sin cambio)</span>
-            {% endif %}
-        </p>
-        {% endwith %}
-        {% endwith %}
-        {% endif %}
-        {% endwith %}
+            <!-- Resumen general en cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Ejercicios Totales</h6>
+                            <h3 class="text-primary">{{ resumen.total }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Adaptados</h6>
+                            <h3 class="text-success">{{ resumen.adaptados }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">No Adaptados</h6>
+                            <h3 class="text-danger">{{ resumen.no_adaptados }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Nuevos</h6>
+                            <h3 class="text-info">{{ resumen.nuevos }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        {% if eid in no_adaptados_ids %}
-        <p class="text-danger small mt-2 mb-0">
-            ❌ No se adaptó el plan — no se cumplió el rendimiento mínimo.
-        </p>
-        {% elif eid in ejercicios_nuevos_ids %}
-        <p class="text-info small mt-2 mb-0">
-            ℹ️ Primera vez realizando este ejercicio — se usó el plan base.
-        </p>
-        {% endif %}
-        {% endwith %}
-        {% if alertas_estancamiento %}
-        <div class="alert alert-warning border shadow-sm mb-4">
-            <h5 class="mb-3">🔁 Ajustes por estancamiento</h5>
-            {% for alerta in alertas_estancamiento %}
-            <div class="mb-3">
-                <strong>{{ alerta.nombre }}</strong>:
-                Peso reducido de {{ alerta.peso_anterior }}kg a {{ alerta.nuevo_peso }}kg
-                <div class="small text-muted mt-1">
-                    <strong>Historial:</strong>
-                    <ul>
-                        {% for entreno in alerta.historial %}
-                        <li>
-                            {{ entreno.fecha }}:
-                            {{ entreno.porcentaje_completado|floatformat:0 }}% completado,
-                            {{ entreno.peso_promedio }}kg
-                            {% if entreno.fue_fallo %}(Fallo){% endif %}
+            <!-- Sección de recomendaciones -->
+            {% if resumen.no_adaptados > 0 or resumen.nuevos > 0 or acciones_estancamiento %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% if resumen.no_adaptados > 0 %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle text-warning me-3"></i>
+                            <div>
+                                <strong>Ejercicios con dificultad:</strong> {{ resumen.no_adaptados }} ejercicios no
+                                alcanzaron
+                                el rendimiento esperado. Considera revisar la técnica o ajustar la carga.
+                            </div>
                         </li>
-                        {% endfor %}
+                        {% endif %}
+
+                        {% if resumen.nuevos > 0 %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-info-circle text-info me-3"></i>
+                            <div>
+                                <strong>Nuevos ejercicios:</strong> El cliente realizó {{ resumen.nuevos }} ejercicios
+                                por primera vez. Monitorea de cerca la ejecución en próximas sesiones.
+                            </div>
+                        </li>
+                        {% endif %}
+
+                        {% if acciones_estancamiento %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-arrow-down text-danger me-3"></i>
+                            <div>
+                                <strong>Ajustes por estancamiento:</strong> Se redujo el peso en {{
+                                acciones_estancamiento|length }}
+                                ejercicios. Recomendamos enfocarse en la técnica durante las próximas sesiones.
+                            </div>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+            {% endif %}
 
+            <!-- Adaptaciones positivas -->
+            {% if adaptaciones_positivas %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-arrow-up text-success me-2"></i>Progreso Positivo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for adaptacion in adaptaciones_positivas %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-success border-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ adaptacion.nombre }}</strong>
+                                            <div class="text-muted small">{{ adaptacion.ejercicio.grupo_muscular }}
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="text-success fw-bold">+10%</span>
+                                            <div class="text-muted small">
+                                                {{ adaptacion.peso_anterior|floatformat:1 }}kg →
+                                                <span class="fw-bold">{{ adaptacion.nuevo_peso|floatformat:1 }}kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Adaptaciones correctivas -->
+            {% if adaptaciones_negativas %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-arrow-down text-danger me-2"></i>Ajustes Realizados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for adaptacion in adaptaciones_negativas %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-danger border-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ adaptacion.nombre }}</strong>
+                                            <div class="text-muted small">{{ adaptacion.ejercicio.grupo_muscular }}
+                                            </div>
+                                            <span class="badge bg-danger mt-1">{{ adaptacion.razon }}</span>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="text-danger fw-bold">-10%</span>
+                                            <div class="text-muted small">
+                                                {{ adaptacion.peso_anterior|floatformat:1 }}kg →
+                                                <span class="fw-bold">{{ adaptacion.nuevo_peso|floatformat:1 }}kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Detalle por ejercicio -->
+            {% for nombre_ejercicio, series in series_por_ejercicio.items %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 d-flex align-items-center">
+                            {{ nombre_ejercicio }}
+                            {% if eid in adaptados_ids %}
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-check-circle me-1"></i> Adaptado
+                            </span>
+                            {% elif eid in no_adaptados_ids %}
+                            <span class="badge bg-danger ms-2">
+                                <i class="fas fa-times-circle me-1"></i> No adaptado
+                            </span>
+                            {% elif eid in ejercicios_nuevos_ids %}
+                            <span class="badge bg-info ms-2">
+                                <i class="fas fa-star me-1"></i> Nuevo
+                            </span>
+                            {% endif %}
+                        </h5>
+                        <small class="text-muted">
+                            {{ series.0.ejercicio.grupo_muscular }} • {{ series.0.ejercicio.equipo }}
+                        </small>
+                    </div>
+                    {% with ejercicio=series.0.ejercicio %}
+                    {% if ejercicio.contador_fallos > 0 %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Fallos: {{ ejercicio.contador_fallos }}/3
+                    </span>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Serie</th>
+                                        <th>Reps</th>
+                                        <th>Peso (kg)</th>
+                                        <th>Estado</th>
+                                        <th>Rendimiento</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for serie in series %}
+                                    <tr class="{% if not serie.completado %}table-warning{% endif %}">
+                                        <td>{{ serie.serie_numero }}</td>
+                                        <td>{{ serie.repeticiones }}</td>
+                                        <td>{{ serie.peso_kg|floatformat:1 }}</td>
+                                        <td>
+                                            {% if serie.completado %}
+                                            <i class="fas fa-check text-success"></i>
+                                            {% else %}
+                                            <i class="fas fa-times text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                {% with porcentaje=your_calculation_here %}  <!-- Add this line -->
+                                                <div class="progress-bar {% if porcentaje >= 100 %}bg-success{% elif porcentaje >= 80 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ porcentaje }}%"
+                                                     aria-valuenow="{{ porcentaje }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    {{ porcentaje|floatformat:0 }}%
+                                                </div>
+                                                {% endwith %}  <!-- This is correct if you add the opening tag -->
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-center mb-3">Progreso</h6>
+                                    <canvas id="grafico-{{ series.0.ejercicio.id }}" height="200"></canvas>
+
+                                    {% with adaptacion=adaptados_dict|get_item:series.0.ejercicio.id %}
+                                    {% if adaptacion %}
+                                    <div class="alert alert-success border-0 py-2 small mt-3">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        <strong>Progreso:</strong>
+                                        {{ adaptacion.peso_anterior|floatformat:1 }}kg →
+                                        {{ adaptacion.nuevo_peso|floatformat:1 }}kg
+                                        <span class="badge bg-success ms-2">
+                                            +{{ adaptacion.nuevo_peso|percent_diff:adaptacion.peso_anterior|floatformat:0 }}%
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Botones de acción -->
+            <div class="d-grid gap-3 d-md-flex justify-content-md-end mt-4">
+                <a href="{% url 'hacer_entreno' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a entrenar
+                </a>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Imprimir Resumen
+                </button>
+                <a href="#" class="btn btn-success">
+                    <i class="fas fa-share-alt me-2"></i>Compartir
+                </a>
+            </div>
+        </div>
     </div>
 </div>
-{% endfor %}
 
-<a href="{% url 'hacer_entreno' %}" class="btn btn-outline-primary w-100">Volver a entrenar</a>
+<!-- Scripts para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Configuración global de Chart.js
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    Chart.defaults.color = '#6c757d';
+
+    // Datos para los gráficos
+    const graficosEjercicios = {
+        {% for nombre_ejercicio, series in series_por_ejercicio.items %}
+        '{{ series.0.ejercicio.id }}': {
+            labels: {{ series.0.ejercicio.historial_dates|safe }},
+            data: {{ series.0.ejercicio.historial_pesos|safe }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    // Crear gráficos
+    for (const [ejercicioId, datos] of Object.entries(graficosEjercicios)) {
+        const ctx = document.getElementById(`grafico-${ejercicioId}`);
+        if (!ctx) continue;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: datos.labels,
+                datasets: [{
+                    label: 'Peso (kg)',
+                    data: datos.data,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.3,
+                    borderWidth: 2,
+                    fill: true,
+                    pointBackgroundColor: '#0d6efd',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Peso: ${context.parsed.y}kg`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .table {
+        margin-bottom: 0;
+    }
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    .progress {
+        border-radius: 10px;
+    }
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+    @media print {
+        .card {
+            box-shadow: none;
+            border: 1px solid #dee2e6;
+        }
+        .btn {
+            display: none;
+        }
+    }
+</style>
 {% endblock %}
