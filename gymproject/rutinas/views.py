@@ -120,11 +120,6 @@ def lista_ejercicios(request):
     return render(request, 'rutinas/lista_ejercicios.html', {'ejercicios': ejercicios})
 
 
-def agregar_ejercicio_general(request):
-    # lógica para agregar un ejercicio a la base general (no a una rutina)
-    pass
-
-
 def agregar_ejercicio(request, rutina_id):
     rutina = get_object_or_404(Rutina, pk=rutina_id)
     if request.method == 'POST':
@@ -215,25 +210,33 @@ def eliminar_rutina_ejercicio(request, pk):
     # lógica para eliminar...
 
 
+# rutinas/views.py
+
+# ... tus imports existentes ...
+from .forms import EjercicioForm  # Asegúrate de que esta importación exista
+from .models import Ejercicio  # Asegúrate de que esta importación exista
+from .models import Programa  # Mantener si lo usas en otras funciones
+
+
+# ...
+
 def agregar_ejercicio_general(request):
-    programa = get_object_or_404(Programa, id=id)
-    form = ProgramaForm(request.POST or None, instance=programa)
+    # Esta vista es para agregar un NUEVO EJERCICIO general
+    # No necesita un 'programa_id' ni un 'Programa' aquí.
 
-    # Listar íconos disponibles
-    iconos_dir = os.path.join(settings.BASE_DIR, 'static', 'img', 'programas')
-    iconos = sorted([
-        archivo for archivo in os.listdir(iconos_dir)
-        if archivo.endswith(('.png', '.jpg', '.jpeg', '.svg'))
-    ])
+    if request.method == 'POST':
+        form = EjercicioForm(request.POST)  # <-- Usar EjercicioForm
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ Ejercicio general agregado correctamente.')
+            return redirect('lista_ejercicios')  # <-- Redirigir a la lista de ejercicios
 
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('lista_programas')
+    else:
+        form = EjercicioForm()  # <-- Usar EjercicioForm
 
-    return render(request, 'programas/editar_programa.html', {
+    return render(request, 'rutinas/agregar_ejercicio.html', {  # <-- Renderizar un template para Ejercicio
         'form': form,
-        'iconos': iconos,
-        'programa': programa
+        'titulo': 'Agregar Nuevo Ejercicio'
     })
 
 
