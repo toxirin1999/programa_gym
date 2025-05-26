@@ -1,430 +1,227 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
+{% load entreno_tags %}
 
-{% block title %}Resumen del Entreno - {{ entreno.cliente.nombre }}{% endblock %}
+{% block title %}Resumen de Entreno{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="card border-0 shadow">
-        <!-- Encabezado mejorado -->
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0">Resumen del Entreno</h4>
-                    <p class="mb-0 small">{{ entreno.cliente.nombre }}</p>
-                </div>
-                <div class="text-end">
-                    <p class="mb-0 small">{{ entreno.fecha|date:"l, j F Y" }}</p>
-                    <p class="mb-0"><strong>{{ entreno.rutina.nombre }}</strong></p>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-body">
-            <!-- Barra de progreso general -->
-            <div class="mb-4">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted small">
-                        {{ series|length }} series • {{ completadas }} completadas ({{ porcentaje_completado|floatformat:0 }}%)
-                    </span>
-                    <span class="text-muted small">
-                        Peso promedio: {{ promedio|floatformat:1 }} kg
-                    </span>
-                </div>
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar bg-success"
-                         role="progressbar"
-                         style="width: {{ porcentaje_completado }}%;"
-                         aria-valuenow="{{ porcentaje_completado }}"
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                    </div>
-                </div>
-            </div>
-            <hr>
-
-            <!-- Resumen general en cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card h-100 border-0 bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted">Ejercicios Totales</h6>
-                            <h3 class="text-primary">{{ resumen.total }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card h-100 border-0 bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted">Adaptados</h6>
-                            <h3 class="text-success">{{ resumen.adaptados }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card h-100 border-0 bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted">No Adaptados</h6>
-                            <h3 class="text-danger">{{ resumen.no_adaptados }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card h-100 border-0 bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted">Nuevos</h6>
-                            <h3 class="text-info">{{ resumen.nuevos }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección de recomendaciones -->
-            {% if resumen.no_adaptados > 0 or resumen.nuevos > 0 or acciones_estancamiento %}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        {% if resumen.no_adaptados > 0 %}
-                        <li class="list-group-item d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle text-warning me-3"></i>
-                            <div>
-                                <strong>Ejercicios con dificultad:</strong> {{ resumen.no_adaptados }} ejercicios no
-                                alcanzaron
-                                el rendimiento esperado. Considera revisar la técnica o ajustar la carga.
-                            </div>
-                        </li>
-                        {% endif %}
-
-                        {% if resumen.nuevos > 0 %}
-                        <li class="list-group-item d-flex align-items-center">
-                            <i class="fas fa-info-circle text-info me-3"></i>
-                            <div>
-                                <strong>Nuevos ejercicios:</strong> El cliente realizó {{ resumen.nuevos }} ejercicios
-                                por primera vez. Monitorea de cerca la ejecución en próximas sesiones.
-                            </div>
-                        </li>
-                        {% endif %}
-
-                        {% if acciones_estancamiento %}
-                        <li class="list-group-item d-flex align-items-center">
-                            <i class="fas fa-arrow-down text-danger me-3"></i>
-                            <div>
-                                <strong>Ajustes por estancamiento:</strong> Se redujo el peso en {{
-                                acciones_estancamiento|length }}
-                                ejercicios. Recomendamos enfocarse en la técnica durante las próximas sesiones.
-                            </div>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Adaptaciones positivas -->
-            {% if adaptaciones_positivas %}
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-arrow-up text-success me-2"></i>Progreso Positivo</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for adaptacion in adaptaciones_positivas %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-success border-2">
-                                <div class="card-body py-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong>{{ adaptacion.nombre }}</strong>
-                                            <div class="text-muted small">{{ adaptacion.ejercicio.grupo_muscular }}
-                                            </div>
-                                        </div>
-                                        <div class="text-end">
-                                            <span class="text-success fw-bold">+10%</span>
-                                            <div class="text-muted small">
-                                                {{ adaptacion.peso_anterior|floatformat:1 }}kg →
-                                                <span class="fw-bold">{{ adaptacion.nuevo_peso|floatformat:1 }}kg</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Adaptaciones correctivas -->
-            {% if adaptaciones_negativas %}
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-arrow-down text-danger me-2"></i>Ajustes Realizados</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for adaptacion in adaptaciones_negativas %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-danger border-2">
-                                <div class="card-body py-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong>{{ adaptacion.nombre }}</strong>
-                                            <div class="text-muted small">{{ adaptacion.ejercicio.grupo_muscular }}
-                                            </div>
-                                            <span class="badge bg-danger mt-1">{{ adaptacion.razon }}</span>
-                                        </div>
-                                        <div class="text-end">
-                                            <span class="text-danger fw-bold">-10%</span>
-                                            <div class="text-muted small">
-                                                {{ adaptacion.peso_anterior|floatformat:1 }}kg →
-                                                <span class="fw-bold">{{ adaptacion.nuevo_peso|floatformat:1 }}kg</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Detalle por ejercicio -->
-            {% for nombre_ejercicio, series in series_por_ejercicio.items %}
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0 d-flex align-items-center">
-                            {{ nombre_ejercicio }}
-                            {% if eid in adaptados_ids %}
-                            <span class="badge bg-success ms-2">
-                                <i class="fas fa-check-circle me-1"></i> Adaptado
-                            </span>
-                            {% elif eid in no_adaptados_ids %}
-                            <span class="badge bg-danger ms-2">
-                                <i class="fas fa-times-circle me-1"></i> No adaptado
-                            </span>
-                            {% elif eid in ejercicios_nuevos_ids %}
-                            <span class="badge bg-info ms-2">
-                                <i class="fas fa-star me-1"></i> Nuevo
-                            </span>
-                            {% endif %}
-                        </h5>
-                        <small class="text-muted">
-                            {{ series.0.ejercicio.grupo_muscular }} • {{ series.0.ejercicio.equipo }}
-                        </small>
-                    </div>
-                    {% with ejercicio=series.0.ejercicio %}
-                    {% if ejercicio.contador_fallos > 0 %}
-                    <span class="badge bg-warning text-dark">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        Fallos: {{ ejercicio.contador_fallos }}/3
-                    </span>
-                    {% endif %}
-                    {% endwith %}
-                </div>
-
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th>Serie</th>
-                                        <th>Reps</th>
-                                        <th>Peso (kg)</th>
-                                        <th>Estado</th>
-                                        <th>Rendimiento</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for serie in series %}
-                                    <tr class="{% if not serie.completado %}table-warning{% endif %}">
-                                        <td>{{ serie.serie_numero }}</td>
-                                        <td>{{ serie.repeticiones }}</td>
-                                        <td>{{ serie.peso_kg|floatformat:1 }}</td>
-                                        <td>
-                                            {% if serie.completado %}
-                                            <i class="fas fa-check text-success"></i>
-                                            {% else %}
-                                            <i class="fas fa-times text-danger"></i>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="progress" style="height: 20px;">
-                                                {% with porcentaje=your_calculation_here %}  <!-- Add this line -->
-                                                <div class="progress-bar {% if porcentaje >= 100 %}bg-success{% elif porcentaje >= 80 %}bg-warning{% else %}bg-danger{% endif %}"
-                                                     role="progressbar"
-                                                     style="width: {{ porcentaje }}%"
-                                                     aria-valuenow="{{ porcentaje }}"
-                                                     aria-valuemin="0"
-                                                     aria-valuemax="100">
-                                                    {{ porcentaje|floatformat:0 }}%
-                                                </div>
-                                                {% endwith %}  <!-- This is correct if you add the opening tag -->
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100 border-0 bg-light">
-                                <div class="card-body">
-                                    <h6 class="text-center mb-3">Progreso</h6>
-                                    <canvas id="grafico-{{ series.0.ejercicio.id }}" height="200"></canvas>
-
-                                    {% with adaptacion=adaptados_dict|get_item:series.0.ejercicio.id %}
-                                    {% if adaptacion %}
-                                    <div class="alert alert-success border-0 py-2 small mt-3">
-                                        <i class="fas fa-chart-line me-2"></i>
-                                        <strong>Progreso:</strong>
-                                        {{ adaptacion.peso_anterior|floatformat:1 }}kg →
-                                        {{ adaptacion.nuevo_peso|floatformat:1 }}kg
-                                        <span class="badge bg-success ms-2">
-                                            +{{ adaptacion.nuevo_peso|percent_diff:adaptacion.peso_anterior|floatformat:0 }}%
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-
-            <!-- Botones de acción -->
-            <div class="d-grid gap-3 d-md-flex justify-content-md-end mt-4">
-                <a href="{% url 'hacer_entreno' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver a entrenar
-                </a>
-                <button class="btn btn-primary" onclick="window.print()">
-                    <i class="fas fa-print me-2"></i>Imprimir Resumen
-                </button>
-                <a href="#" class="btn btn-success">
-                    <i class="fas fa-share-alt me-2"></i>Compartir
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Scripts para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Configuración global de Chart.js
-    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-    Chart.defaults.color = '#6c757d';
-
-    // Datos para los gráficos
-    const graficosEjercicios = {
-        {% for nombre_ejercicio, series in series_por_ejercicio.items %}
-        '{{ series.0.ejercicio.id }}': {
-            labels: {{ series.0.ejercicio.historial_dates|safe }},
-            data: {{ series.0.ejercicio.historial_pesos|safe }}
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    };
-
-    // Crear gráficos
-    for (const [ejercicioId, datos] of Object.entries(graficosEjercicios)) {
-        const ctx = document.getElementById(`grafico-${ejercicioId}`);
-        if (!ctx) continue;
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: datos.labels,
-                datasets: [{
-                    label: 'Peso (kg)',
-                    data: datos.data,
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    tension: 0.3,
-                    borderWidth: 2,
-                    fill: true,
-                    pointBackgroundColor: '#0d6efd',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Peso: ${context.parsed.y}kg`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-</script>
-
-<!-- Estilos adicionales -->
 <style>
-    .card {
-        border-radius: 0.5rem;
+    .fade-in-card {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .fade-in-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .card.fade-in-card span.me-2 {
+        animation: bounce 1.5s ease infinite;
+    }
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    .perfect-icon {
+        font-size: 2.5rem;
+        display: inline-block;
+        animation: bounce-scale 1.5s ease infinite;
+    }
+    @keyframes bounce-scale {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+    }
+    .confeti-overlay {
+        position: fixed;
+        pointer-events: none;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
         overflow: hidden;
     }
-    .card-header {
-        border-bottom: none;
+    .confeti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: hsl(var(--hue, 200), 100%, 50%);
+        animation: confeti-fall 3s linear forwards;
+        border-radius: 2px;
     }
-    .table {
-        margin-bottom: 0;
-    }
-    .table th {
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-    }
-    .progress {
-        border-radius: 10px;
-    }
-    .badge {
-        font-weight: 500;
-        letter-spacing: 0.5px;
-    }
-    @media print {
-        .card {
-            box-shadow: none;
-            border: 1px solid #dee2e6;
-        }
-        .btn {
-            display: none;
-        }
+    @keyframes confeti-fall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
     }
 </style>
+
+<div class="apple-fitness-container">
+    <script id="logros-hoy-data" type="application/json">{{ logros_hoy_json|safe }}</script>
+    <script id="sugerencias-inteligentes-data" type="application/json">{{ sugerencias_inteligentes_json|safe }}</script>
+    <script id="predicciones-progreso-data" type="application/json">{{ predicciones_progreso_json|safe }}</script>
+    <script id="medallas-logros-data" type="application/json">{{ medallas_logros_json|safe }}</script>
+    <script id="leaderboard-data" type="application/json">{{ leaderboard_json|safe }}</script>
+    <script id="entreno-actual-data" type="application/json">{{ entreno_actual_json|safe }}</script>
+    <script id="progreso-por-ejercicio-data" type="application/json">{{ progreso_por_ejercicio_json|safe }}</script>
+
+    <h1 class="mb-4">Resumen de Entrenamiento</h1>
+
+    <div class="card mb-4"><div class="card-header bg-primary text-white">Logros de Hoy</div><div class="card-body" id="logros-hoy-container"><p class="text-muted">Cargando logros...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-success text-white">Sugerencias Inteligentes</div><div class="card-body" id="sugerencias-container"><p class="text-muted">Cargando sugerencias...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-warning text-white">Predicciones de Progreso</div><div class="card-body" id="predicciones-container"><p class="text-muted">Cargando predicciones...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-info text-white">Tus Medallas y Logros</div><div class="card-body" id="medallas-logros-container"><p class="text-muted">Cargando tus medallas y logros...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-danger text-white">Tablas de Clasificación</div><div class="card-body" id="leaderboard-container"><p class="text-muted">Cargando clasificaciones...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-dark text-white">Detalles del Entrenamiento Actual</div><div class="card-body" id="entreno-actual-container"><p class="text-muted">Cargando detalles...</p></div></div>
+    <div class="card mb-4"><div class="card-header bg-secondary text-white">Progreso por Ejercicio</div><div class="card-body" id="graficos-progreso-container"><p class="text-muted">Cargando gráficas...</p></div></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.card').forEach((card, index) => {
+        card.classList.add('fade-in-card');
+        setTimeout(() => {
+            card.classList.add('visible');
+        }, 200 + index * 150);
+    });
+
+    function lanzarConfeti() {
+        const confeti = document.createElement('div');
+        confeti.classList.add('confeti-overlay');
+        document.body.appendChild(confeti);
+        for (let i = 0; i < 100; i++) {
+            const part = document.createElement('div');
+            part.className = 'confeti';
+            part.style.left = Math.random() * 100 + 'vw';
+            part.style.animationDelay = (Math.random() * 2) + 's';
+            confeti.appendChild(part);
+        }
+        setTimeout(() => confeti.remove(), 4000);
+    }
+
+    function loadDataIntoContainer(dataId, containerId, renderFunction) {
+        const dataElement = document.getElementById(dataId);
+        const container = document.getElementById(containerId);
+        if (dataElement && container) {
+            try {
+                const data = JSON.parse(dataElement.textContent);
+                renderFunction(data, container);
+            } catch (e) {
+                console.error(`Error parsing data from ${dataId}:`, e);
+                container.innerHTML = '<p class="text-danger">No se pudieron cargar los datos. Por favor, recarga la página o inténtalo más tarde.</p>';
+            }
+        }
+    }
+
+    function renderLogrosHoy(data, container) {
+        if (data.mensaje) {
+            container.innerHTML = `<p>${data.mensaje}</p><p><strong>${data.total_peso_levantado_hoy} kg</strong> levantados hoy.</p>`;
+        } else {
+            container.innerHTML = '<p class="text-muted">No hay logros registrados.</p>';
+        }
+    }
+
+    function renderSugerencias(data, container) {
+        if (data.length > 0) {
+            container.innerHTML = '<ul>' + data.map(s => `<li>${s}</li>`).join('') + '</ul>';
+        } else {
+            container.innerHTML = '<p class="text-muted">No hay sugerencias por ahora.</p>';
+        }
+    }
+
+    function renderPredicciones(data, container) {
+        if (data.mensaje) {
+            const color = data.tendencia === 'ascendente' ? 'success' : data.tendencia === 'descendente' ? 'danger' : 'secondary';
+            const porcentaje = data.tendencia === 'ascendente' ? 80 : data.tendencia === 'descendente' ? 30 : 50;
+            container.innerHTML = `
+                <p>${data.mensaje}</p>
+                <div class="progress">
+                    <div class="progress-bar bg-${color}" style="width:${porcentaje}%">${porcentaje}%</div>
+                </div>`;
+        } else {
+            container.innerHTML = '<p class="text-muted">No hay datos suficientes.</p>';
+        }
+    }
+
+    function renderMedallasLogros(data, container) {
+        if (data.length > 0) {
+            container.innerHTML = '<ul class="list-unstyled">' +
+                data.map(item => `
+                    <li class="mb-2 d-flex align-items-start">
+                        <span class="me-2" style="font-size: 1.2rem;">🏅</span>
+                        <div><strong class="text-primary">${item.nombre}</strong><br><small>${item.descripcion}</small></div>
+                    </li>`).join('') + '</ul>';
+        } else {
+            container.innerHTML = '<p class="text-muted">Aún no tienes medallas.</p>';
+        }
+    }
+
+    function renderLeaderboard(data, container) {
+        if (data.length > 0) {
+            container.innerHTML = '<ul class="list-unstyled">' +
+                data.map((item, i) => `<li><strong>${i+1}. ${item.nombre}</strong>: ${item.valor} ${item.unidad}</li>`).join('') +
+                '</ul>';
+        } else {
+            container.innerHTML = '<p class="text-muted">Sin datos aún.</p>';
+        }
+    }
+
+    function renderEntrenoActual(data, container) {
+        if (data.length === 0) {
+            container.innerHTML = '<p class="text-muted">No se encontraron series.</p>';
+            return;
+        }
+        let completadas = 0;
+        let total = data.length;
+        let html = '<table class="table"><thead><tr><th>Ejercicio</th><th>Serie</th><th>Reps</th><th>Peso</th><th>✓</th></tr></thead><tbody>';
+        data.forEach(serie => {
+            if (serie.completado) completadas++;
+            html += `<tr><td>${serie.ejercicio_nombre}</td><td>${serie.serie_numero}</td><td>${serie.repeticiones}</td><td>${serie.peso_kg}</td><td>${serie.completado ? '✅' : '❌'}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        const porcentaje = Math.round((completadas / total) * 100);
+        const color = porcentaje === 100 ? 'success' : porcentaje >= 80 ? 'warning' : 'danger';
+        html += `<div class="progress mb-2"><div class="progress-bar bg-${color}" style="width:${porcentaje}%">${porcentaje}%</div></div>`;
+        if (porcentaje === 100) {
+            html += `<div class="text-center mt-2"><span class="perfect-icon">🎯</span><p class="text-success">¡Entreno perfecto!</p></div>`;
+            lanzarConfeti();
+        }
+        container.innerHTML = html;
+    }
+
+    function renderGraficasProgreso(data, container) {
+        container.innerHTML = '';
+        for (const ejercicio in data) {
+            const graficoId = 'grafico-' + ejercicio.replace(/\s+/g, '-').toLowerCase();
+            container.innerHTML += `<h6>${ejercicio}</h6><canvas id="${graficoId}" height="200"></canvas>`;
+            const ctx = document.getElementById(graficoId).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data[ejercicio].labels,
+                    datasets: [
+                        { label: 'Peso (kg)', data: data[ejercicio].peso, borderColor: 'blue', fill: false, tension: 0.3 },
+                        { label: 'Reps', data: data[ejercicio].reps, borderColor: 'green', fill: false, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }
+
+    loadDataIntoContainer('logros-hoy-data', 'logros-hoy-container', renderLogrosHoy);
+    loadDataIntoContainer('sugerencias-inteligentes-data', 'sugerencias-container', renderSugerencias);
+    loadDataIntoContainer('predicciones-progreso-data', 'predicciones-container', renderPredicciones);
+    loadDataIntoContainer('medallas-logros-data', 'medallas-logros-container', renderMedallasLogros);
+    loadDataIntoContainer('leaderboard-data', 'leaderboard-container', renderLeaderboard);
+    loadDataIntoContainer('entreno-actual-data', 'entreno-actual-container', renderEntrenoActual);
+    loadDataIntoContainer('progreso-por-ejercicio-data', 'graficos-progreso-container', renderGraficasProgreso);
+});
+</script>
 {% endblock %}

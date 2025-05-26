@@ -3,142 +3,356 @@
 {% block title %}Empezar Entreno{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Día {{ rutina.nombre }}</h2>
+<div class="apple-fitness-container">
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-glass mb-4">
+        <h2 class="display-6 fw-bold">{{ rutina.nombre }}</h2>
+        <div class="subtitle">Nuevo entreno</div>
+    </div>
 
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Los campos están precargados con los valores del último entreno registrado de este
-    cliente.
-</div>
-
-<form method="post">
-    {% csrf_token %}
-
-    <p><strong>Cliente:</strong> {{ cliente_inicial.nombre }}</p>
-    {{ cliente_form }}
-
-    {% for ejercicio, form in ejercicios_forms %}
-    <div class="card mb-4 shadow-sm" id="ejercicio-{{ forloop.counter }}">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title mb-0">{{ ejercicio.nombre }}</h5>
-                    {% if ejercicio.series_datos.0.fallos_consecutivos > 0 %}
-                    <span class="badge bg-warning text-dark ms-2">
-                    {{ ejercicio.series_datos.0.fallos_consecutivos }} fallos consecutivos
-                    </span>
-                    {% endif %}
-                    {% if ejercicio.series_datos.0.fallo_anterior %}
-                    <span class="text-warning small">⚠️ Entreno anterior incompleto</span>
-                    {% endif %}
-
-                    <small class="text-muted">{{ ejercicio.grupo_muscular }} - {{ ejercicio.equipo }}</small>
-                    {% if ejercicio.series_datos.0.adaptado %}
-                    <span class="text-warning small">⭐ Adaptado</span>
-
-                    {% endif %}
-
-                </div>
-            </div>
-
-            <hr>
-
-            <p class="text-primary fw-medium mb-2">Series de entrenamiento</p>
-
-            <div class="series-list">
-                {% for serie in ejercicio.series_datos %}
-                <div class="serie-item mb-3 p-3 rounded shadow-sm bg-light d-flex align-items-center"
-                     data-numero="{{ serie.numero }}">
-
-                    <div class="circle rounded-circle d-flex justify-content-center align-items-center me-3"
-                         style="width: 50px; height: 50px; cursor: pointer;"
-                         data-original="{{ serie.repeticiones }}">
-                        <span class="rep-counter">{{ serie.repeticiones }}</span>
-                        <input type="hidden" name="{{ ejercicio.id }}_reps_{{ serie.numero }}"
-                               value="{{ serie.repeticiones }}">
-                    </div>
-
-                    <div style="flex-grow:1;">
-                        <label class="form-label mb-1">Serie {{ serie.numero }}</label>
-                        <input type="hidden" name="{{ ejercicio.id }}_peso_{{ serie.numero }}"
-                               value="{{ serie.peso_kg }}">
-                        <input type="hidden" name="{{ ejercicio.id }}_completado_{{ serie.numero }}" value="0">
-
-                        <small class="text-muted">
-                            Última vez: {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
-                        </small>
-
-                        {% if serie.peso_adaptado %}
-                        <div class="mt-1">
-                            <span class="badge rounded-pill bg-success text-white">
-                                💪 Peso adaptado: {{ serie.peso_kg }} kg (↑10%)
-                            </span>
-                        </div>
-                        {% endif %}
-
-                        {% if serie.adaptado %}
-                        <div><small class="text-warning">⭐ Adaptado del progreso anterior</small></div>
-                        {% endif %}
-                    </div>
-
-                </div>
-                {% endfor %}
-            </div>
-
-            <button type="button" class="btn btn-sm btn-outline-primary"
-                    onclick="agregarSerie(this, '{{ ejercicio.id }}')"
-                    data-reps="{{ form.initial.repeticiones }}"
-                    data-peso="{{ form.initial.peso_kg }}"
-                    data-original="{{ form.initial.repeticiones }}">
-                Agregar +
-            </button>
-
+    <div class="alert alert-fitness mb-4">
+        <div class="alert-icon">
+            <i class="bi bi-info-circle"></i>
+        </div>
+        <div class="alert-content">
+            Los campos están precargados con los valores del último entreno registrado de este cliente.
         </div>
     </div>
-    {% endfor %}
 
-    <button type="submit" class="btn btn-success w-100 py-2">Guardar entrenamiento</button>
-</form>
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="client-info mb-4">
+            <div class="client-avatar">
+                <i class="bi bi-person-circle"></i>
+            </div>
+            <div class="client-name">
+                <strong>{{ cliente_inicial.nombre }}</strong>
+            </div>
+        </div>
+        {{ cliente_form }}
+
+        {% for ejercicio, form in ejercicios_forms %}
+        <div class="fitness-card mb-4" id="ejercicio-{{ forloop.counter }}">
+            <div class="fitness-card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fitness-card-title">{{ ejercicio.nombre }}</h5>
+                        {% if ejercicio.series_datos.0.fallos_consecutivos > 0 %}
+                        <span class="fitness-badge warning">
+                            {{ ejercicio.series_datos.0.fallos_consecutivos }} fallos consecutivos
+                        </span>
+                        {% endif %}
+                        {% if ejercicio.series_datos.0.fallo_anterior %}
+                        <span class="fitness-warning small">⚠️ Entreno anterior incompleto</span>
+                        {% endif %}
+
+                        <div class="fitness-subtitle">{{ ejercicio.grupo_muscular }} - {{ ejercicio.equipo }}</div>
+                        {% if ejercicio.series_datos.0.adaptado %}
+                        <span class="fitness-star small">⭐ Adaptado</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="fitness-divider"></div>
+
+                <p class="fitness-section-title mb-3">Series de entrenamiento</p>
+
+                <div class="series-list">
+                    {% for serie in ejercicio.series_datos %}
+                    <div class="serie-item mb-3" data-numero="{{ serie.numero }}">
+                        <div class="fitness-ring me-3" data-original="{{ serie.repeticiones }}">
+                            <span class="rep-counter">{{ serie.repeticiones }}</span>
+                            <input type="hidden" name="{{ ejercicio.id }}_reps_{{ serie.numero }}"
+                                   value="{{ serie.repeticiones }}">
+                        </div>
+
+                        <div class="serie-info">
+                            <div class="serie-title">Serie {{ serie.numero }}</div>
+                            <input type="hidden" name="{{ ejercicio.id }}_peso_{{ serie.numero }}"
+                                   value="{{ serie.peso_kg }}">
+                            <input type="hidden" name="{{ ejercicio.id }}_completado_{{ serie.numero }}" value="0">
+
+                            <div class="serie-details">
+                                Última vez: {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
+                            </div>
+
+                            {% if serie.peso_adaptado %}
+                            <div class="mt-2">
+                                <span class="fitness-badge success">
+                                    💪 Peso adaptado: {{ serie.peso_kg }} kg (↑10%)
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            {% if serie.adaptado %}
+                            <div class="fitness-star small">⭐ Adaptado del progreso anterior</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="button" class="fitness-button outline small"
+                        onclick="agregarSerie(this, '{{ ejercicio.id }}')"
+                        data-reps="{{ form.initial.repeticiones }}"
+                        data-peso="{{ form.initial.peso_kg }}"
+                        data-original="{{ form.initial.repeticiones }}">
+                    <i class="bi bi-plus-circle"></i> Agregar serie
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="fitness-button primary large w-100 mb-5">
+            <i class="bi bi-check-circle"></i> Guardar entrenamiento
+        </button>
+    </form>
+</div>
 
 <style>
-    .circle {
-        border: 2px solid fuchsia;
-        background-color: white;
-        color: black;
-        font-size: 1.2rem;
-        font-weight: bold;
+    /* Apple Fitness Style */
+    .apple-fitness-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px 15px;
+        color: #f5f5f7;
     }
 
-    .circle.selected {
-        background-color: fuchsia;
+    .header-glass {
+        background: rgba(30, 30, 32, 0.8);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 24px;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-glass .subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+    }
+
+    .fitness-card {
+        background: rgba(30, 30, 32, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .fitness-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .fitness-card-body {
+        padding: 20px;
+    }
+
+    .fitness-card-title {
+        font-weight: 600;
+        font-size: 1.25rem;
+        margin-bottom: 5px;
         color: white;
     }
 
-    .circle input {
-        background: transparent;
-        border: none;
-        width: 100%;
-        height: 100%;
-        text-align: center;
+    .fitness-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+        margin-top: 5px;
     }
 
-    .circle input:focus {
-        outline: none;
+    .fitness-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 15px 0;
+    }
+
+    .fitness-section-title {
+        color: #0082fb;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .fitness-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .fitness-badge.warning {
+        background: rgba(255, 204, 0, 0.2);
+        color: #ffcc00;
+    }
+
+    .fitness-badge.success {
+        background: rgba(40, 205, 65, 0.2);
+        color: #28cd41;
+    }
+
+    .fitness-warning {
+        color: #ffcc00;
+    }
+
+    .fitness-star {
+        color: #ffcc00;
+    }
+
+    .fitness-ring {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        position: relative;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid #fc2d22;
+        color: white;
+        transition: all 0.2s ease;
+    }
+
+    .fitness-ring.selected {
+        background: rgba(252, 45, 34, 0.8);
+        box-shadow: 0 0 15px rgba(252, 45, 34, 0.5);
+    }
+
+    .serie-item {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .serie-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .serie-info {
+        flex-grow: 1;
+    }
+
+    .serie-title {
+        font-weight: 500;
+        color: white;
+        margin-bottom: 5px;
+    }
+
+    .serie-details {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+    }
+
+    .fitness-button {
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .fitness-button.primary {
+        background: linear-gradient(135deg, #0082fb, #0060d6);
+        color: white;
+    }
+
+    .fitness-button.primary:hover {
+        background: linear-gradient(135deg, #0060d6, #0082fb);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 130, 251, 0.3);
+    }
+
+    .fitness-button.outline {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #0082fb;
+    }
+
+    .fitness-button.outline:hover {
+        background: rgba(0, 130, 251, 0.1);
+        border-color: #0082fb;
+    }
+
+    .fitness-button.small {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+
+    .fitness-button.large {
+        padding: 15px 25px;
+        font-size: 1.1rem;
+    }
+
+    .alert-fitness {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 130, 251, 0.1);
+        border-left: 4px solid #0082fb;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .alert-icon {
+        font-size: 1.5rem;
+        color: #0082fb;
+        margin-right: 15px;
+    }
+
+    .client-info {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+    }
+
+    .client-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0082fb, #0060d6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin-right: 15px;
+    }
+
+    .client-name {
+        font-size: 1.1rem;
+        color: white;
     }
 </style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
 
-        function disminuirReps(circle) {
-            const span = circle.querySelector('.rep-counter');
-            const inputReps = circle.querySelector('input[type="hidden"]');
-            const original = parseInt(circle.dataset.original);
-            const parent = circle.closest('.serie-item');
+        function disminuirReps(ring) {
+            const span = ring.querySelector('.rep-counter');
+            const inputReps = ring.querySelector('input[type="hidden"]');
+            const original = parseInt(ring.dataset.original);
+            const parent = ring.closest('.serie-item');
             const completadoInput = parent.querySelector('input[name$="_completado_' + parent.dataset.numero + '"]');
 
-            if (!circle.dataset.clicked) {
-                circle.dataset.clicked = "true";
-                circle.classList.add("selected");
+            if (!ring.dataset.clicked) {
+                ring.dataset.clicked = "true";
+                ring.classList.add("selected");
                 if (completadoInput) completadoInput.value = "1";
                 return;
             }
@@ -156,38 +370,37 @@
             }
         }
 
-        document.querySelectorAll('.circle').forEach(circle => {
-            circle.addEventListener('click', () => disminuirReps(circle));
+        document.querySelectorAll('.fitness-ring').forEach(ring => {
+            ring.addEventListener('click', () => disminuirReps(ring));
         });
 
     });
 
     function agregarSerie(button, ejercicioId) {
-        const lista = button.closest('.card-body').querySelector('.series-list');
+        const lista = button.closest('.fitness-card-body').querySelector('.series-list');
         const count = lista.querySelectorAll('.serie-item').length + 1;
         const repsPrevias = button.dataset.reps || '';
         const pesoPrevio = button.dataset.peso || '';
         const originalReps = button.dataset.original || repsPrevias;
 
         const nuevaSerie = document.createElement('div');
-        nuevaSerie.className = "serie-item mb-3 p-3 rounded shadow-sm bg-light d-flex align-items-center";
+        nuevaSerie.className = "serie-item mb-3";
         nuevaSerie.setAttribute("data-numero", count);
 
         nuevaSerie.innerHTML = `
-            <div class="circle rounded-circle d-flex justify-content-center align-items-center me-3"
-                 style="width: 50px; height: 50px; cursor: pointer;" data-original="${originalReps}">
+            <div class="fitness-ring me-3" data-original="${originalReps}">
                 <span class="rep-counter">${repsPrevias}</span>
                 <input type="hidden" name="${ejercicioId}_reps_${count}" value="${repsPrevias}">
             </div>
-            <div style="flex-grow:1;">
-                <label class="form-label mb-1">Serie ${count}</label>
+            <div class="serie-info">
+                <div class="serie-title">Serie ${count}</div>
                 <input type="hidden" name="${ejercicioId}_peso_${count}" value="${pesoPrevio}">
                 <input type="hidden" name="${ejercicioId}_completado_${count}" value="0">
-                <small class="text-muted">Última vez: ${repsPrevias} reps @ ${pesoPrevio} kg</small>
+                <div class="serie-details">Última vez: ${repsPrevias} reps @ ${pesoPrevio} kg</div>
             </div>
         `;
 
-        nuevaSerie.querySelector('.circle').addEventListener('click', () => disminuirReps(nuevaSerie.querySelector('.circle')));
+        nuevaSerie.querySelector('.fitness-ring').addEventListener('click', () => disminuirReps(nuevaSerie.querySelector('.fitness-ring')));
 
         lista.appendChild(nuevaSerie);
     }

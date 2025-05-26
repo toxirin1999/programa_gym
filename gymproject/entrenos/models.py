@@ -2,6 +2,7 @@ from django.db import models
 from clientes.models import Cliente
 from rutinas.models import Ejercicio, Rutina
 from django.db import models
+from django.contrib.auth.models import User
 from clientes.models import Cliente
 from rutinas.models import Ejercicio, Rutina
 
@@ -42,7 +43,8 @@ class SerieRealizada(models.Model):
     serie_numero = models.PositiveIntegerField()
     repeticiones = models.PositiveIntegerField()
     completado = models.BooleanField(default=False)
-    peso_kg = models.DecimalField(max_digits=5, decimal_places=2)
+    peso_kg = models.DecimalField(max_digits=6, decimal_places=2, null=True,
+                                  blank=True)  # <-- Añade null=True, blank=True
 
 
 class PlanPersonalizado(models.Model):
