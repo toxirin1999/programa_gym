@@ -40,6 +40,148 @@ from datetime import timedelta
 from django.http import HttpResponse
 from .models import Cliente
 
+# En tu archivo views.py
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from decimal import Decimal
+# Asegúrate de importar el formulario que acabas de crear
+from .forms import DatosNutricionalesForm
+# Importa o define tu modelo para guardar los planes nutricionales
+from .models import PlanNutricional
+
+
+# Si quieres integrar con una IA más avanzada (como un modelo de lenguaje grande)
+# necesitarás una forma de comunicarte con ella. Esto es un placeholder.
+# from tu_modulo_ia import generar_plan_nutricional_con_ia
+
+def calcular_plan_nutricional(request):
+    if request.method == 'POST':
+        form = DatosNutricionalesForm(request.POST)
+        if form.is_valid():
+            edad = form.cleaned_data['edad']
+            genero = form.cleaned_data['genero']
+            altura_cm = form.cleaned_data['altura_cm']
+            peso_kg = form.cleaned_data['peso_kg']
+            nivel_actividad = form.cleaned_data['nivel_actividad']
+            objetivo = form.cleaned_data['objetivo']
+
+            # 1. Calcular TMB (Tasa Metabólica Basal)
+            if genero == 'M':
+                tmb = (Decimal('10') * peso_kg) + (Decimal('6.25') * altura_cm) - (
+                        Decimal('5') * Decimal(edad)) + Decimal('5')
+            else:  # Femenino
+                tmb = (Decimal('10') * peso_kg) + (Decimal('6.25') * altura_cm) - (
+                        Decimal('5') * Decimal(edad)) - Decimal('161')
+
+            # 2. Factor de Actividad Física (PAF)
+            paf = Decimal('1.2')  # Sedentario
+            if nivel_actividad == 'levemente_activo':
+                paf = Decimal('1.375')
+            elif nivel_actividad == 'moderadamente_activo':
+                paf = Decimal('1.55')
+            elif nivel_actividad == 'muy_activo':
+                paf = Decimal('1.725')
+            elif nivel_actividad == 'extremadamente_activo':
+                paf = Decimal('1.9')
+
+            # 3. Calcular GET (Gasto Energético Total)
+            get = tmb * paf
+
+            # 4. Ajustar calorías según el objetivo
+            calorias_objetivo = get
+            if objetivo == 'masa_muscular':
+                calorias_objetivo += Decimal('400')  # Superávit calórico
+            elif objetivo == 'perder_peso':
+                calorias_objetivo -= Decimal('400')  # Déficit calórico
+            # Para 'definir', se mantiene el GET
+
+            # Aquí es donde entra tu "IA" o lógica avanzada para el plan nutricional
+            # Por ahora, una lógica simple para el ejemplo:
+            # Distribución de macronutrientes recomendada (ejemplo básico)
+            # Proteínas: 25-30%
+            # Grasas: 20-30%
+            # Carbohidratos: 40-55%
+
+            # Ejemplo con 30% Proteínas, 25% Grasas, 45% Carbohidratos
+            calorias_proteinas = calorias_objetivo * Decimal('0.30')
+            calorias_grasas = calorias_objetivo * Decimal('0.25')
+            calorias_carbohidratos = calorias_objetivo * Decimal('0.45')
+
+            # Convertir calorías a gramos (1g Prot = 4kcal, 1g Grasa = 9kcal, 1g Carb = 4kcal)
+            gramos_proteinas = calorias_proteinas / Decimal('4')
+            gramos_grasas = calorias_grasas / Decimal('9')
+            gramos_carbohidratos = calorias_carbohidratos / Decimal('4')
+
+            # Redondeo para presentación
+            calorias_objetivo = round(calorias_objetivo, 0)
+            gramos_proteinas = round(gramos_proteinas, 0)
+            gramos_grasas = round(gramos_grasas, 0)
+            gramos_carbohidratos = round(gramos_carbohidratos, 0)
+
+            # Generar un plan nutricional más detallado con IA (placeholder)
+            # Si tienes un modelo de IA entrenado para esto, lo llamarías aquí.
+            # Por ejemplo:
+            # plan_nutricional_ia = generar_plan_nutricional_con_ia(
+            #     calorias_objetivo, gramos_proteinas, gramos_grasas, gramos_carbohidratos,
+            #     objetivo, preferencias_dieteticas=form.cleaned_data.get('restricciones_dieteticas')
+            # )
+            # Este `plan_nutricional_ia` podría ser un texto estructurado, una lista de comidas, etc.
+
+            # Por ahora, un plan de ejemplo simple:
+            plan_generado = f"""
+            ¡Excelente! Basado en tus datos, aquí tienes un plan nutricional recomendado:
+
+            **Objetivo:** {objetivo.replace('_', ' ').title()}
+            **Calorías diarias estimadas:** {calorias_objetivo} kcal
+
+            **Distribución de Macronutrientes:**
+            * **Proteínas:** {gramos_proteinas} gramos ({calorias_proteinas} kcal)
+            * **Grasas:** {gramos_grasas} gramos ({calorias_grasas} kcal)
+            * **Carbohidratos:** {gramos_carbohidratos} gramos ({calorias_carbohidratos} kcal)
+
+            **Recomendaciones Generales para tu objetivo de {objetivo.replace('_', ' ').title()}:**
+            * **Desayuno:** Ej. Avena con fruta y frutos secos, o huevos revueltos con tostadas integrales.
+            * **Almuerzo:** Ej. Pollo/pescado a la plancha con arroz integral y verduras al vapor.
+            * **Cena:** Ej. Salmón al horno con patata cocida y ensalada variada.
+            * **Snacks (si aplica):** Ej. Yogur griego, fruta, puñado de almendras.
+
+            **Consejos Adicionales:**
+            * Bebe al menos 2-3 litros de agua al día.
+            * Prioriza alimentos integrales y frescos.
+            * Asegúrate de consumir suficiente fibra.
+            * Adapta las porciones para ajustarte a tus gramos de macronutrientes.
+            * Consulta a un profesional de la salud o nutricionista para un plan personalizado y adaptado a tus necesidades individuales.
+            """
+
+            # Guardar el plan (asumiendo que tienes un modelo PlanNutricional)
+            # plan_nutricional = PlanNutricional.objects.create(
+            #     cliente=request.user.cliente, # Asumiendo que el usuario logueado es un cliente
+            #     calorias_estimadas=calorias_objetivo,
+            #     gramos_proteinas=gramos_proteinas,
+            #     gramos_grasas=gramos_grasas,
+            #     gramos_carbohidratos=gramos_carbohidratos,
+            #     objetivo=objetivo,
+            #     plan_generado_texto=plan_generado # Guardar el texto completo del plan
+            # )
+            # messages.success(request, "¡Plan nutricional generado con éxito!")
+
+            # Redirigir a una página de resultados o mostrarlo en la misma página
+            return render(request, 'nutricion/plan_nutricional_resultado.html', {
+                'plan_generado': plan_generado,
+                'calorias_objetivo': calorias_objetivo,
+                'gramos_proteinas': gramos_proteinas,
+                'gramos_grasas': gramos_grasas,
+                'gramos_carbohidratos': gramos_carbohidratos,
+                'objetivo': objetivo,
+                'form_data': form.cleaned_data  # Para mostrar los datos introducidos
+            })
+        else:
+            messages.error(request, "Por favor, corrige los errores en el formulario.")
+    else:
+        form = DatosNutricionalesForm()
+
+    return render(request, 'nutricion/calcular_plan_nutricional.html', {'form': form})
+
 
 def exportar_historial(request, cliente_id):
     cliente = Cliente.objects.get(pk=cliente_id)
@@ -317,7 +459,11 @@ def dashboard(request):
     clientes = Cliente.objects.all()
     total_clientes = clientes.count()
     total_revisiones = sum(cliente.revisiones.count() for cliente in clientes)
-
+    entrenos_hoy_lista = []
+    entrenos_semana_lista = []
+    entrenos_mes_lista = []
+    entrenos_anio_lista = []
+    entrenos_todos_lista = []
     # Promedios
     promedio_peso = 0
     promedio_grasa = 0

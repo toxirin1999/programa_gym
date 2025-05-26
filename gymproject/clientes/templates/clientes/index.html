@@ -2,7 +2,6 @@
 {% load static %}
 {% block title %}Lista de Clientes{% endblock %}
 
-<link rel="stylesheet" href="{% static 'custom.css' %}">
 {% block content %}
 <div class="container mt-4">
     <h2 class="fw-bold mb-3">Clientes</h2>
@@ -10,10 +9,10 @@
     <!-- Filtro por nombre, programa y género -->
     <form method="get" class="row mb-4">
         <div class="col-md-4">
-            <input type="text" name="nombre" placeholder="Buscar por nombre" class="form-control" value="{{ request.GET.nombre }}">
+            <input type="text" name="nombre" placeholder="Buscar por nombre" class="af-form-control" value="{{ request.GET.nombre }}">
         </div>
         <div class="col-md-4">
-            <select name="programa" class="form-select">
+            <select name="programa" class="af-form-select">
                 <option value="">Todos los programas</option>
                 {% for programa in programas %}
                 <option value="{{ programa.id }}" {% if request.GET.programa == programa.id|stringformat:"s" %}selected{% endif %}>
@@ -23,7 +22,7 @@
             </select>
         </div>
         <div class="col-md-4">
-            <select name="genero" class="form-select">
+            <select name="genero" class="af-form-select">
                 <option value="">Todos los géneros</option>
                 <option value="M" {% if request.GET.genero == "M" %}selected{% endif %}>Masculino</option>
                 <option value="F" {% if request.GET.genero == "F" %}selected{% endif %}>Femenino</option>
@@ -31,12 +30,12 @@
         </div>
         <div class="col-md-12 mt-2 d-flex justify-content-between align-items-center">
             <div>
-                <span id="alerta-contador" class="badge bg-warning text-dark"></span>
+                <span id="alerta-contador" class="af-alert-counter"></span>
             </div>
             <div class="text-end">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="{% url 'clientes_index' %}" class="btn btn-secondary">Limpiar</a>
-                <button type="button" id="toggle-alerts" class="btn btn-outline-warning btn-sm ms-2">
+                <button type="submit" class="af-btn" style="background-color: var(--af-ring-blue);">Filtrar</button>
+                <a href="{% url 'clientes_index' %}" class="af-btn af-btn-secondary">Limpiar</a>
+                <button type="button" id="toggle-alerts" class="af-btn" style="background-color: var(--af-accent-yellow); color: #000;">
                     👀 Mostrar solo clientes en riesgo
                 </button>
             </div>
@@ -44,49 +43,48 @@
     </form>
 
     {% if clientes %}
-    <ul class="list-group shadow-sm rounded overflow-hidden">
+    <ul class="af-list">
         {% for cliente in clientes %}
-        <li class="list-group-item d-flex justify-content-between align-items-center
+        <li class="af-list-item d-flex justify-content-between align-items-center
     {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
-        cliente-riesgo list-group-item-warning
+        af-list-item-warning cliente-riesgo
     {% endif %}">
             <div>
                 <strong>
-
                     {{ cliente.nombre }}
 
-{% if cliente.proximo_registro_peso %}
-    {% if cliente.proximo_registro_peso <= today %}
-        <i class="bi bi-calendar-x-fill text-danger ms-2" title="Peso atrasado para {{ cliente.proximo_registro_peso }}"></i>
-    {% else %}
-        <i class="bi bi-calendar-event-fill text-warning ms-2" title="Próximo peso: {{ cliente.proximo_registro_peso }}"></i>
-    {% endif %}
-{% endif %}
+                    {% if cliente.proximo_registro_peso %}
+                        {% if cliente.proximo_registro_peso <= today %}
+                            <i class="bi bi-calendar-x-fill" style="color: var(--af-ring-red);" title="Peso atrasado para {{ cliente.proximo_registro_peso }}"></i>
+                        {% else %}
+                            <i class="bi bi-calendar-event-fill" style="color: var(--af-accent-yellow);" title="Próximo peso: {{ cliente.proximo_registro_peso }}"></i>
+                        {% endif %}
+                    {% endif %}
                     {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
-                        <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
+                        <i class="bi bi-exclamation-triangle-fill" style="color: var(--af-accent-yellow);"
                            data-bs-toggle="tooltip" title="{{ cliente.ultima_revision.check_alerts }}"></i>
                     {% endif %}
                 </strong><br>
                 <small>Email: {{ cliente.email }} | Teléfono: {{ cliente.telefono }}</small><br>
                 {% if cliente.programa %}
-                <span class="badge bg-primary mt-1">Programa: {{ cliente.programa.nombre }}</span>
+                <span class="af-badge af-badge-blue mt-1">Programa: {{ cliente.programa.nombre }}</span>
                 {% else %}
-                <span class="badge bg-secondary mt-1">Sin programa asignado</span>
+                <span class="af-badge af-badge-gray mt-1">Sin programa asignado</span>
                 {% endif %}
                 {% if cliente.ultima_dieta %}
-                <span class="badge bg-success mt-1">Dieta: {{ cliente.ultima_dieta.dieta.nombre }}</span>
+                <span class="af-badge af-badge-green mt-1">Dieta: {{ cliente.ultima_dieta.dieta.nombre }}</span>
                 {% else %}
-                <span class="badge bg-secondary mt-1">Sin dieta asignada</span>
+                <span class="af-badge af-badge-gray mt-1">Sin dieta asignada</span>
                 {% endif %}
             </div>
             <div>
-                <a href="{% url 'detalle_cliente' cliente.id %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'detalle_cliente' cliente.id %}" class="af-action-btn af-action-btn-primary">
                     <i class="bi bi-eye"></i> Ver
                 </a>
-                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'editar_cliente' cliente.id %}" class="af-action-btn af-action-btn-success">
                     <i class="bi bi-pencil-square"></i> Editar
                 </a>
-                <a href="{% url 'eliminar_cliente' cliente.id %}" class="btn btn-sm btn-outline-danger"
+                <a href="{% url 'eliminar_cliente' cliente.id %}" class="af-action-btn af-action-btn-danger"
                    onclick="return confirm('¿Estás seguro de eliminar este cliente?');">
                     <i class="bi bi-trash"></i> Eliminar
                 </a>
@@ -95,11 +93,11 @@
         {% endfor %}
     </ul>
     {% else %}
-    <p class="text-muted">No hay clientes registrados.</p>
+    <p style="color: var(--af-text-secondary);">No hay clientes registrados.</p>
     {% endif %}
 
     <div class="mt-4 text-end">
-        <a href="{% url 'agregar_cliente' %}" class="btn btn-fucsia">
+        <a href="{% url 'agregar_cliente' %}" class="af-btn" style="background-color: var(--af-accent-purple);">
             <i class="bi bi-plus-circle"></i> Añadir nuevo cliente
         </a>
     </div>
@@ -110,7 +108,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggle-alerts");
     const alertaContador = document.getElementById("alerta-contador");
-    const clientes = document.querySelectorAll(".list-group-item");
+    const clientes = document.querySelectorAll(".af-list-item");
 
     let soloAlertas = false;
 

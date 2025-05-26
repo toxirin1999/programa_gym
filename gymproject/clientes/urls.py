@@ -3,6 +3,12 @@ from . import views
 from clientes import views as clientes_views
 from .views import historial_cliente
 
+# clientes/urls.py
+from django.urls import path
+from . import views
+from clientes import views as clientes_views
+from .views import historial_cliente  # Asumiendo que esta importación es necesaria para alguna otra URL
+
 urlpatterns = [
     # Clientes
     path('', views.index, name='clientes_index'),
@@ -17,6 +23,13 @@ urlpatterns = [
     path('cliente/<int:cliente_id>/revisiones/agregar/', views.agregar_revision, name='agregar_revision'),
     path('cliente/<int:cliente_id>/asignar_dieta/', views.asignar_dieta_directo, name='asignar_dieta_directo'),
     path('panel/', clientes_views.dashboard, name='dashboard'),
+
+    # Esta es la URL correcta para el cálculo y visualización del plan nutricional
+    path('nutricion/calcular/', views.calcular_plan_nutricional, name='calcular_plan_nutricional'),
+
+    # ELIMINA LA SIGUIENTE LÍNEA, YA QUE LA FUNCIÓN 'plan_nutricional_resultado' NO EXISTE:
+    # path('/nutricion/plan_resultado/', views.plan_nutricional_resultado, name='plan_nutricional_resultado'),
+
     path('datos-graficas/<int:cliente_id>/', views.datos_graficas, name='datos_graficas'),
     # Medidas (con prefijo para no pisar rutas de clientes)
     path('medidas/', views.lista_medidas, name='lista_medidas'),

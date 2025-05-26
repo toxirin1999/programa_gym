@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calcular Plan Nutricional{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Calcula tu Plan Nutricional</h2>
+    <p class="lead">Introduce tus datos para que la IA te recomiende un plan según tus objetivos.</p>
+
+    <div class="af-card mb-4">
+        <form method="post">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                <div class="form-text text-muted">{{ field.help_text }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-success btn-lg">Generar Plan Nutricional</button>
+        </form>
+    </div>
+
+    {% if messages %}
+    <div class="mt-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

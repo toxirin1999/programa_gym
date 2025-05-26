@@ -6,6 +6,35 @@ from .models import ObjetivoCliente
 from django import forms
 from .models import DietaAsignada
 
+from django import forms
+
+
+class DatosNutricionalesForm(forms.Form):
+    edad = forms.IntegerField(label="Edad", min_value=1, max_value=120)
+    genero = forms.ChoiceField(label="Género", choices=[('M', 'Masculino'), ('F', 'Femenino')])
+    altura_cm = forms.DecimalField(label="Altura (cm)", max_digits=5, decimal_places=2, min_value=50)
+    peso_kg = forms.DecimalField(label="Peso (kg)", max_digits=5, decimal_places=2, min_value=20)
+
+    NIVEL_ACTIVIDAD_CHOICES = [
+        ('sedentario', 'Sedentario (poco o ningún ejercicio)'),
+        ('levemente_activo', 'Levemente activo (ejercicio ligero/deporte 1-3 días/semana)'),
+        ('moderadamente_activo', 'Moderadamente activo (ejercicio moderado/deporte 3-5 días/semana)'),
+        ('muy_activo', 'Muy activo (ejercicio intenso/deporte 6-7 días/semana)'),
+        ('extremadamente_activo', 'Extremadamente activo (ejercicio muy intenso/trabajo físico)'),
+    ]
+    nivel_actividad = forms.ChoiceField(label="Nivel de Actividad Física", choices=NIVEL_ACTIVIDAD_CHOICES)
+
+    OBJETIVO_CHOICES = [
+        ('masa_muscular', 'Ganar Masa Muscular'),
+        ('definir', 'Definir / Mantener Peso'),
+        ('perder_peso', 'Perder Peso'),
+    ]
+    objetivo = forms.ChoiceField(label="Objetivo", choices=OBJETIVO_CHOICES)
+
+    # Puedes añadir más campos para preferencias dietéticas si lo deseas
+    # comidas_dia = forms.IntegerField(label="Número de comidas al día deseadas", min_value=2, max_value=6, required=False)
+    # restricciones_dieteticas = forms.CharField(label="Restricciones o preferencias dietéticas (ej. vegetariano, sin lactosa)", widget=forms.Textarea, required=False)
+
 
 class DietaAsignadaForm(forms.ModelForm):
     class Meta:

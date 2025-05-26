@@ -2,8 +2,6 @@
 {% load filtros %}
 {% load static %}
 
-
-
 {% block title %}Detalle Cliente{% endblock %}
 
 {% block content %}
@@ -12,35 +10,31 @@
         <div class="mb-3">
             {% if cliente.foto %}
             <img src="{{ cliente.foto.url }}" alt="{{ cliente.nombre }}" class="rounded-circle shadow"
-                 style="width: 200px; height: 200px; object-fit: cover;">
+                 style="width: 200px; height: 200px; object-fit: cover; border: 3px solid var(--af-ring-blue);">
             {% else %}
-
-            <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center shadow"
-                 style="width: 100px; height: 100px; font-size: 36px;">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow"
+                 style="width: 100px; height: 100px; font-size: 36px; background-color: var(--af-card-bg); color: var(--af-text-primary); border: 2px solid var(--af-ring-blue);">
                 <i class="bi bi-person-fill"></i>
             </div>
             {% endif %}
-
         </div>
         <h3 class="fw-bold mb-1">{{ cliente.nombre }}</h3>
-        <div class="text-muted">{{ cliente.email }}</div>
+        <div style="color: var(--af-text-secondary);">{{ cliente.email }}</div>
         {% if ultima_revision and ultima_revision.check_alerts %}
         <div class="mt-2">
-        <span class="badge bg-warning text-dark" title="{{ ultima_revision.check_alerts }}">
-            ⚠ Riesgo
-        </span>
+            <span class="af-badge af-badge-yellow" title="{{ ultima_revision.check_alerts }}">
+                ⚠ Riesgo
+            </span>
         </div>
-
         {% endif %}
-        <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-warning">
+        <a href="{% url 'editar_cliente' cliente.id %}" class="af-action-btn af-action-btn-success mt-2">
             <i class="bi bi-pencil-square"></i> Editar
         </a>
     </div>
 
-
     {% with alertas=ultima_revision.check_alerts %}
     {% if alertas %}
-    <div class="alert alert-warning">
+    <div class="af-card" style="border-left: 4px solid var(--af-accent-yellow);">
         <strong>Alertas detectadas:</strong>
         <ul class="mb-0">
             {% for alerta in alertas %}
@@ -50,446 +44,400 @@
     </div>
     {% endif %}
     {% endwith %}
+
     {% if cliente.proximo_registro_peso %}
     {% if cliente.proximo_registro_peso <= today %}
-    <div class="alert alert-warning">
-        🕒 ¡Este cliente debería registrar su peso hoy o lo tiene atrasado!
+    <div class="af-card" style="border-left: 4px solid var(--af-accent-yellow);">
+        <i class="bi bi-clock me-2" style="color: var(--af-accent-yellow);"></i> ¡Este cliente debería registrar su peso
+        hoy o lo tiene atrasado!
     </div>
     {% else %}
-    <div class="alert alert-info">
-        📅 Próximo registro de peso programado para: {{ cliente.proximo_registro_peso }}
+    <div class="af-card" style="border-left: 4px solid var(--af-ring-blue);">
+        <i class="bi bi-calendar-event me-2" style="color: var(--af-ring-blue);"></i> Próximo registro de peso
+        programado para: {{ cliente.proximo_registro_peso }}
     </div>
     {% endif %}
     {% endif %}
 
-
-
-            <div class="row mt-4">
-
-                <table class="table table-bordered">
-                    <tr>
-                        <th>ID</th>
-                        <td>{{ cliente.id }}</td>
-                    </tr>
-                    <tr>
-                        <th>Nombre</th>
-                        <td>{{ cliente.nombre }}</td>
-                    </tr>
-                    <tr>
-                        <th>Email</th>
-                        <td>{{ cliente.email }}</td>
-                    </tr>
-                    <tr>
-                        <th>Teléfono</th>
-                        <td>{{ cliente.telefono }}</td>
-                    </tr>
-                    <tr>
-                        <th>Fecha nacimiento</th>
-                        <td>{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Dirección</th>
-                        <td>{{ cliente.direccion }}</td>
-                    </tr>
-                    <tr>
-                        <th>Género</th>
-                        <td>{{ cliente.get_genero_display }}</td>
-                    </tr>
-                    <tr>
-                        <th>Membresía activa</th>
-                        <td>{% if cliente.membresia_activa %}Sí{% else %}No{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <th>Vencimiento membresía</th>
-                        <td>{{ cliente.fecha_vencimiento_membresia|date:"d/m/Y" }}</td>
-                    </tr>
-                    <tr>
-                    <tr>
-    <th>Programa</th>
-    <td class="d-flex align-items-center gap-2">
-        {% if cliente.programa.icono %}
-            <img src="{% static 'img/programas/' %}{{ cliente.programa.icono }}" alt="{{ cliente.programa.nombre }}" width="40" height="40" class="rounded-circle border">
-        {% endif %}
-        <span>{{ cliente.programa.nombre }}</span>
-        <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-warning ms-3">
-            Cambiar programa
-        </a>
-<a href="{% url 'historial_cliente' cliente.id %}" class="btn btn-sm btn-outline-primary mt-2">
-    📋 Ver historial de entrenamientos
-</a>
-
-    </td>
-</tr>
-                    {% with cliente.dietas_asignadas.last as ultima_dieta %}
-                    {% if ultima_dieta %}
-                    <tr>
-                        <th>Dieta asignada</th>
-
-                        <td>
-                            {{ ultima_dieta.dieta.nombre }}
-                                                 <a href="{% url 'ver_dieta' ultima_dieta.dieta.id %}"
-                                   class="btn btn-sm btn-outline-primary">Ver dieta</a>
-                                <a href="{% url 'asignar_dieta_directo' cliente.id %}"
-                                   class="btn btn-sm btn-outline-success">Asignar nueva</a>
-                            <small class="text-muted d-block">desde {{ ultima_dieta.fecha_inicio }}</small>
-
-                        </td>
-
-                    </tr>
-                    {% endif %}
-                    {% endwith %}
-                </table>
-
-
-            </div>
-            <h4 class="mt-4">🎯 Objetivos definidos</h4>
-            {% if objetivos %}
-            <table class="table table-bordered">
-                <thead>
+    <div class="row mt-4">
+        <div class="af-table-container">
+            <table class="af-table">
                 <tr>
-                    <th>Medida</th>
-                    <th>Valor objetivo</th>
-                    <th>Fecha de asignación</th>
-                    <th>Acciones</th>
+                    <th>ID</th>
+                    <td>{{ cliente.id }}</td>
                 </tr>
-                </thead>
-                <tbody>
-                {% for obj in objetivos %}
-
                 <tr>
-                    <td>{{ obj.get_medida_display }}</td>
-                    <td>{{ obj.valor }}</td>
-                    <td>{{ obj.fecha }}</td>
-
+                    <th>Nombre</th>
+                    <td>{{ cliente.nombre }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ cliente.email }}</td>
+                </tr>
+                <tr>
+                    <th>Teléfono</th>
+                    <td>{{ cliente.telefono }}</td>
+                </tr>
+                <tr>
+                    <th>Fecha nacimiento</th>
+                    <td>{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</td>
+                </tr>
+                <tr>
+                    <th>Dirección</th>
+                    <td>{{ cliente.direccion }}</td>
+                </tr>
+                <tr>
+                    <th>Género</th>
+                    <td>{{ cliente.get_genero_display }}</td>
+                </tr>
+                <tr>
+                    <th>Membresía activa</th>
                     <td>
-
-                        <a href="{% url 'editar_objetivo' obj.id %}" class="btn btn-sm btn-outline-primary">✏️</a>
-                        <a href="{% url 'eliminar_objetivo' obj.id %}" class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('¿Eliminar este objetivo?');">🗑️</a>
-                    </td>
-                </tr>
-
-
-                {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="text-muted">No hay objetivos registrados.</p>
-            {% endif %}
-
-            <a href="{% url 'definir_objetivo' cliente.id %}" class="btn btn-outline-success btn-sm mt-2">
-                ➕ Definir nuevo objetivo
-            </a>
-
-
-            <h4 class="mt-4">Comparativa de Medidas Corporales</h4>
-            {% if ultima_revision %}
-            <table class="table table-striped align-middle">
-                <thead>
-                <tr>
-                    <th>Medida</th>
-                    <th>Inicial</th>
-                    <th>Última Revisión ({{ ultima_revision.fecha }})</th>
-                </tr>
-
-                </thead>
-                <tbody>
-                <tr>
-                    <th>Peso (kg)</th>
-                    <td>{{ cliente.peso_corporal }}</td>
-                    <td>
-                        {% with inicial=cliente.peso_corporal revision=ultima_revision.peso_corporal %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
+                        {% if cliente.membresia_activa %}
+                        <span class="af-badge af-badge-green">Activa</span>
+                        {% else %}
+                        <span class="af-badge af-badge-red">Inactiva</span>
+                        {% endif %}
                     </td>
                 </tr>
                 <tr>
-                    <th>Grasa corporal (%)</th>
-                    <td>{{ cliente.grasa_corporal }}</td>
-                    <td>
-                        {% with inicial=cliente.grasa_corporal revision=ultima_revision.grasa_corporal %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
-                    </td>
+                    <th>Vencimiento membresía</th>
+                    <td>{{ cliente.fecha_vencimiento_membresia|date:"d/m/Y" }}</td>
                 </tr>
                 <tr>
-                    <th>Cintura (cm)</th>
-                    <td>{{ cliente.cintura }}</td>
-                    <td>
-                        {% with inicial=cliente.cintura revision=ultima_revision.cintura %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
+                    <th>Programa</th>
+                    <td class="d-flex align-items-center gap-2">
+                        {% if cliente.programa.icono %}
+                        <img src="{% static 'img/programas/' %}{{ cliente.programa.icono }}" alt="{{ cliente.programa.nombre }}" width="40" height="40" class="rounded-circle" style="border: 1px solid var(--af-ring-blue);">
+                        {% endif %}
+                        <span>{{ cliente.programa.nombre }}</span>
+                        <a href="{% url 'editar_cliente' cliente.id %}" class="af-action-btn af-action-btn-success ms-3">
+                            Cambiar programa
+                        </a>
+                        <a href="{% url 'historial_cliente' cliente.id %}" class="af-action-btn af-action-btn-primary mt-2">
+                            📋 Ver historial de entrenamientos
+                        </a>
                     </td>
                 </tr>
+                {% with cliente.dietas_asignadas.last as ultima_dieta %}
+                {% if ultima_dieta %}
                 <tr>
-                    <th>Pecho (cm)</th>
-                    <td>{{ cliente.pecho }}</td>
+                    <th>Dieta asignada</th>
                     <td>
-                        {% with inicial=cliente.pecho revision=ultima_revision.pecho %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
+                        {{ ultima_dieta.dieta.nombre }}
+                        <a href="{% url 'ver_dieta' ultima_dieta.dieta.id %}" class="af-action-btn af-action-btn-primary">Ver
+                            dieta</a>
+                        <a href="{% url 'asignar_dieta_directo' cliente.id %}" class="af-action-btn af-action-btn-success">Asignar
+                            nueva</a>
+                        <small style="color: var(--af-text-secondary);" class="d-block">
+                            {{ ultima_dieta.fecha_inicio }}</small>
                     </td>
                 </tr>
-                <tr>
-                    <th>Bíceps (cm)</th>
-                    <td>{{ cliente.biceps }}</td>
-                    <td>
-                        {% with inicial=cliente.biceps revision=ultima_revision.biceps %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
-                    </td>
-                </tr>
-                <tr>
-                    <th>Muslos (cm)</th>
-                    <td>{{ cliente.muslos }}</td>
-                    <td>
-                        {% with inicial=cliente.muslos revision=ultima_revision.muslos %}
-                        {% include "clientes/partials/comparador.html" %}
-                        {% endwith %}
-                    </td>
-                </tr>
-                <!-- Agrega más medidas si usas hombro, cuello, etc. -->
-                </tbody>
-            </table>
-            <div class="text-end mb-3">
-                <a href="{% url 'agregar_revision' cliente.id %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-plus-circle"></i> Añadir revisión
-                </a>
-                <a href="{% url 'lista_revisiones' cliente.id %}" class="btn btn-outline-secondary btn-sm">
-                    📋 Ver historial completo
-                </a>
-
-<button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#modalRecordatorioPeso">
-                    <i class="bi bi-calendar-event"></i> Editar recordatorio de peso
-                </button>
-                {% if cliente.proximo_registro_peso %}
-                <div>
-                    <strong>🔔 Próximo recordatorio:</strong>
-                    {{ cliente.proximo_registro_peso|date:"d/m/Y" }}
-                </div>
                 {% endif %}
-
-
-
-            </div>
-
-  <div class="card shadow-sm my-4">
-    <div class="card-header text-center fw-bold text-primary">
-        TENDENCIAS DE PESO
+                {% endwith %}
+            </table>
+        </div>
     </div>
-    <div class="card-body d-flex justify-content-around flex-wrap gap-3 text-center">
 
-        <div class="rounded border p-3 bg-light-success">
-            <div class="fs-4 fw-bold text-success">{{ peso_7d }}</div>
-            <small>Ganado<br>en 7 días</small>
-        </div>
-
-        <div class="rounded border p-3 bg-light-danger">
-            <div class="fs-4 fw-bold text-danger">{{ peso_30d }}</div>
-            <small>Perdido<br>en 30 días</small>
-        </div>
-
-        <div class="rounded border p-3 bg-light-danger">
-            <div class="fs-4 fw-bold text-danger">{{ peso_90d }}</div>
-            <small>Perdido<br>en 90 días</small>
-        </div>
-
-        <div class="rounded border p-3 bg-light-success">
-            <div class="fs-4 fw-bold text-success">{{ peso_total }}</div>
-            <small>Ganado<br>Total</small>
-        </div>
-
+    <h4 class="mt-4" style="color: var(--af-ring-blue);">🎯 Objetivos definidos</h4>
+    {% if objetivos %}
+    <div class="af-table-container">
+        <table class="af-table">
+            <thead>
+            <tr>
+                <th>Medida</th>
+                <th>Valor objetivo</th>
+                <th>Fecha de asignación</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for obj in objetivos %}
+            <tr>
+                <td>{{ obj.get_medida_display }}</td>
+                <td>{{ obj.valor }}</td>
+                <td>{{ obj.fecha }}</td>
+                <td>
+                    <a href="{% url 'editar_objetivo' obj.id %}" class="af-action-btn af-action-btn-primary">✏️</a>
+                    <a href="{% url 'eliminar_objetivo' obj.id %}" class="af-action-btn af-action-btn-danger"
+                       onclick="return confirm('¿Eliminar este objetivo?');">🗑️</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
+    {% else %}
+    <p style="color: var(--af-text-secondary);">No hay objetivos registrados.</p>
+    {% endif %}
 
-            {% else %}
-            <div class="text-end mb-3">
-                <a href="{% url 'agregar_revision' cliente.id %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-plus-circle"></i> Añadir revisión
-                </a>
-                <a href="{% url 'lista_revisiones' cliente.id %}" class="btn btn-outline-secondary btn-sm">
-                    📋 Ver historial completo
-                </a>
+    <a href="{% url 'definir_objetivo' cliente.id %}" class="af-btn" style="background-color: var(--af-ring-green); margin-top: 1rem;">
+        ➕ Definir nuevo objetivo
+    </a>
+
+    <h4 class="mt-4" style="color: var(--af-ring-blue);">Comparativa de Medidas Corporales</h4>
+    {% if ultima_revision %}
+    <div class="af-table-container">
+        <table class="af-table">
+            <thead>
+            <tr>
+                <th>Medida</th>
+                <th>Inicial</th>
+                <th>Última Revisión ({{ ultima_revision.fecha }})</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th>Peso (kg)</th>
+                <td>{{ cliente.peso_corporal }}</td>
+                <td>
+                    {% with inicial=cliente.peso_corporal revision=ultima_revision.peso_corporal %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Grasa corporal (%)</th>
+                <td>{{ cliente.grasa_corporal }}</td>
+                <td>
+                    {% with inicial=cliente.grasa_corporal revision=ultima_revision.grasa_corporal %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Cintura (cm)</th>
+                <td>{{ cliente.cintura }}</td>
+                <td>
+                    {% with inicial=cliente.cintura revision=ultima_revision.cintura %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Pecho (cm)</th>
+                <td>{{ cliente.pecho }}</td>
+                <td>
+                    {% with inicial=cliente.pecho revision=ultima_revision.pecho %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Bíceps (cm)</th>
+                <td>{{ cliente.biceps }}</td>
+                <td>
+                    {% with inicial=cliente.biceps revision=ultima_revision.biceps %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Muslos (cm)</th>
+                <td>{{ cliente.muslos }}</td>
+                <td>
+                    {% with inicial=cliente.muslos revision=ultima_revision.muslos %}
+                    {% include "clientes/partials/comparador.html" %}
+                    {% endwith %}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="text-end mb-3 mt-3">
+        <a href="{% url 'agregar_revision' cliente.id %}" class="af-action-btn af-action-btn-success">
+            <i class="bi bi-plus-circle"></i> Añadir revisión
+        </a>
+        <a href="{% url 'lista_revisiones' cliente.id %}" class="af-action-btn af-action-btn-primary">
+            📋 Ver historial completo
+        </a>
+        <button class="af-action-btn af-action-btn-primary" data-bs-toggle="modal" data-bs-target="#modalRecordatorioPeso">
+            <i class="bi bi-calendar-event"></i> Editar recordatorio de peso
+        </button>
+        {% if cliente.proximo_registro_peso %}
+        <div class="mt-2">
+            <strong style="color: var(--af-ring-blue);">🔔 Próximo recordatorio:</strong>
+            {{ cliente.proximo_registro_peso|date:"d/m/Y" }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="af-card my-4">
+        <div class="text-center fw-bold mb-3" style="color: var(--af-ring-blue);">
+            TENDENCIAS DE PESO
+        </div>
+        <div class="d-flex justify-content-around flex-wrap gap-3 text-center">
+            <div class="af-card" style="background-color: rgba(52, 199, 89, 0.1); border-left: 3px solid var(--af-ring-green);">
+                <div class="fs-4 fw-bold" style="color: var(--af-ring-green);">{{ peso_7d }}</div>
+                <small>Ganado<br>en 7 días</small>
             </div>
-            <p class="text-muted">Sin revisiones registradas.</p>
-            {% endif %}
-
-            <!-- inicio de graficas -->
-
-            <h4 class="mt-5">Progreso en Gráficas</h4>
-            <!-- Selector de medidas -->
-            <div class="mb-3">
-                <label for="medidasSelect" class="form-label">Selecciona las medidas a mostrar:</label>
-                <select id="medidasSelect" class="form-select" multiple size="6">
-                    <option value="pesos" selected>Peso (kg)</option>
-                    <option value="grasas" selected>Grasa corporal (%)</option>
-                    <option value="cinturas" selected>Cintura (cm)</option>
-                    <option value="pechos">Pecho (cm)</option>
-                    <option value="biceps">Bíceps (cm)</option>
-                    <option value="muslos">Muslos (cm)</option>
-                </select>
+            <div class="af-card" style="background-color: rgba(255, 59, 48, 0.1); border-left: 3px solid var(--af-ring-red);">
+                <div class="fs-4 fw-bold" style="color: var(--af-ring-red);">{{ peso_30d }}</div>
+                <small>Perdido<br>en 30 días</small>
             </div>
-
-            <!-- Filtro de fechas -->
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <label class="form-label mb-0" for="fechaInicio">📆 Desde:</label>
-                <input type="date" id="fechaInicio" class="form-control form-control-sm" style="max-width: 180px;">
-                <label class="form-label mb-0" for="fechaFin">📆 Hasta:</label>
-                <input type="date" id="fechaFin" class="form-control form-control-sm" style="max-width: 180px;">
-                <button id="filtrarFechas" class="btn btn-sm btn-outline-primary">Aplicar</button>
+            <div class="af-card" style="background-color: rgba(255, 59, 48, 0.1); border-left: 3px solid var(--af-ring-red);">
+                <div class="fs-4 fw-bold" style="color: var(--af-ring-red);">{{ peso_90d }}</div>
+                <small>Perdido<br>en 90 días</small>
             </div>
+            <div class="af-card" style="background-color: rgba(52, 199, 89, 0.1); border-left: 3px solid var(--af-ring-green);">
+                <div class="fs-4 fw-bold" style="color: var(--af-ring-green);">{{ peso_total }}</div>
+                <small>Ganado<br>Total</small>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-end mb-3">
+        <a href="{% url 'agregar_revision' cliente.id %}" class="af-action-btn af-action-btn-success">
+            <i class="bi bi-plus-circle"></i> Añadir revisión
+        </a>
+        <a href="{% url 'lista_revisiones' cliente.id %}" class="af-action-btn af-action-btn-primary">
+            📋 Ver historial completo
+        </a>
+    </div>
+    <p style="color: var(--af-text-secondary);">Sin revisiones registradas.</p>
+    {% endif %}
 
-            <canvas id="graficaProgreso" height="140"></canvas>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script>
-                const clienteId = "{{ cliente.id }}";
+    <!-- inicio de graficas -->
+    <h4 class="mt-5" style="color: var(--af-ring-blue);">Progreso en Gráficas</h4>
+    <!-- Selector de medidas -->
+    <div class="mb-3">
+        <label for="medidasSelect" class="form-label"></label>
+        <select id="medidasSelect" class="af-form-select" multiple size="6">
+            <option value="pesos" selected>Peso (kg)</option>
+            <option value="grasas" selected>Grasa corporal (%)</option>
+            <option value="cinturas" selected>Cintura (cm)</option>
+            <option value="pechos">Pecho (cm)</option>
+            <option value="biceps">Bíceps (cm)</option>
+            <option value="muslos">Muslos (cm)</option>
+        </select>
+    </div>
 
-                const colores = {
-                    pesos: 'blue',
-                    grasas: 'red',
-                    cinturas: 'green',
-                    pechos: 'orange',
-                    biceps: 'purple',
-                    muslos: 'brown'
-                };
+    <!-- Filtro de fechas -->
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <label class="form-label mb-0" for="fechaInicio">📆 Desde:</label>
+        <input type="date" id="fechaInicio" class="af-form-control" style="max-width: 180px;">
+        <label class="form-label mb-0" for="fechaFin">📆 Hasta:</label>
+        <input type="date" id="fechaFin" class="af-form-control" style="max-width: 180px;">
+        <button id="filtrarFechas" class="af-btn" style="background-color: var(--af-ring-blue);">Aplicar</button>
+    </div>
 
-                const etiquetas = {
-                    pesos: 'Peso (kg)',
-                    grasas: 'Grasa corporal (%)',
-                    cinturas: 'Cintura (cm)',
-                    pechos: 'Pecho (cm)',
-                    biceps: 'Bíceps (cm)',
-                    muslos: 'Muslos (cm)'
-                };
+    <div class="af-card">
+        <canvas id="graficaProgreso" height="140"></canvas>
+    </div>
 
-                let datosGlobales = {};
-                let chart = null;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar tema oscuro para Chart.js
+            Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-                function construirURL(clienteId) {
-                    const inicio = document.getElementById('fechaInicio').value;
-                    const fin = document.getElementById('fechaFin').value;
-                    let url = `/clientes/datos-graficas/${clienteId}/`;
-                    if (inicio && fin) {
-                        url += `?start=${inicio}&end=${fin}`;
-                    }
-                    return url;
+            const clienteId = "{{ cliente.id }}";
+
+            const colores = {
+                pesos: 'rgb(0, 122, 255)', // azul
+                grasas: 'rgb(255, 59, 48)', // rojo
+                cinturas: 'rgb(52, 199, 89)', // verde
+                pechos: 'rgb(255, 149, 0)', // naranja
+                biceps: 'rgb(175, 82, 222)', // morado
+                muslos: 'rgb(255, 204, 0)' // amarillo
+            };
+
+            const etiquetas = {
+                pesos: 'Peso (kg)',
+                grasas: 'Grasa corporal (%)',
+                cinturas: 'Cintura (cm)',
+                pechos: 'Pecho (cm)',
+                biceps: 'Bíceps (cm)',
+                muslos: 'Muslos (cm)'
+            };
+
+            let datosGlobales = {};
+            let chart = null;
+
+            function construirURL(clienteId) {
+                const inicio = document.getElementById('fechaInicio').value;
+                const fin = document.getElementById('fechaFin').value;
+                let url = `/clientes/datos-graficas/${clienteId}/`;
+                if (inicio && fin) {
+                    url += `?start=${inicio}&end=${fin}`;
                 }
+                return url;
+            }
 
-                function cargarGrafica() {
-                    fetch(construirURL(clienteId))
-                        .then(response => response.json())
-                        .then(data => {
-                            datosGlobales = data;
-                            const ctx = document.getElementById('graficaProgreso').getContext('2d');
+            function cargarGrafica() {
+                fetch(construirURL(clienteId))
+                    .then(response => response.json())
+                    .then(data => {
+                        datosGlobales = data;
+                        const ctx = document.getElementById('graficaProgreso').getContext('2d');
 
-                            const seleccionadas = Array.from(document.getElementById('medidasSelect').selectedOptions).map(opt => opt.value);
-                            const datasets = seleccionadas.map(key => ({
-                                label: etiquetas[key],
-                                data: data[key],
-                                borderColor: colores[key],
-                                tension: 0.2
-                            }));
+                        const seleccionadas = Array.from(document.getElementById('medidasSelect').selectedOptions).map(opt => opt.value);
+                        const datasets = seleccionadas.map(key => ({
+                            label: etiquetas[key],
+                            data: data[key],
+                            borderColor: colores[key],
+                            backgroundColor: colores[key].replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                            tension: 0.2
+                        }));
 
-                            if (!chart) {
-                                chart = new Chart(ctx, {
-                                    type: 'line',
-                                    data: {
-                                        labels: data.fechas,
-                                        datasets: datasets
+                        if (chart) {
+                            chart.destroy();
+                        }
+
+                        chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.fechas,
+                                datasets: datasets
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                        labels: {
+                                            usePointStyle: true,
+                                            padding: 15
+                                        }
                                     },
-                                    options: {
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { position: 'bottom' },
-                                            title: {
-                                                display: true,
-                                                text: 'Evolución de medidas corporales'
-                                            }
+                                    tooltip: {
+                                        backgroundColor: 'rgba(28, 28, 30, 0.9)',
+                                        titleColor: 'white',
+                                        bodyColor: 'white',
+                                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                                        borderWidth: 1,
+                                        padding: 10,
+                                        displayColors: true,
+                                        usePointStyle: true
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            color: 'rgba(255, 255, 255, 0.1)'
+                                        }
+                                    },
+                                    y: {
+                                        grid: {
+                                            color: 'rgba(255, 255, 255, 0.1)'
                                         }
                                     }
-                                });
-                            } else {
-                                chart.data.labels = data.fechas;
-                                chart.data.datasets = datasets;
-                                chart.update();
+                                }
                             }
                         });
-                }
+                    });
+            }
 
-                document.getElementById('medidasSelect').addEventListener('change', cargarGrafica);
-                document.getElementById('filtrarFechas').addEventListener('click', cargarGrafica);
+            // Cargar la gráfica inicial
+            cargarGrafica();
 
-                // Carga inicial
-                cargarGrafica();
-            </script>
+            // Actualizar la gráfica cuando cambie la selección de medidas
+            document.getElementById('medidasSelect').addEventListener('change', cargarGrafica);
 
-
-            <!-- fin de graficas -->
-
-
-
-            <hr>
-            <h4>Historial de Dietas</h4>
-            <table class="table table-striped">
-                <thead>
-                <tr>
-                    <th>Dieta</th>
-                    <th>Inicio</th>
-                    <th>Fin</th>
-                    <th>Observaciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for cd in cliente.dietas_asignadas.all %}
-                <tr>
-                    <td>{{ cd.dieta.nombre }}</td>
-                    <td>{{ cd.fecha_inicio }}</td>
-                    <td>{% if cd.fecha_fin %}{{ cd.fecha_fin }}{% else %}<em>Actual</em>{% endif %}</td>
-                    <td>{{ cd.observaciones|default:"—" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-muted">Sin historial de dietas.</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-
-            </table>
-
-
-            <div class="mt-4">
-
-                <a href="{% url 'clientes_index' %}" class="btn btn-secondary mt-3">Volver a la lista</a>
-            </div>
-        </div>
-
-
+            // Actualizar la gráfica cuando se aplique el filtro de fechas
+            document.getElementById('filtrarFechas').addEventListener('click', cargarGrafica);
+        });
+    </script>
 </div>
-
-<!-- Modal: Recordatorio de registro de peso -->
-<div class="modal fade" id="modalRecordatorioPeso" tabindex="-1" aria-labelledby="modalPesoLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="post" action="{% url 'actualizar_recordatorio_peso' cliente.id %}" class="modal-content">
-
-            {% csrf_token %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalPesoLabel">Editar recordatorio de peso</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                <label for="id_proximo_registro_peso" class="form-label">Nueva fecha:</label>
-                <input type="date" name="proximo_registro_peso" id="id_proximo_registro_peso" class="form-control"
-                       required>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-        </form>
-    </div>
-
-
-
-
 {% endblock %}
