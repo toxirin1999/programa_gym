@@ -1,235 +1,335 @@
-/* Tipografía principal */
+/* Estilos base para el tema Apple Fitness */
+:root {
+  /* Colores base */
+  --color-black: #000000;
+  --color-dark-gray: #1C1C1E;
+  --color-medium-gray: #2C2C2E;
+  --color-light-gray: #8E8E93;
+  --color-white: #FFFFFF;
+
+  /* Colores de acento (anillos) */
+  --color-red: #FF3B30;
+  --color-green: #4CD964;
+  --color-blue: #5AC8FA;
+
+  /* Colores de estado */
+  --color-success: #34C759;
+  --color-warning: #FFCC00;
+  --color-error: #FF3B30;
+  --color-info: #007AFF;
+
+  /* Colores de progreso */
+  --color-purple: #AF52DE;
+  --color-orange: #FF9500;
+  --color-cyan: #5AC8FA;
+
+  /* Espaciado */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Bordes */
+  --border-radius-sm: 8px;
+  --border-radius-md: 16px;
+  --border-radius-lg: 24px;
+  --border-radius-circle: 50%;
+}
+
+/* Estilos generales */
 body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f8f9fa;
-    color: #212529;
+  color: #32FF00;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
 }
 
-
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 700;
+/* Contenedor principal */
+.container {
+  max-width: 100%;
+  padding: var(--spacing-md);
 }
 
-/* Tarjetas limpias */
+/* Tarjetas estilo Apple Fitness */
 .card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-}
-/* Encabezado de tarjeta */
-.card-header {
-    background-color: #fff3ed;
-    color: #e5745e;
-    font-weight: 600;
-    border-bottom: 1px solid #f0f0f0;
-}
-.card .value {
-    color: #ff2d55;
-    font-weight: 700;
+  background-color: var(--color-dark-gray);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-.card-icon {
-    background-color: #d1d1d6;
-    color: #ffffff;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
+.card-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
 }
 
-.btn-float {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background-color: #ff2d55;
-    color: #fff;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+.card-subtitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-light-gray);
+  margin-bottom: var(--spacing-md);
 }
 
-.btn-float:hover {
-    background-color: #d91c4a;
-}
-.value {
-    color: #ff2d55;  /* fucsia estilo Apple */
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-input, select, textarea {
-    background-color: #f5f5f7;  /* gris suave */
-    border: 1px solid #d2d2d7;
-    border-radius: 12px;
-    color: #ff2d55;  /* fucsia */
-    padding: 10px;
-    width: 100%;
-}
-/* Inputs */
-input[type="text"],
-input[type="email"],
-input[type="date"],
-input[type="number"],
-select,
-textarea {
-    border-radius: 8px !important;
-    border: 1px solid #ced4da;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    transition: all 0.2s;
-}
-input:focus,
-select:focus,
-textarea:focus {
-    border-color: #e5745e;
-    box-shadow: 0 0 0 0.1rem rgba(229, 116, 94, 0.25);
-    outline: none;
+/* Tarjetas de estadísticas */
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-dark-gray);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
-
-input::placeholder, textarea::placeholder {
-    color: #d2d2d7;  /* color de placeholder gris */
+.stats-value {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
 }
 
-input:focus, select:focus, textarea:focus {
-    border-color: #ff2d55;
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(255, 45, 85, 0.25);
-}
-/* Formularios */
-form {
-    background: white;
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-.form-control {
-    background-color: #f5f5f7;
-    border: 1px solid #d2d2d7;
-    border-radius: 12px;
-    color: #ff2d55;
-    padding: 10px;
-    width: 100%;
+.stats-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-light-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.form-control::placeholder {
-    color: #d2d2d7;
+/* Grilla de estadísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
-.form-control:focus {
-    border-color: #ff2d55;
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(255, 45, 85, 0.25);
+/* Botones */
+.button {
+  background-color: var(--color-medium-gray);
+  color: #32FF00;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.btn-primary {
-    background-color: #ff2d55;
-    border: none;
-    border-radius: 12px;
-    padding: 10px 20px;
-    font-weight: 500;
+.button-primary {
+  background-color: var(--color-info);
 }
 
-.btn-primary:hover {
-    background-color: #d91c4a;
-}
-.text-fuchsia {
-    color: #ff2d55;
-}
-.list-group-item {
-    border: none;
-    border-bottom: 1px solid #d2d2d7;
-}
-.btn-danger {
-    background-color: #ff3b30;
-    border: none;
-    border-radius: 12px;
-    padding: 5px 10px;
-    font-size: 12px;
+.button-success {
+  background-color: var(--color-success);
 }
 
-.btn-danger:hover {
-    background-color: #c1271c;
-}
-/* Estilo para .btn-fucsia (hereda de Apple coral) */
-.btn-fucsia {
-    background-color: #e5745e;
-    border: none;
-    color: white;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.btn-fucsia:hover {
-    background-color: #d45f48;
+/* Barra de navegación inferior */
+.tab-bar {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--color-dark-gray);
+  padding: var(--spacing-sm) 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Badge suave */
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-sm);
+}
+
+.tab-icon {
+  font-size: 24px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.tab-label {
+  font-size: 12px;
+  color: var(--color-light-gray);
+}
+
+.tab-item.active .tab-label {
+  color: #32FF00;
+}
+
+/* Anillos de actividad */
+.activity-rings-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto var(--spacing-lg);
+}
+
+/* Tendencias */
+.trend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-medium-gray);
+}
+
+.trend-label {
+  display: flex;
+  align-items: center;
+}
+
+.trend-icon {
+  margin-right: var(--spacing-sm);
+  color: var(--color-blue);
+}
+
+.trend-value {
+  font-weight: 600;
+}
+
+.trend-up {
+  color: var(--color-green);
+}
+
+.trend-down {
+  color: var(--color-red);
+}
+
+/* Gráficos minimalistas */
+.chart-container {
+  height: 60px;
+  margin-top: var(--spacing-sm);
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart-bar {
+  flex: 1;
+  background-color: var(--color-info);
+  margin: 0 1px;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Encabezado de página */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius-circle);
+  overflow: hidden;
+}
+
+/* Etiquetas y badges */
 .badge {
-    font-size: 0.85rem;
-    border-radius: 6px;
-    padding: 0.4em 0.6em;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: var(--color-medium-gray);
 }
 
-/* Canvas de gráficas */
-canvas {
-    background: white;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
+.badge-success {
+  background-color: var(--color-success);
 }
 
-/* Tooltips */
-[data-bs-toggle="tooltip"] {
-    cursor: help;
+.badge-warning {
+  background-color: var(--color-warning);
+  color: var(--color-black);
 }
 
-/* Botones extra amplios */
-button,
-.btn {
-    font-size: 1rem;
-    font-weight: 500;
+/* Componentes específicos para la aplicación de gimnasio */
+.exercise-card {
+  background-color: var(--color-dark-gray);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
-.bg-light-success { background-color: #e6fff1; }
-.bg-light-danger { background-color: #ffe6e6; }
-<style>
-    .icono-opcion {
-        border-radius: 50%;
-        padding: 4px;
-        transition: border-color 0.3s;
-        cursor: pointer;
-    }
-    .icono-opcion.selected {
-        border: 2px solid #0d6efd; /* azul Bootstrap */
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-    }
-    .icono-label {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-    }
-</style>
-.selected {
-    border: 2px solid #ff6600;
-    box-shadow: 0 0 5px #ff6600;
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
 }
-.circle {
-    font-size: 1rem;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #000;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+.exercise-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.exercise-subtitle {
+  font-size: 14px;
+  color: var(--color-light-gray);
+}
+
+.exercise-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--spacing-md);
+}
+
+.exercise-stat {
+  text-align: center;
+}
+
+.exercise-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.exercise-stat-label {
+  font-size: 12px;
+  color: var(--color-light-gray);
+}
+
+/* Progreso de peso */
+.weight-progress {
+  display: flex;
+  align-items: center;
+  margin-top: var(--spacing-sm);
+}
+.text-ia {
+  color: #32FF00; /* verde brillante estilo app */
+  font-weight: 500;
+}
+
+.text-usuario {
+  color: #FF3B3B; /* rojo suave */
+  font-weight: 500;
+}
+
+.weight-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.weight-arrow {
+  margin: 0 var(--spacing-xs);
+  color: var(--color-success);
+}
+
+.weight-percentage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-success);
+  background-color: rgba(52, 199, 89, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
 }

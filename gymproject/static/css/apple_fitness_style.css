@@ -39,8 +39,7 @@
 
 /* Estilos generales */
 body {
-  background-color: var(--color-black);
-  color: var(--color-white);
+  color: #32FF00;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
   padding: 0;
@@ -110,7 +109,7 @@ body {
 /* Botones */
 .button {
   background-color: var(--color-medium-gray);
-  color: var(--color-white);
+  color: #32FF00;
   border: none;
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-sm) var(--spacing-md);
@@ -159,7 +158,7 @@ body {
 }
 
 .tab-item.active .tab-label {
-  color: var(--color-white);
+  color: #32FF00;
 }
 
 /* Anillos de actividad */
@@ -305,6 +304,15 @@ body {
   display: flex;
   align-items: center;
   margin-top: var(--spacing-sm);
+}
+.text-ia {
+  color: #32FF00; /* verde brillante estilo app */
+  font-weight: 500;
+}
+
+.text-usuario {
+  color: #FF3B3B; /* rojo suave */
+  font-weight: 500;
 }
 
 .weight-value {

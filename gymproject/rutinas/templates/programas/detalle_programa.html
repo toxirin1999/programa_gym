@@ -4,86 +4,81 @@
 {% block title %}{{ programa.nombre }}{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 800px;">
-
-    <!-- Encabezado del programa -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body text-center">
-            {% if programa.icono %}
-            <img src="{% static 'img/programas/' %}{{ programa.icono }}" alt="{{ programa.nombre }}"
-                 class="rounded-circle border mb-2" width="100" height="100">
-            {% endif %}
-            <h3 class="fw-bold">{{ programa.nombre }}</h3>
-            {% if programa.tipo %}
-            <span class="badge bg-info">{{ programa.tipo }}</span>
-            {% endif %}
-            <p class="text-muted mb-0">Creado el {{ programa.fecha_creacion|date:"d M Y" }}</p>
-        </div>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="d-flex justify-content-end mb-4">
-        <div class="btn-group" role="group">
-            <a href="{% url 'editar_programa' programa.id %}" class="btn btn-outline-warning btn-sm">
-                <i class="bi bi-pencil-square"></i> Editar
-            </a>
-            <form action="{% url 'eliminar_programa' programa.id %}" method="post"
-                  onsubmit="return confirm('¿Estás seguro de eliminar este programa?');">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash"></i> Eliminar
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Rutinas del programa -->
-    <h4 class="mb-3">Rutinas del Programa ({{ rutinas|length }})</h4>
-
-    {% if rutinas %}
-    {% for rutina in rutinas %}
-    <div class="card mb-3 shadow-sm">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-                <strong>{{ rutina.nombre }}</strong>
-                {% if rutina.descripcion %}
-                <div class="text-muted small">{{ rutina.descripcion }}</div>
-                {% endif %}
-            </div>
-            <div class="btn-group">
-                <a href="{% url 'detalle_rutina' rutina.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
-                <a href="{% url 'eliminar_rutina' rutina.id %}" class="btn btn-sm btn-outline-danger"
-                   onclick="return confirm('¿Estás seguro de eliminar esta rutina?');">
-                    <i class="bi bi-trash"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <p class="text-muted">Este programa aún no tiene rutinas.</p>
+<!-- Encabezado del programa -->
+<div class="card text-center">
+    {% if programa.icono %}
+    <img src="{% static 'img/programas/' %}{{ programa.icono }}" alt="{{ programa.nombre }}"
+         class="rounded-circle border mb-3" width="100" height="100">
     {% endif %}
-
-    <!-- Añadir rutina -->
-    <div class="text-end mb-5">
-        <a href="{% url 'agregar_rutina' programa.id %}" class="btn btn-success">
-            <i class="bi bi-plus-circle"></i> Añadir nueva rutina
-        </a>
-    </div>
-
-    <!-- Asignar programa a cliente -->
-    <h4 class="mb-3">Asignar este Programa a un Cliente</h4>
-    <form method="post" action="{% url 'asignar_programa_a_cliente' programa.id %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="cliente_id" class="form-label">Selecciona Cliente</label>
-            <select name="cliente_id" id="cliente_id" class="form-select">
-                {% for cliente in clientes %}
-                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Asignar Programa</button>
-    </form>
+    <h2 class="green-text fw-bold">{{ programa.nombre }}</h2>
+    {% if programa.tipo %}
+    <div class="af-badge af-badge-blue">{{ programa.tipo }}</div>
+    {% endif %}
+    <p class="text-muted">Creado el {{ programa.fecha_creacion|date:"d M Y" }}</p>
 </div>
+
+<!-- Botones de acción -->
+<div class="d-flex justify-content-end mb-3">
+    <div class="btn-group">
+        <a href="{% url 'editar_programa' programa.id %}" class="af-action-btn af-action-btn-primary">
+            <i class="bi bi-pencil-square"></i> Editar
+        </a>
+        <form action="{% url 'eliminar_programa' programa.id %}" method="post"
+              onsubmit="return confirm('¿Estás seguro de eliminar este programa?');">
+            {% csrf_token %}
+            <button type="submit" class="af-action-btn af-action-btn-danger">
+                <i class="bi bi-trash"></i> Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Rutinas del programa -->
+<h4 class="green-text">Rutinas del Programa ({{ rutinas|length }})</h4>
+
+{% if rutinas %}
+{% for rutina in rutinas %}
+<div class="card">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <strong class="text-white">{{ rutina.nombre }}</strong>
+            {% if rutina.descripcion %}
+            <div class="text-muted small">{{ rutina.descripcion }}</div>
+            {% endif %}
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'detalle_rutina' rutina.id %}" class="af-action-btn af-action-btn-primary">Ver</a>
+            <a href="{% url 'eliminar_rutina' rutina.id %}" class="af-action-btn af-action-btn-danger"
+               onclick="return confirm('¿Estás seguro de eliminar esta rutina?');">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-muted">Este programa aún no tiene rutinas.</p>
+{% endif %}
+
+<!-- Añadir rutina -->
+<div class="text-end">
+    <a href="{% url 'agregar_rutina' programa.id %}" class="af-btn af-btn-green">
+        <i class="bi bi-plus-circle"></i> Añadir nueva rutina
+    </a>
+</div>
+
+<!-- Asignar programa -->
+<h4 class="green-text mt-5">Asignar este Programa a un Cliente</h4>
+<form method="post" action="{% url 'asignar_programa_a_cliente' programa.id %}">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="cliente_id" class="form-label">Selecciona Cliente</label>
+        <select name="cliente_id" id="cliente_id" class="af-form-select">
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="af-btn w-100">Asignar Programa</button>
+</form>
 {% endblock %}
