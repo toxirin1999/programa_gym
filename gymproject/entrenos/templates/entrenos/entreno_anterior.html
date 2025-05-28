@@ -8,7 +8,19 @@
     <!-- Cabecera con efecto de cristal -->
     <div class="header-glass mb-4">
         <div class="d-flex justify-content-between align-items-center">
-            <h2 class="display-6 fw-bold mb-0">{{ cliente.nombre }}</h2>
+            <div class="d-flex align-items-center gap-3">
+                {% if cliente.foto %}
+                <img src="{{ cliente.foto.url }}" alt="Foto de {{ cliente.nombre }}"
+                     class="rounded-circle"
+                     style="width: 88px; height: 88px; object-fit: cover; border: 2px solid #32FF00;">
+                {% else %}
+                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                     style="width: 48px; height: 48px;">
+                    <i class="bi bi-person"></i>
+                </div>
+                {% endif %}
+                <h2 class="display-6 fw-bold mb-0">{{ cliente.nombre }}</h2>
+            </div>
             <span class="fitness-badge primary">{{ rutina.nombre }}</span>
         </div>
         <div class="subtitle">Último entreno</div>
@@ -338,5 +350,15 @@
         padding: 15px 25px;
         font-size: 1.1rem;
     }
+    .text-ia {
+    color: #32FF00;
+    font-weight: 500;
+}
+
+.text-usuario {
+    color: #FF4C4C;
+    font-weight: 500;
+}
+
 </style>
 {% endblock %}

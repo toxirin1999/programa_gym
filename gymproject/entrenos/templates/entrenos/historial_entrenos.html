@@ -3,101 +3,102 @@
 {% block title %}Historial de Entrenos{% endblock %}
 
 {% block content %}
-<form method="get" class="mb-4">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-6">
-            {{ form.cliente.label_tag }} {{ form.cliente }}
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary">Filtrar</button>
-        </div>
-        {% if cliente %}
-        <div class="col-md-2">
-            <a href="{% url 'historial_entrenos' %}" class="btn btn-outline-secondary">Limpiar</a>
-        </div>
-        {% endif %}
-    </div>
-</form>
-{% if cliente %}
-<h5 class="mb-3">Mostrando entrenos de: {{ cliente.nombre }}</h5>
-{% endif %}
+<div class="max-w-5xl mx-auto p-4">
 
-{% if messages %}
-<div class="mt-3">
-    {% for message in messages %}
-    <div class="alert alert-success">
-        {{ message }}
-    </div>
-    {% endfor %}
-</div>
-</div>
-{% endif %}
-{% if entrenos and cliente_id %}
-<h4>Historial de: {{ entrenos.0.cliente.nombre }}</h4>
-{% endif %}
-<h2 class="mb-4">Historial de Entrenos</h2>
+    <h1 class="text-3xl font-bold mb-4 text-white">Historial de Entrenamientos</h1>
 
-{% for entreno in entrenos %}<div class="border rounded p-3 mb-4 shadow-sm bg-white">
-<form method="post" action="{% url 'eliminar_entreno' entreno.id %}" class="text-end">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-sm btn-outline-danger mb-2">🗑 Eliminar</button>
-</form>
-    <h5 class="mb-1">{{ entreno.cliente.nombre }} - {{ entreno.rutina.nombre }}</h5>
-    <small class="text-muted">Fecha: {{ entreno.fecha }}</small>
-
-    {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
-    <ul class="mt-2">
-        {% with volumen_total_entreno=0 %}
-        {% for grupo in series_por_ejercicio %}
-        {% with total_volumen=0 %}
-        <li>
-            <strong>{{ grupo.grouper.nombre }}</strong>:
-            {% for serie in grupo.list %}
-                <span class="badge text-bg-light me-1">
-                    Serie {{ serie.serie_numero }} — {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
-                </span>
-                {% with parcial=serie.repeticiones|default_if_none:0|add:"0"|floatformat:0|floatformat:2 %}
-                    {% with carga=parcial|floatformat:2|floatformat:0|add:"0"|floatformat:0 %}
-                        {% with total_volumen=total_volumen|add:serie.repeticiones|add:0 %}
-                            {% with volumen_total_entreno=volumen_total_entreno|add:serie.repeticiones|add:0 %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endwith %}
-                {% endwith %}
-            {% endfor %}
-            <br><small class="text-muted">Volumen total: {{ total_volumen }} kg</small>
-        </li>
-        {% endwith %}
-        {% empty %}
-        <li class="text-muted">Sin series registradas.</li>
-        {% endfor %}
-        <li class="mt-2 fw-bold">
-            {% if volumen_total_entreno > 15000 %}
-            <span class="text-danger">🔴 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
-            {% elif volumen_total_entreno > 8000 %}
-            <span class="text-warning">🟡 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
-            {% else %}
-            <span class="text-success">🟢 Volumen total del entreno: {{ volumen_total_entreno }} kg</span>
+    <form method="get" class="bg-gray-900 p-6 rounded-2xl shadow-xl max-w-xl mx-auto space-y-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+                {{ form.cliente.label_tag }} {{ form.cliente }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            {% if cliente %}
+            <div class="col-md-2">
+                <a href="{% url 'historial_entrenos' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
             {% endif %}
-        </li>
-        <div class="small text-muted mb-1">
-          {% if volumen_total_entreno > 15000 %}🔴 Carga intensa
-          {% elif volumen_total_entreno > 8000 %}🟡 Carga moderada
-          {% else %}🟢 Carga ligera
-          {% endif %}
         </div>
-        <div class="progress my-2" style="height: 20px;">
-          <div class="progress-bar {% if volumen_total_entreno > 15000 %}bg-danger{% elif volumen_total_entreno > 8000 %}bg-warning{% else %}bg-success{% endif %}"
-               role="progressbar"
-               style="width: {{ volumen_total_entreno|floatformat:0|divisibleby:200 }}%;"
-               aria-valuenow="{{ volumen_total_entreno|default:0 }}" aria-valuemin="0" aria-valuemax="20000">
-            {{ volumen_total_entreno }} kg ({{ volumen_total_entreno|divisibleby:200 }}%)
-          </div>
+    </form>
+
+    {% if cliente %}
+    <h5 class="mb-3 text-white">Mostrando entrenos de: {{ cliente.nombre }}</h5>
+    {% endif %}
+
+    {% for entreno in entrenos %}
+    <div class="bg-[#1a1a1a] text-white rounded-2xl p-6 mb-6 shadow-lg space-y-4">
+        <div class="flex justify-between items-start">
+            <div class="space-y-1">
+                <h2 class="text-xl font-bold">{{ entreno.cliente.nombre }} – {{ entreno.rutina.nombre }}</h2>
+                <p class="text-sm text-gray-400">📅 {{ entreno.fecha_formateada }}</p>
+
+
+                {% if entreno.perfecto %}
+                <span class="inline-flex items-center bg-[#32FF00] text-black font-semibold px-3 py-1 rounded-full text-sm">
+        🎯 Entreno perfecto
+      </span>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'eliminar_entreno' entreno.id %}" class="mt-1">
+                {% csrf_token %}
+                <button type="submit" class="text-fuchsia-500 hover:text-red-500 text-xl">🗑</button>
+            </form>
         </div>
-        {% endwith %}
-    </ul>
+
+        {% regroup entreno.series.all by ejercicio as series_por_ejercicio %}
+        <ul class="space-y-2">
+            {% with volumen_total_entreno=0 %}
+            {% for grupo in series_por_ejercicio %}
+            <li>
+                <p class="text-[#FF00F7] font-medium">{{ grupo.grouper.nombre }}</p>
+                {% with total_volumen=0 %}
+                <div class="flex flex-wrap gap-2">
+                    {% for serie in grupo.list %}
+                    <span class="bg-[#2a2a2a] px-3 py-1 rounded text-sm">
+          Serie {{ serie.serie_numero }} — {{ serie.repeticiones }} reps @ {{ serie.peso_kg }} kg
+        </span>
+                    {% with volumen_total_entreno=volumen_total_entreno|add:serie.repeticiones %}
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </li>
+            {% empty %}
+            <li class="text-gray-500">No hay series.</li>
+            {% endfor %}
+
+            <li class="mt-2 text-sm font-medium">
+                {% if volumen_total_entreno > 15000 %}
+                <span class="text-red-400">🔴 Volumen total del entreno: {{ volumen_total_entreno }} reps</span>
+                {% elif volumen_total_entreno > 8000 %}
+                <span class="text-yellow-400">🟡 Volumen total del entreno: {{ volumen_total_entreno }} reps</span>
+                {% else %}
+                <span class="text-[#32FF00]">🟢 Volumen total del entreno: {{ volumen_total_entreno }} reps</span>
+                {% endif %}
+            </li>
+
+            <div class="w-full bg-gray-800 rounded h-4 mt-1 overflow-hidden">
+                <div class="h-4 bg-[#32FF00] text-black text-xs font-semibold flex items-center justify-center"
+                     style="width: {{ volumen_total_entreno|floatformat:0|divisibleby:200 }}%">
+                    {{ volumen_total_entreno }} reps
+                </div>
+            </div>
+            {% endwith %}
+        </ul>
+
+        <div class="text-right">
+            <a href="{% url 'resumen_entreno' entreno.id %}"
+               class="bg-[#32FF00] hover:bg-lime-400 text-black font-bold px-4 py-2 rounded-lg text-sm">
+                Ver resumen
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-white">No hay entrenamientos registrados.</p>
+    {% endfor %}
+
+
 </div>
-{% empty %}
-<p>No hay entrenamientos registrados.</p>
-{% endfor %}
 {% endblock %}

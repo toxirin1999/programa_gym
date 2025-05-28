@@ -3,6 +3,10 @@ from decimal import Decimal, ROUND_HALF_UP
 from collections import defaultdict
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from django.core.serializers.json import DjangoJSONEncoder
+
+from django.utils.dateformat import DateFormat
+from django.utils.translation import gettext as _
 from types import SimpleNamespace
 import copy
 from types import SimpleNamespace
@@ -86,7 +90,7 @@ def historial_entrenos(request):
     Returns:
         HttpResponse con la plantilla renderizada
     """
-    from django.core.paginator import Paginator  # Importación añadida
+    from django.core.paginator import Paginator
 
     form = FiltroClienteForm(request.GET or None)
     entrenos = EntrenoRealizado.objects.select_related('cliente', 'rutina').prefetch_related('series__ejercicio')
@@ -99,8 +103,17 @@ def historial_entrenos(request):
 
     entrenos = entrenos.order_by('-fecha')
 
-    # Implementación de paginación
-    paginator = Paginator(entrenos, 10)  # 10 entrenamientos por página
+    # Agregar atributo .perfecto a cada entreno
+    for entreno in entrenos:
+        total = entreno.series.count()
+        completadas = entreno.series.filter(completado=True).count()
+        entreno.perfecto = total > 0 and completadas == total
+
+        # Formatear fecha como "26 de mayo de 2025"
+        df = DateFormat(entreno.fecha)
+        entreno.fecha_formateada = df.format("j \\d\\e F \\d\\e Y")
+    # Paginación
+    paginator = Paginator(entrenos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -492,7 +505,8 @@ def empezar_entreno(request, rutina_id):
                             logger.error(f"Error al crear serie {i} para ejercicio {asignacion['ej_nombre']}: {str(e)}")
 
                 # Adaptar plan personalizado
-                adaptar_plan_personalizado_manual(entreno, request, cliente, rutina)
+                adaptar_plan_personalizado(entreno, [(Ejercicio.objects.get(id=a['ejercicio_id']), None) for a in
+                                                     ejercicios_rutina], cliente, rutina, request)
 
                 # Actualizar rutina del cliente
                 exito, mensaje = actualizar_rutina_cliente(cliente, rutina)
@@ -985,7 +999,7 @@ def crear_entreno_seguro(entreno, ejercicios_forms, request):
 def adaptar_plan_personalizado_seguro(entreno, ejercicios_forms, cliente_id, rutina_id, request):
     """
     Versión segura de adaptar_plan_personalizado que usa solo IDs y no objetos simulados.
-    
+
     Args:
         entreno: Objeto EntrenoRealizado
         ejercicios_forms: Lista de tuplas (ejercicio_dict, form)
@@ -1095,7 +1109,7 @@ def adaptar_plan_personalizado_seguro(entreno, ejercicios_forms, cliente_id, rut
 def crear_entreno_seguro(entreno, ejercicios_forms, request):
     """
     Versión segura de crear_entreno que usa solo IDs y no objetos simulados.
-    
+
     Args:
         entreno: Objeto EntrenoRealizado
         ejercicios_forms: Lista de tuplas (ejercicio_dict, form)
@@ -1148,7 +1162,7 @@ def crear_entreno_seguro(entreno, ejercicios_forms, request):
 def adaptar_plan_personalizado_seguro(entreno, ejercicios_forms, cliente_id, rutina_id, request):
     """
     Versión segura de adaptar_plan_personalizado que usa solo IDs y no objetos simulados.
-    
+
     Args:
         entreno: Objeto EntrenoRealizado
         ejercicios_forms: Lista de tuplas (ejercicio_dict, form)
@@ -1533,23 +1547,26 @@ def mostrar_entreno_anterior(request, cliente_id, rutina_id):
     return render(request, 'entrenos/entreno_anterior.html', context)
 
 
-# gymproject/entrenos/views.py
-
-# ... (tus imports existentes) ...
 import json
-from datetime import datetime, timedelta, date  # Asegúrate de que datetime y date estén importados
-from decimal import Decimal, ROUND_HALF_UP  # Asegúrate de que Decimal y ROUND_HALF_UP estén importados
-from collections import defaultdict  # Asegúrate de que defaultdict esté importado
-from django.db.models import Count, Avg, Sum  # Asegúrate de que estos estén importados
-from django.core.serializers.json import DjangoJSONEncoder  # Asegúrate de que esté importado
 import logging
-from django.db.models import Avg
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Avg, Count, Sum
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateformat import DateFormat
+
+from clientes.models import Cliente
+from .models import EntrenoRealizado, PlanPersonalizado, SerieRealizada
+from rutinas.models import Ejercicio, Rutina, RutinaEjercicio
 
 logger = logging.getLogger(__name__)
 
 
-# Clase para codificar Decimal y datetime en JSON
+# Clase para codificar Decimal y datetime en JSON (Mantén solo una vez)
 class CustomJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
@@ -1559,8 +1576,7 @@ class CustomJSONEncoder(DjangoJSONEncoder):
         return super().default(obj)
 
 
-# --- INICIO DE LA NUEVA VISTA resumen_entreno ---
-
+# --- FUNCIÓN resumen_entreno CORREGIDA Y OPTIMIZADA ---
 def resumen_entreno(request, entreno_id):
     try:
         entreno_actual = get_object_or_404(EntrenoRealizado, id=entreno_id)
@@ -1569,7 +1585,7 @@ def resumen_entreno(request, entreno_id):
     except Exception as e:
         logger.error(f"Error al cargar entreno o cliente en resumen_entreno: {e}")
         messages.error(request, "No se encontró el entrenamiento o no tienes permisos.")
-        return redirect('historial_entrenos')  # O a una página de inicio
+        return redirect('historial_entrenos')
 
     # --- 1. Datos para Detalles del Entrenamiento Actual ---
     series_entreno_actual = SerieRealizada.objects.filter(entreno=entreno_actual).order_by('ejercicio__nombre',
@@ -1586,14 +1602,12 @@ def resumen_entreno(request, entreno_id):
     series_totales = series_entreno_actual.count()
     series_exitosas = series_entreno_actual.filter(completado=True).count()
     entreno_perfecto = series_totales > 0 and series_exitosas == series_totales
-    entreno_actual_json = json.dumps(entreno_actual_data, cls=CustomJSONEncoder)
+    entreno_actual_json = json.dumps(entreno_actual_data, cls=CustomJSONEncoder, ensure_ascii=False)
 
-    # --- 2. Lógica para Logros de Hoy (Ejemplo: Suma total de peso levantado) ---
-    # Esto es un ejemplo, puedes expandirlo según lo que definas como "Logros"
+    # --- 2. Lógica para Logros de Hoy ---
     hoy = date.today()
-    logros_hoy = {}
+    logros_hoy = {'mensaje': 'Aún no hay datos de logros para hoy.', 'total_peso_levantado_hoy': 0.0}
     try:
-        # Calcular peso total levantado hoy por el cliente
         total_peso_hoy = SerieRealizada.objects.filter(
             entreno__cliente=cliente,
             entreno__fecha=hoy
@@ -1601,42 +1615,36 @@ def resumen_entreno(request, entreno_id):
 
         logros_hoy['total_peso_levantado_hoy'] = float(total_peso_hoy.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
         logros_hoy['mensaje'] = f"¡Hoy levantaste un total de {logros_hoy['total_peso_levantado_hoy']} kg!"
-
-        # Puedes añadir más lógicas aquí, ej. "número de entrenos completados hoy", "mejor serie", etc.
     except Exception as e:
         logger.error(f"Error al calcular logros de hoy: {e}")
-        logros_hoy['error'] = "Error al cargar los logros de hoy."
+        logros_hoy = {'mensaje': "Error al cargar los logros de hoy.", 'total_peso_levantado_hoy': 0.0, 'error': True}
+    logros_hoy_json = json.dumps(logros_hoy, cls=CustomJSONEncoder, ensure_ascii=False)
 
-    logros_hoy_json = json.dumps(logros_hoy, cls=CustomJSONEncoder)
-
-    # --- 3. Lógica para Sugerencias Inteligentes (Ejemplo básico: si falló un ejercicio) ---
+    # --- 3. Lógica para Sugerencias Inteligentes ---
     sugerencias = []
-    # Aquí podrías analizar el rendimiento del cliente en el entreno_actual
-    # Si hubo fallos en series, sugerir descanso o revisar técnica
-    series_fallidas = [s for s in series_entreno_actual if not s.completado]
-    if series_fallidas:
-        sugerencias.append("Considera revisar la técnica o reducir ligeramente el peso en los ejercicios fallidos.")
-    else:
-        sugerencias.append("¡Excelente rendimiento! Sigue así.")
-
-    sugerencias_inteligentes_json = json.dumps(sugerencias)
-
-    # --- 4. Lógica para Predicciones de Progreso (Ejemplo simple: tendencia de peso) ---
-    predicciones = {}
     try:
-        # Obtener los últimos 5 entrenos del cliente para un ejercicio específico (ej. sentadilla)
-        # Esto es un ejemplo. La lógica real de predicción es más compleja.
-        # Necesitarías elegir un ejercicio clave o analizar múltiples.
+        series_fallidas = [s for s in series_entreno_actual if not s.completado]
+        if series_fallidas:
+            sugerencias.append("Considera revisar la técnica o reducir ligeramente el peso en los ejercicios fallidos.")
+        else:
+            sugerencias.append("¡Excelente rendimiento! Sigue así.")
+    except Exception as e:
+        logger.error(f"Error al generar sugerencias: {e}")
+        sugerencias = ["Error al cargar sugerencias."]
+    sugerencias_inteligentes_json = json.dumps(sugerencias, cls=CustomJSONEncoder, ensure_ascii=False)
 
+    # --- 4. Lógica para Predicciones de Progreso ---
+    predicciones = {'mensaje': "No hay datos suficientes para predecir el progreso.", 'tendencia': 'insuficiente'}
+    try:
         ultimos_entrenos_ejercicio = SerieRealizada.objects.filter(
             entreno__cliente=cliente,
-        ).order_by('-entreno__fecha', '-entreno__id', '-serie_numero')[:5]  # Últimas 5 series
+        ).order_by('-entreno__fecha', '-entreno__id', '-serie_numero')[:5]
 
         pesos = [float(s.peso_kg) for s in ultimos_entrenos_ejercicio if s.peso_kg is not None]
 
         if len(pesos) >= 2:
-            promedio_reciente = sum(pesos[:2]) / 2  # Promedio de los 2 últimos
-            promedio_anterior = sum(pesos[2:]) / (len(pesos) - 2) if len(pesos) > 2 else 0
+            promedio_reciente = sum(pesos[:2]) / len(pesos[:2])
+            promedio_anterior = sum(pesos[2:]) / len(pesos[2:]) if len(pesos[2:]) > 0 else 0
             if promedio_reciente > promedio_anterior:
                 predicciones['mensaje'] = "¡Tendencia al alza en el peso levantado! Buen progreso."
                 predicciones['tendencia'] = 'ascendente'
@@ -1649,109 +1657,135 @@ def resumen_entreno(request, entreno_id):
         else:
             predicciones['mensaje'] = "Necesitas más datos de entrenamiento para predecir el progreso."
             predicciones['tendencia'] = 'insuficiente'
-
     except Exception as e:
         logger.error(f"Error al generar predicciones: {e}")
-        predicciones['error'] = "Error al cargar predicciones."
+        predicciones = {'mensaje': "Error al cargar predicciones.", 'tendencia': 'error', 'error': True}
+    predicciones_progreso_json = json.dumps(predicciones, cls=CustomJSONEncoder, ensure_ascii=False)
 
-    predicciones_progreso_json = json.dumps(predicciones, cls=CustomJSONEncoder)
-
-    # --- 5. Lógica para Medallas y Logros (Ejemplo básico) ---
-    # Esto es altamente personalizable.
+    # --- 5. Lógica para Medallas y Logros ---
     medallas_logros = []
-    # Contar entrenos perfectos históricos (todas las series completadas)
-    entrenos_cliente = EntrenoRealizado.objects.filter(cliente=cliente)
-    entrenos_perfectos = 0
+    try:
+        entrenos_cliente = EntrenoRealizado.objects.filter(cliente=cliente)
+        entrenos_perfectos_count = 0  # Usar un nombre diferente para evitar confusión con entreno_perfecto del actual
 
-    for entreno in entrenos_cliente:
-        total = SerieRealizada.objects.filter(entreno=entreno).count()
-        completadas = SerieRealizada.objects.filter(entreno=entreno, completado=True).count()
-        if total > 0 and total == completadas:
-            entrenos_perfectos += 1
-        # Ejemplo: Si el cliente ha completado más de 5 entrenamientos
-    entrenos_completados_count = EntrenoRealizado.objects.filter(cliente=cliente).count()
-    if entrenos_completados_count >= 5:
-        medallas_logros.append(
-            {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.', 'tipo': 'medalla'})
-    if entrenos_completados_count >= 10:
-        if {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.',
-            'tipo': 'medalla'} in medallas_logros:
-            medallas_logros.remove(
+        for entreno in entrenos_cliente:
+            total_series_entreno = SerieRealizada.objects.filter(entreno=entreno).count()
+            completadas_series_entreno = SerieRealizada.objects.filter(entreno=entreno, completado=True).count()
+            if total_series_entreno > 0 and total_series_entreno == completadas_series_entreno:
+                entrenos_perfectos_count += 1
+
+        entrenos_completados_count = entrenos_cliente.count()
+
+        if entrenos_completados_count >= 5:
+            medallas_logros.append(
                 {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.', 'tipo': 'medalla'})
-        medallas_logros.append(
-            {'nombre': 'Constancia Avanzada', 'descripcion': 'Completaste 10+ entrenamientos.', 'tipo': 'medalla'})
+        if entrenos_completados_count >= 10:
+            # Eliminar la medalla de constancia básica si ya se tiene la avanzada
+            if {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.',
+                'tipo': 'medalla'} in medallas_logros:
+                medallas_logros.remove(
+                    {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.', 'tipo': 'medalla'})
+            medallas_logros.append(
+                {'nombre': 'Constancia Avanzada', 'descripcion': 'Completaste 10+ entrenamientos.', 'tipo': 'medalla'})
 
-    # Puedes añadir más logros, ej. "primera rutina completada", "levantar X kg en Y ejercicio", etc.
-    medallas_logros_json = json.dumps(medallas_logros)
+        # Actualizar contador de entrenos perfectos del cliente (si el entreno actual fue perfecto)
+        if entreno_perfecto:
+            if not hasattr(cliente, 'entrenos_perfectos_totales') or cliente.entrenos_perfectos_totales is None:
+                cliente.entrenos_perfectos_totales = 0  # Inicializar si no existe o es None
+            cliente.entrenos_perfectos_totales += 1
+            cliente.save()  # Guarda el contador actualizado
 
-    # --- 6. Lógica para Tablas de Clasificación (Leaderboard) ---
-    # Esto es más complejo y requeriría una lógica para determinar qué métrica usar
-    # (ej. "peso total levantado", "número de entrenos", etc.) y compararla entre clientes.
-    # Por ahora, un placeholder.
-    leaderboard_data = []
-    # Ejemplo: Clientes con más entrenos completados
-    top_clientes_entrenos = Cliente.objects.annotate(
-        num_entrenos=Count('entrenorealizado')
-    ).order_by('-num_entrenos')[:5]
-
-    # Obtener todos los ejercicios del entreno actual
-    ejercicios_actuales = set(serie.ejercicio for serie in series_entreno_actual)
-    progreso_por_ejercicio = {}
-
-    for ejercicio in ejercicios_actuales:
-        series_historicas = SerieRealizada.objects.filter(
-            entreno__cliente=cliente,
-            ejercicio=ejercicio
-        ).order_by('entreno__fecha').values('entreno__fecha').annotate(
-            peso_promedio=Avg('peso_kg'),
-            reps_promedio=Avg('repeticiones')
-        )
-
-    progreso_por_ejercicio[ejercicio.nombre] = {
-        "labels": [DateFormat(d["entreno__fecha"]).format("d M") for d in series_historicas],
-        "peso": [round(d["peso_promedio"] or 0, 1) for d in series_historicas],
-        "reps": [int(d["reps_promedio"] or 0) for d in series_historicas]
-    }
-
-    # --- 6. Lógica para Tablas de Clasificación (Leaderboard) ---
-    leaderboard_data = []
-
-    # Ejemplo: Clientes con más entrenos completados
-    top_clientes_entrenos = Cliente.objects.annotate(
-        num_entrenos=Count('entrenorealizado')
-    ).order_by('-num_entrenos')[:5]
-    for c in top_clientes_entrenos:
-        leaderboard_data.append({'nombre': c.nombre, 'valor': c.num_entrenos, 'unidad': 'entrenos'})
-    leaderboard_json = json.dumps(leaderboard_data)
-    if entreno_perfecto:
-        if hasattr(cliente, 'entrenos_perfectos'):
-            cliente.entrenos_perfectos += 1
-        else:
-            cliente.entrenos_perfectos = 1
-        cliente.save()
-    if hasattr(cliente, 'entrenos_perfectos'):
-        if cliente.entrenos_perfectos >= 5:
+        # Medalla de Precisión (basada en el contador total)
+        if hasattr(cliente, 'entrenos_perfectos_totales') and cliente.entrenos_perfectos_totales >= 1:
             medallas_logros.append({
                 'nombre': 'Precisión',
-                'descripcion': f'{cliente.entrenos_perfectos} entrenos perfectos (100% completado)',
+                'descripcion': f'{cliente.entrenos_perfectos_totales} entrenos perfectos (100% completado)',
                 'tipo': 'medalla'
             })
+    except Exception as e:
+        logger.error(f"Error al generar medallas y logros: {e}")
+        medallas_logros = [{'nombre': 'Error', 'descripcion': 'No se pudieron cargar las medallas.', 'tipo': 'error'}]
+    medallas_logros_json = json.dumps(medallas_logros, cls=CustomJSONEncoder, ensure_ascii=False)
+
+    # --- 6. Lógica para Tablas de Clasificación (Leaderboard) ---
+    leaderboard_data = []  # Inicialización segura
+    try:
+        top_clientes_entrenos = Cliente.objects.annotate(
+            num_entrenos=Count('entrenorealizado')
+        ).order_by('-num_entrenos')[:5]
+        for c in top_clientes_entrenos:
+            leaderboard_data.append({'nombre': c.nombre, 'valor': c.num_entrenos, 'unidad': 'entrenos'})
+    except Exception as e:
+        logger.error(f"Error al generar leaderboard: {e}")
+        leaderboard_data = [{'nombre': 'Error', 'valor': 0, 'unidad': 'datos no disponibles'}]
+    leaderboard_json = json.dumps(leaderboard_data, cls=CustomJSONEncoder, ensure_ascii=False)
+
+    # --- 7. Lógica para Progreso por Ejercicio ---
+    progreso_por_ejercicio = {}  # Inicialización segura
+    try:
+        # Obtener todos los ejercicios del entreno actual (para filtrar los históricos relevantes)
+        ejercicios_en_entreno_actual = set(serie.ejercicio for serie in series_entreno_actual)
+
+        for ejercicio in ejercicios_en_entreno_actual:
+            series_historicas = SerieRealizada.objects.filter(
+                entreno__cliente=cliente,
+                ejercicio=ejercicio
+            ).order_by('entreno__fecha').values('entreno__fecha').annotate(
+                peso_promedio=Avg('peso_kg'),
+                reps_promedio=Avg('repeticiones')
+            )
+            # Asegúrate de que los valores sean floats y enteros, y que las listas no estén vacías
+            if series_historicas:
+                progreso_por_ejercicio[ejercicio.nombre] = {
+                    "labels": [DateFormat(d["entreno__fecha"]).format("d M") for d in series_historicas],
+                    "peso": [round(float(d["peso_promedio"] or 0), 1) for d in series_historicas],
+                    "reps": [int(d["reps_promedio"] or 0) for d in series_historicas]
+                }
+            else:
+                # Si no hay datos históricos para este ejercicio, inicializa con listas vacías
+                progreso_por_ejercicio[ejercicio.nombre] = {
+                    "labels": [], "peso": [], "reps": []
+                }
+    except Exception as e:
+        logger.error(f"Error al generar progreso por ejercicio: {e}")
+        progreso_por_ejercicio = {"error": "No se pudo cargar el progreso de ejercicios.", 'error': True}
+    progreso_por_ejercicio_json = json.dumps(progreso_por_ejercicio, cls=CustomJSONEncoder, ensure_ascii=False)
+
     # --- Pasa todos los JSON y otros datos al contexto del template ---
+    progreso_semanal = {
+    "peso_total_esta_semana": 19800,
+    "peso_total_anterior": 17500,
+    "rondas_completas": 3
+    }
+    logros = {
+        "ejercicios_mejorados": 2  # valor real desde tu lógica
+    }
+    consistencia = {
+        "entrenos_esta_semana": 4,
+        "historial": [True, True, True, True, False, False, False],
+        "semanas_consecutivas": 6
+    }
+    carga = {
+    "diferencia": 2700  # positivo o negativo, según cálculo real
+}
     context = {
-        'entreno_actual': entreno_actual,  # Pasa el objeto para usarlo en el template directamente
+        'entreno_actual': entreno_actual,
         'entreno_actual_json': entreno_actual_json,
         'logros_hoy_json': logros_hoy_json,
         'sugerencias_inteligentes_json': sugerencias_inteligentes_json,
         'predicciones_progreso_json': predicciones_progreso_json,
         'medallas_logros_json': medallas_logros_json,
-        'leaderboard_json': leaderboard_json,
-        'entreno_perfecto': entreno_perfecto,
-        "progreso_por_ejercicio_json": json.dumps(progreso_por_ejercicio, cls=CustomJSONEncoder),
-
+        'leaderboard_json': leaderboard_json,  # Aquí se usa la variable correcta
+        'entreno_perfecto': entreno_perfecto,  # Este es un booleano, no JSON
+        "progreso_por_ejercicio_json": progreso_por_ejercicio_json,
+        "progreso_semanal_json" : json.dumps(progreso_semanal, ensure_ascii=False),
+        'logros' : logros,
+        "consistencia" : consistencia,
+        "carga" : carga
     }
     return render(request, 'entrenos/resumen_entreno.html', context)
-# --- FIN DE LA NUEVA VISTA resumen_entreno ---
+# --- FIN DE LA VISTA resumen_entreno ---
 
-
-# (El resto de tus vistas y funciones como hacer_entreno, etc. continúan aquí)
+# (El resto de tus vistas y funciones como entrenos_filtrados, historial_entrenos,
+# crear_entreno, adaptar_plan_personalizado, etc. continúan aquí)
 # ...

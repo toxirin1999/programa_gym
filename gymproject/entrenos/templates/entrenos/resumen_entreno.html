@@ -1,227 +1,546 @@
-{% extends 'base.html' %}
-{% load static %}
-{% load entreno_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resumen de Entrenamiento</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+          background-color: #0f0f0f;
+          color: white;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          padding: 20px;
+          margin: 0;
+        }
 
-{% block title %}Resumen de Entreno{% endblock %}
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+        }
 
-{% block content %}
-<style>
-    .fade-in-card {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-    }
-    .fade-in-card.visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    .card.fade-in-card span.me-2 {
-        animation: bounce 1.5s ease infinite;
-    }
-    @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-4px); }
-    }
-    .perfect-icon {
-        font-size: 2.5rem;
-        display: inline-block;
-        animation: bounce-scale 1.5s ease infinite;
-    }
-    @keyframes bounce-scale {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.3); }
-    }
-    .confeti-overlay {
-        position: fixed;
-        pointer-events: none;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-        overflow: hidden;
-    }
-    .confeti {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background-color: hsl(var(--hue, 200), 100%, 50%);
-        animation: confeti-fall 3s linear forwards;
-        border-radius: 2px;
-    }
-    @keyframes confeti-fall {
-        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-    }
-</style>
+        h1 {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          color: white;
+        }
 
-<div class="apple-fitness-container">
-    <script id="logros-hoy-data" type="application/json">{{ logros_hoy_json|safe }}</script>
-    <script id="sugerencias-inteligentes-data" type="application/json">{{ sugerencias_inteligentes_json|safe }}</script>
-    <script id="predicciones-progreso-data" type="application/json">{{ predicciones_progreso_json|safe }}</script>
-    <script id="medallas-logros-data" type="application/json">{{ medallas_logros_json|safe }}</script>
-    <script id="leaderboard-data" type="application/json">{{ leaderboard_json|safe }}</script>
-    <script id="entreno-actual-data" type="application/json">{{ entreno_actual_json|safe }}</script>
-    <script id="progreso-por-ejercicio-data" type="application/json">{{ progreso_por_ejercicio_json|safe }}</script>
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
 
-    <h1 class="mb-4">Resumen de Entrenamiento</h1>
+        .card {
+          background-color: #1a1a1a;
+          border-radius: 12px;
+          padding: 16px;
+          border: 1px solid #333;
+        }
 
-    <div class="card mb-4"><div class="card-header bg-primary text-white">Logros de Hoy</div><div class="card-body" id="logros-hoy-container"><p class="text-muted">Cargando logros...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-success text-white">Sugerencias Inteligentes</div><div class="card-body" id="sugerencias-container"><p class="text-muted">Cargando sugerencias...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-warning text-white">Predicciones de Progreso</div><div class="card-body" id="predicciones-container"><p class="text-muted">Cargando predicciones...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-info text-white">Tus Medallas y Logros</div><div class="card-body" id="medallas-logros-container"><p class="text-muted">Cargando tus medallas y logros...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-danger text-white">Tablas de Clasificación</div><div class="card-body" id="leaderboard-container"><p class="text-muted">Cargando clasificaciones...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-dark text-white">Detalles del Entrenamiento Actual</div><div class="card-body" id="entreno-actual-container"><p class="text-muted">Cargando detalles...</p></div></div>
-    <div class="card mb-4"><div class="card-header bg-secondary text-white">Progreso por Ejercicio</div><div class="card-body" id="graficos-progreso-container"><p class="text-muted">Cargando gráficas...</p></div></div>
+        .card-title {
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .green-text {
+          color: #32FF00;
+        }
+
+        .red-text {
+          color: #ff4d4d;
+        }
+
+        .yellow-text {
+          color: #FFD700;
+        }
+
+        .cyan-text {
+          color: #00FFFF;
+        }
+
+        .pink-text {
+          color: #FF69B4;
+        }
+
+        .full-width {
+          grid-column: span 2;
+        }
+
+        .checkmark {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background-color: #32FF00;
+          border-radius: 50%;
+        }
+
+        .circle-empty {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background-color: #333;
+          border-radius: 50%;
+        }
+
+        .consistency-circles {
+          display: flex;
+          gap: 4px;
+          margin: 10px 0;
+        }
+
+        .btn {
+          background-color: #0066ff;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          padding: 12px;
+          font-weight: 600;
+          width: 100%;
+          margin-top: 10px;
+          cursor: pointer;
+        }
+
+        .progress-chart {
+          width: 100%;
+          height: 150px;
+        }
+
+        .progress-img {
+          max-width: 60px;
+          border-radius: 5px;
+          float: right;
+        }
+
+        .arrow-up {
+          color: #32FF00;
+        }
+
+        .arrow-down {
+          color: #ff4d4d;
+        }
+		/* Añadir al CSS */
+.notificaciones-opciones {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #32FF00;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 20px;
+}
+/* Añadir al CSS */
+.tabs {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.tab-btn {
+  background-color: #333;
+  border: none;
+  color: white;
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-right: 5px;
+  transition: background-color 0.3s;
+}
+
+.tab-btn.active {
+  background-color: #4287f5;
+}
+
+.tab-btn:hover {
+  background-color: #444;
+}
+
+.tab-content {
+  position: relative;
+  height: 200px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+        .arrow-right {
+          color: #32FF00;
+        }
+        /* Añadir al CSS existente */
+@media (max-width: 768px) 
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: span 1;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
+
+/* Asegurar que la base sea responsive */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+/* Añadir al CSS */
+.ejercicio-progreso {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ejercicio-nombre {
+  flex: 1;
+}
+
+.ejercicio-barra {
+  width: 100px;
+  height: 8px;
+  background-color: #333;
+  border-radius: 4px;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.barra-progreso {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.ejercicio-valor {
+  width: 50px;
+  text-align: right;
+}
+/* Añadir al CSS */
+.logros-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.logro {
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.logro-activo {
+  background-color: rgba(50, 255, 0, 0.2);
+  border: 1px solid #32FF00;
+}
+
+.logro-inactivo {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid #333;
+  opacity: 0.6;
+}
+
+.logro:hover {
+  transform: scale(1.05);
+}
+
+.logro-icono {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.logro-nombre {
+  font-size: 12px;
+}
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Resumen de Entrenamiento</h1>
+
+    <div class="grid">
+        <!-- Añadir sección de logros -->
+        <div class="card full-width">
+            <div class="card-title green-text">🏆 Logros Desbloqueados</div>
+            <div class="logros-grid">
+                {% for logro in logros_desbloqueados %}
+                <div class="logro {% if logro.desbloqueado %}logro-activo{% else %}logro-inactivo{% endif %}"
+                     title="{{ logro.descripcion }}">
+                    <div class="logro-icono">{{ logro.icono }}</div>
+                    <div class="logro-nombre">{{ logro.nombre }}</div>
+                </div>
+                {% empty %}
+                <div class="logro-mensaje">¡Completa más entrenamientos para desbloquear logros!</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Logros de Hoy -->
+        <div class="card full-width">
+            <div class="card-title green-text">1 Logros de Hoy</div>
+            <div class="green-text">➡ Lograste aumentar el peso en <span class="red-text">2 ejercicios hoy</span></div>
+        </div>
+
+        <!-- Nivel de Consistencia -->
+        <div class="card">
+            <div class="card-title green-text">⚪ Nivel de Consistencia</div>
+            <div>{{ consistencia.semanas_consecutivas }} semanas completadas</div>
+            <div class="consistency-circles">
+                {% for dia in consistencia.historial %}
+                <div class="{% if dia %}checkmark{% else %}circle-empty{% endif %}"></div>
+                {% endfor %}
+            </div>
+
+
+        </div>
+        <!-- Añadir nueva sección -->
+        <div class="card full-width">
+            <div class="card-title blue-text">📊 Tendencias a Largo Plazo</div>
+            <div class="tabs">
+                <button class="tab-btn active" data-periodo="3m">3 meses</button>
+                <button class="tab-btn" data-periodo="6m">6 meses</button>
+                <button class="tab-btn" data-periodo="1y">1 año</button>
+            </div>
+            <div class="tab-content">
+                <canvas id="graficoTendencias" height="200"></canvas>
+            </div>
+        </div>
+
+
+        <!-- Carga Total -->
+        <div class="card">
+            <div class="card-title green-text">↗ Carga Total</div>
+            <div>Hoy fue <span class="green-text">{% if carga.diferencia >= 0 %}+{% endif %}{{ carga.diferencia }} kg </span></div>
+            <div>sobre tu media semanal</div>
+            {% if carga.diferencia > 2000 %}
+            <div class="red-text" style="margin-top: 10px;">Te recomendamos descanso activo mañana 🧘</div>
+            {% endif %}
+        </div>
+
+        <!-- Sugerencias Inteligentes -->
+
+        <div class="card">
+            <div class="card-title yellow-text">🔍 Sugerencias Inteligentes</div>
+            {% for recomendacion in recomendaciones_personalizadas %}
+            <div class="recomendacion">
+                <span class="recomendacion-icono">{{ recomendacion.icono }}</span>
+                <span class="red-text">{{ recomendacion.mensaje }}</span>
+            </div>
+            {% empty %}
+            <div>¡Excelente trabajo! Sigue con tu rutina actual.</div>
+            {% endfor %}
+        </div>
+
+
+        <!-- Mejora por Ejercicio -->
+        <div class="card">
+            <div class="card-title green-text">📊 Mejora por Ejercicio</div>
+            <div style="display: flex; justify-content: space-between;">
+                <div>Prensa</div>
+                <div class="arrow-up">↑ 10%</div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <div>Peso muerto</div>
+                <div class="arrow-down">↓ -5%</div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <div>Elevaciones laterales</div>
+                <div class="arrow-right">↗ →</div>
+            </div>
+
+        </div>
+        <!-- Añadir en la sección de Próximo Entreno -->
+        <div class="card">
+            <div class="card-title green-text">↻ Próximo Entreno Recomendado</div>
+            <div>{{ proximo_entreno.rutina }} - {{ proximo_entreno.fecha|date:"l" }} a las {{ proximo_entreno.hora }}</div>
+            <button class="btn">Agendar entreno</button>
+            <div class="notificaciones-opciones">
+                <label class="switch">
+                    <input type="checkbox" id="notificaciones-toggle" {% if notificaciones_activas %}checked{% endif %}>
+                    <span class="slider round"></span>
+                </label>
+                <span>Recordatorio 1h antes</span>
+            </div>
+        </div>
+
+        <!-- Estado Emocional -->
+        <div class="card">
+            <div class="card-title yellow-text">😊 Estado Emocional</div>
+            <div>Progreso emojano el semana:</div>
+            <div>😊 (positivo)</div>
+        </div>
+
+
+        <!-- Próximo Entreno -->
+        <div class="card">
+            <div class="card-title green-text">Opciones</div>
+            <div></div>
+            <button class="btn">Volver a Menu</button>
+        </div>
+
+
+    </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.card').forEach((card, index) => {
-        card.classList.add('fade-in-card');
-        setTimeout(() => {
-            card.classList.add('visible');
-        }, 200 + index * 150);
-    });
-
-    function lanzarConfeti() {
-        const confeti = document.createElement('div');
-        confeti.classList.add('confeti-overlay');
-        document.body.appendChild(confeti);
-        for (let i = 0; i < 100; i++) {
-            const part = document.createElement('div');
-            part.className = 'confeti';
-            part.style.left = Math.random() * 100 + 'vw';
-            part.style.animationDelay = (Math.random() * 2) + 's';
-            confeti.appendChild(part);
+    const ctx = document.getElementById('graficoProgreso').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['04 May', '11 May', '18 May'],
+        datasets: [{
+          label: 'Volumen total',
+          data: [3400, 3900, 4700],
+          borderColor: '#32FF00',
+          tension: 0.3,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false } 
+        },
+        scales: { 
+          y: { 
+            beginAtZero: true,
+            grid: {
+              color: '#333'
+            },
+            ticks: {
+              color: '#999'
+            }
+          },
+          x: {
+            grid: {
+              color: '#333'
+            },
+            ticks: {
+              color: '#999'
+            }
+          }
         }
-        setTimeout(() => confeti.remove(), 4000);
-    }
-
-    function loadDataIntoContainer(dataId, containerId, renderFunction) {
-        const dataElement = document.getElementById(dataId);
-        const container = document.getElementById(containerId);
-        if (dataElement && container) {
-            try {
-                const data = JSON.parse(dataElement.textContent);
-                renderFunction(data, container);
-            } catch (e) {
-                console.error(`Error parsing data from ${dataId}:`, e);
-                container.innerHTML = '<p class="text-danger">No se pudieron cargar los datos. Por favor, recarga la página o inténtalo más tarde.</p>';
+      }
+    });
+	
+	// Añadir al JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar gráfico de tendencias
+    const ctxTendencias = document.getElementById('graficoTendencias').getContext('2d');
+    let graficoTendencias = new Chart(ctxTendencias, {
+        type: 'line',
+        data: {
+            labels: [], // Se llenará con fechas
+            datasets: [{
+                label: 'Volumen total',
+                data: [], // Se llenará con datos
+                borderColor: '#4287f5',
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false } 
+            },
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: '#333' },
+                    ticks: { color: '#999' }
+                },
+                x: {
+                    grid: { color: '#333' },
+                    ticks: { color: '#999' }
+                }
             }
         }
-    }
-
-    function renderLogrosHoy(data, container) {
-        if (data.mensaje) {
-            container.innerHTML = `<p>${data.mensaje}</p><p><strong>${data.total_peso_levantado_hoy} kg</strong> levantados hoy.</p>`;
-        } else {
-            container.innerHTML = '<p class="text-muted">No hay logros registrados.</p>';
-        }
-    }
-
-    function renderSugerencias(data, container) {
-        if (data.length > 0) {
-            container.innerHTML = '<ul>' + data.map(s => `<li>${s}</li>`).join('') + '</ul>';
-        } else {
-            container.innerHTML = '<p class="text-muted">No hay sugerencias por ahora.</p>';
-        }
-    }
-
-    function renderPredicciones(data, container) {
-        if (data.mensaje) {
-            const color = data.tendencia === 'ascendente' ? 'success' : data.tendencia === 'descendente' ? 'danger' : 'secondary';
-            const porcentaje = data.tendencia === 'ascendente' ? 80 : data.tendencia === 'descendente' ? 30 : 50;
-            container.innerHTML = `
-                <p>${data.mensaje}</p>
-                <div class="progress">
-                    <div class="progress-bar bg-${color}" style="width:${porcentaje}%">${porcentaje}%</div>
-                </div>`;
-        } else {
-            container.innerHTML = '<p class="text-muted">No hay datos suficientes.</p>';
-        }
-    }
-
-    function renderMedallasLogros(data, container) {
-        if (data.length > 0) {
-            container.innerHTML = '<ul class="list-unstyled">' +
-                data.map(item => `
-                    <li class="mb-2 d-flex align-items-start">
-                        <span class="me-2" style="font-size: 1.2rem;">🏅</span>
-                        <div><strong class="text-primary">${item.nombre}</strong><br><small>${item.descripcion}</small></div>
-                    </li>`).join('') + '</ul>';
-        } else {
-            container.innerHTML = '<p class="text-muted">Aún no tienes medallas.</p>';
-        }
-    }
-
-    function renderLeaderboard(data, container) {
-        if (data.length > 0) {
-            container.innerHTML = '<ul class="list-unstyled">' +
-                data.map((item, i) => `<li><strong>${i+1}. ${item.nombre}</strong>: ${item.valor} ${item.unidad}</li>`).join('') +
-                '</ul>';
-        } else {
-            container.innerHTML = '<p class="text-muted">Sin datos aún.</p>';
-        }
-    }
-
-    function renderEntrenoActual(data, container) {
-        if (data.length === 0) {
-            container.innerHTML = '<p class="text-muted">No se encontraron series.</p>';
-            return;
-        }
-        let completadas = 0;
-        let total = data.length;
-        let html = '<table class="table"><thead><tr><th>Ejercicio</th><th>Serie</th><th>Reps</th><th>Peso</th><th>✓</th></tr></thead><tbody>';
-        data.forEach(serie => {
-            if (serie.completado) completadas++;
-            html += `<tr><td>${serie.ejercicio_nombre}</td><td>${serie.serie_numero}</td><td>${serie.repeticiones}</td><td>${serie.peso_kg}</td><td>${serie.completado ? '✅' : '❌'}</td></tr>`;
+    });
+    
+    // Cargar datos iniciales (3 meses)
+    cargarDatosTendencia('3m');
+    
+    // Configurar cambio de pestañas
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            cargarDatosTendencia(this.dataset.periodo);
         });
-        html += '</tbody></table>';
-        const porcentaje = Math.round((completadas / total) * 100);
-        const color = porcentaje === 100 ? 'success' : porcentaje >= 80 ? 'warning' : 'danger';
-        html += `<div class="progress mb-2"><div class="progress-bar bg-${color}" style="width:${porcentaje}%">${porcentaje}%</div></div>`;
-        if (porcentaje === 100) {
-            html += `<div class="text-center mt-2"><span class="perfect-icon">🎯</span><p class="text-success">¡Entreno perfecto!</p></div>`;
-            lanzarConfeti();
-        }
-        container.innerHTML = html;
-    }
-
-    function renderGraficasProgreso(data, container) {
-        container.innerHTML = '';
-        for (const ejercicio in data) {
-            const graficoId = 'grafico-' + ejercicio.replace(/\s+/g, '-').toLowerCase();
-            container.innerHTML += `<h6>${ejercicio}</h6><canvas id="${graficoId}" height="200"></canvas>`;
-            const ctx = document.getElementById(graficoId).getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data[ejercicio].labels,
-                    datasets: [
-                        { label: 'Peso (kg)', data: data[ejercicio].peso, borderColor: 'blue', fill: false, tension: 0.3 },
-                        { label: 'Reps', data: data[ejercicio].reps, borderColor: 'green', fill: false, tension: 0.3 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom' } },
-                    scales: { y: { beginAtZero: true } }
-                }
+    });
+    
+    // Función para cargar datos según período
+    function cargarDatosTendencia(periodo) {
+        fetch(`/api/tendencias/?periodo=${periodo}`)
+            .then(response => response.json())
+            .then(data => {
+                actualizarGraficoTendencias(data.fechas, data.valores);
             });
-        }
     }
-
-    loadDataIntoContainer('logros-hoy-data', 'logros-hoy-container', renderLogrosHoy);
-    loadDataIntoContainer('sugerencias-inteligentes-data', 'sugerencias-container', renderSugerencias);
-    loadDataIntoContainer('predicciones-progreso-data', 'predicciones-container', renderPredicciones);
-    loadDataIntoContainer('medallas-logros-data', 'medallas-logros-container', renderMedallasLogros);
-    loadDataIntoContainer('leaderboard-data', 'leaderboard-container', renderLeaderboard);
-    loadDataIntoContainer('entreno-actual-data', 'entreno-actual-container', renderEntrenoActual);
-    loadDataIntoContainer('progreso-por-ejercicio-data', 'graficos-progreso-container', renderGraficasProgreso);
+    
+    // Función para actualizar el gráfico
+    function actualizarGraficoTendencias(fechas, valores) {
+        graficoTendencias.data.labels = fechas;
+        graficoTendencias.data.datasets[0].data = valores;
+        graficoTendencias.update();
+    }
 });
+
 </script>
-{% endblock %}
+</body>
+</html>
