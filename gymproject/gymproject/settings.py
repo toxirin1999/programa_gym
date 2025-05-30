@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'anuncios',
     'entrenos',
     'widget_tweaks',
+    'joi',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'joi.context_processors.joi_context',
+
             ],
         },
     },
@@ -121,7 +124,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'joi', 'static'),  # Añade esta línea
+]
 
 # Asegúrate de que STATICFILES_DIRS también esté configurado
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
@@ -130,4 +136,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_URL = '/panel/'
+LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/redirigir/'  # Ruta intermedia para decidir a dónde ir
+
+LOGIN_URL = '/login/'

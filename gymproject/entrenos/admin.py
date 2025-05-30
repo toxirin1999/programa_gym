@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import LogroDesbloqueado, EstadoEmocional
 
-# Register your models here.
+admin.site.register(LogroDesbloqueado)
+admin.site.register(EstadoEmocional)

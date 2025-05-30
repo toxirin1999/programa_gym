@@ -4,6 +4,7 @@ from collections import defaultdict
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+from .models import LogroDesbloqueado, EstadoEmocional
 
 from django.utils.dateformat import DateFormat
 from django.utils.translation import gettext as _
@@ -1529,11 +1530,26 @@ def mostrar_entreno_anterior(request, cliente_id, rutina_id):
     except Exception as e:
         logger.error(f"Error al procesar ejercicios planificados: {str(e)}")
         ejercicios_planificados = []
+    # Cargar último logro
+
+    ultimo_logro = LogroDesbloqueado.objects.filter(cliente=cliente).order_by('-fecha').first()
+
+    # Estado emocional más reciente
+
+    estado_emocional = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha').first()
+
+    # Progreso semanal simulado (reemplazar por datos reales si los tienes)
+    progreso_fechas = ['22 May', '23 May', '24 May', '25 May', '26 May', '27 May', '28 May']
+    progreso_valores = [2600, 2800, 3000, 2900, 3100, 3300, 3500]
 
     # Añadir información de depuración al contexto
     context = {
         'cliente': cliente,
         'rutina': rutina,
+        'ultimo_logro': ultimo_logro,
+        'estado_emocional': estado_emocional,
+        'progreso_fechas': progreso_fechas,
+        'progreso_valores': progreso_valores,
         'entreno': entreno_anterior,
         'series_procesadas': series_procesadas,  # ¡Clave para la plantilla corregida!
         'plan': ejercicios_planificados,
@@ -1753,9 +1769,9 @@ def resumen_entreno(request, entreno_id):
 
     # --- Pasa todos los JSON y otros datos al contexto del template ---
     progreso_semanal = {
-    "peso_total_esta_semana": 19800,
-    "peso_total_anterior": 17500,
-    "rondas_completas": 3
+        "peso_total_esta_semana": 19800,
+        "peso_total_anterior": 17500,
+        "rondas_completas": 3
     }
     logros = {
         "ejercicios_mejorados": 2  # valor real desde tu lógica
@@ -1766,8 +1782,8 @@ def resumen_entreno(request, entreno_id):
         "semanas_consecutivas": 6
     }
     carga = {
-    "diferencia": 2700  # positivo o negativo, según cálculo real
-}
+        "diferencia": 2700  # positivo o negativo, según cálculo real
+    }
     context = {
         'entreno_actual': entreno_actual,
         'entreno_actual_json': entreno_actual_json,
@@ -1778,10 +1794,10 @@ def resumen_entreno(request, entreno_id):
         'leaderboard_json': leaderboard_json,  # Aquí se usa la variable correcta
         'entreno_perfecto': entreno_perfecto,  # Este es un booleano, no JSON
         "progreso_por_ejercicio_json": progreso_por_ejercicio_json,
-        "progreso_semanal_json" : json.dumps(progreso_semanal, ensure_ascii=False),
-        'logros' : logros,
-        "consistencia" : consistencia,
-        "carga" : carga
+        "progreso_semanal_json": json.dumps(progreso_semanal, ensure_ascii=False),
+        'logros': logros,
+        "consistencia": consistencia,
+        "carga": carga
     }
     return render(request, 'entrenos/resumen_entreno.html', context)
 # --- FIN DE LA VISTA resumen_entreno ---

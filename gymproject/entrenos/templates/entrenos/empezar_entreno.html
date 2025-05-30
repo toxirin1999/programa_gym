@@ -4,116 +4,116 @@
 
 {% block extra_js %}
 <script>
-/**
- * Cronómetros para la página de entrenamiento
- * - Cronómetro total: mide la duración total del entrenamiento
- * - Cronómetro de descanso: se reinicia cada vez que se registran repeticiones
- */
+    /**
+     * Cronómetros para la página de entrenamiento
+     * - Cronómetro total: mide la duración total del entrenamiento
+     * - Cronómetro de descanso: se reinicia cada vez que se registran repeticiones
+     */
 
-// Variables globales para los cronómetros
-let tiempoTotalInicio = null;
-let tiempoTotalInterval = null;
-let tiempoDescansoInicio = null;
-let tiempoDescansoInterval = null;
+    // Variables globales para los cronómetros
+    let tiempoTotalInicio = null;
+    let tiempoTotalInterval = null;
+    let tiempoDescansoInicio = null;
+    let tiempoDescansoInterval = null;
 
-/**
- * Inicia el cronómetro total del entrenamiento
- */
-function iniciarCronometroTotal() {
-    // Si ya está iniciado, no hacer nada
-    if (tiempoTotalInicio !== null) return;
-    
-    // Guardar tiempo de inicio
-    tiempoTotalInicio = new Date();
-    
-    // Actualizar el cronómetro cada segundo
-    tiempoTotalInterval = setInterval(actualizarCronometroTotal, 1000);
-    
-    // Actualización inicial
-    actualizarCronometroTotal();
-}
+    /**
+     * Inicia el cronómetro total del entrenamiento
+     */
+    function iniciarCronometroTotal() {
+        // Si ya está iniciado, no hacer nada
+        if (tiempoTotalInicio !== null) return;
 
-/**
- * Actualiza la visualización del cronómetro total
- */
-function actualizarCronometroTotal() {
-    const ahora = new Date();
-    const diferencia = ahora - tiempoTotalInicio;
-    
-    // Convertir a formato hh:mm:ss
-    const horas = Math.floor(diferencia / 3600000);
-    const minutos = Math.floor((diferencia % 3600000) / 60000);
-    const segundos = Math.floor((diferencia % 60000) / 1000);
-    
-    // Formatear con ceros a la izquierda
-    const horasStr = horas.toString().padStart(2, '0');
-    const minutosStr = minutos.toString().padStart(2, '0');
-    const segundosStr = segundos.toString().padStart(2, '0');
-    
-    // Actualizar el elemento HTML
-    const cronometroTotal = document.getElementById('cronometro-total');
-    if (cronometroTotal) {
-        cronometroTotal.textContent = `${horasStr}:${minutosStr}:${segundosStr}`;
+        // Guardar tiempo de inicio
+        tiempoTotalInicio = new Date();
+
+        // Actualizar el cronómetro cada segundo
+        tiempoTotalInterval = setInterval(actualizarCronometroTotal, 1000);
+
+        // Actualización inicial
+        actualizarCronometroTotal();
     }
-}
 
-/**
- * Detiene el cronómetro total
- */
-function detenerCronometroTotal() {
-    if (tiempoTotalInterval) {
-        clearInterval(tiempoTotalInterval);
-        tiempoTotalInterval = null;
-    }
-}
+    /**
+     * Actualiza la visualización del cronómetro total
+     */
+    function actualizarCronometroTotal() {
+        const ahora = new Date();
+        const diferencia = ahora - tiempoTotalInicio;
 
-/**
- * Inicia o reinicia el cronómetro de descanso
- */
-function iniciarCronometroDescanso() {
-    // Detener el intervalo anterior si existe
-    if (tiempoDescansoInterval) {
-        clearInterval(tiempoDescansoInterval);
-    }
-    
-    // Guardar tiempo de inicio
-    tiempoDescansoInicio = new Date();
-    
-    // Actualizar el cronómetro cada segundo
-    tiempoDescansoInterval = setInterval(actualizarCronometroDescanso, 1000);
-    
-    // Actualización inicial
-    actualizarCronometroDescanso();
-    
-    // Añadir efecto visual
-    const cronometroDescanso = document.getElementById('cronometro-descanso');
-    if (cronometroDescanso) {
-        cronometroDescanso.classList.add('pulse-animation');
-        setTimeout(() => cronometroDescanso.classList.remove('pulse-animation'), 500);
-    }
-}
+        // Convertir a formato hh:mm:ss
+        const horas = Math.floor(diferencia / 3600000);
+        const minutos = Math.floor((diferencia % 3600000) / 60000);
+        const segundos = Math.floor((diferencia % 60000) / 1000);
 
-/**
- * Actualiza la visualización del cronómetro de descanso
- */
-function actualizarCronometroDescanso() {
-    const ahora = new Date();
-    const diferencia = ahora - tiempoDescansoInicio;
-    
-    // Convertir a formato mm:ss
-    const minutos = Math.floor(diferencia / 60000);
-    const segundos = Math.floor((diferencia % 60000) / 1000);
-    
-    // Formatear con ceros a la izquierda
-    const minutosStr = minutos.toString().padStart(2, '0');
-    const segundosStr = segundos.toString().padStart(2, '0');
-    
-    // Actualizar el elemento HTML
-    const cronometroDescanso = document.getElementById('cronometro-descanso');
-    if (cronometroDescanso) {
-        cronometroDescanso.textContent = `${minutosStr}:${segundosStr}`;
+        // Formatear con ceros a la izquierda
+        const horasStr = horas.toString().padStart(2, '0');
+        const minutosStr = minutos.toString().padStart(2, '0');
+        const segundosStr = segundos.toString().padStart(2, '0');
+
+        // Actualizar el elemento HTML
+        const cronometroTotal = document.getElementById('cronometro-total');
+        if (cronometroTotal) {
+            cronometroTotal.textContent = `${horasStr}:${minutosStr}:${segundosStr}`;
+        }
     }
-}
+
+    /**
+     * Detiene el cronómetro total
+     */
+    function detenerCronometroTotal() {
+        if (tiempoTotalInterval) {
+            clearInterval(tiempoTotalInterval);
+            tiempoTotalInterval = null;
+        }
+    }
+
+    /**
+     * Inicia o reinicia el cronómetro de descanso
+     */
+    function iniciarCronometroDescanso() {
+        // Detener el intervalo anterior si existe
+        if (tiempoDescansoInterval) {
+            clearInterval(tiempoDescansoInterval);
+        }
+
+        // Guardar tiempo de inicio
+        tiempoDescansoInicio = new Date();
+
+        // Actualizar el cronómetro cada segundo
+        tiempoDescansoInterval = setInterval(actualizarCronometroDescanso, 1000);
+
+        // Actualización inicial
+        actualizarCronometroDescanso();
+
+        // Añadir efecto visual
+        const cronometroDescanso = document.getElementById('cronometro-descanso');
+        if (cronometroDescanso) {
+            cronometroDescanso.classList.add('pulse-animation');
+            setTimeout(() => cronometroDescanso.classList.remove('pulse-animation'), 500);
+        }
+    }
+
+    /**
+     * Actualiza la visualización del cronómetro de descanso
+     */
+    function actualizarCronometroDescanso() {
+        const ahora = new Date();
+        const diferencia = ahora - tiempoDescansoInicio;
+
+        // Convertir a formato mm:ss
+        const minutos = Math.floor(diferencia / 60000);
+        const segundos = Math.floor((diferencia % 60000) / 1000);
+
+        // Formatear con ceros a la izquierda
+        const minutosStr = minutos.toString().padStart(2, '0');
+        const segundosStr = segundos.toString().padStart(2, '0');
+
+        // Actualizar el elemento HTML
+        const cronometroDescanso = document.getElementById('cronometro-descanso');
+        if (cronometroDescanso) {
+            cronometroDescanso.textContent = `${minutosStr}:${segundosStr}`;
+        }
+    }
 </script>
 {% endblock %}
 
@@ -124,7 +124,7 @@ function actualizarCronometroDescanso() {
         <h2 class="display-6 fw-bold">{{ rutina.nombre }}</h2>
         <div class="subtitle">Nuevo entreno</div>
     </div>
-    
+
     <!-- Cronómetro total del entrenamiento -->
     <div class="fitness-card mb-4">
         <div class="fitness-card-body">
@@ -136,7 +136,7 @@ function actualizarCronometroDescanso() {
             </div>
         </div>
     </div>
-    
+
     <!-- Cronómetro de descanso entre series -->
     <div class="fitness-card mb-4">
         <div class="fitness-card-body">
@@ -326,12 +326,12 @@ function actualizarCronometroDescanso() {
         background: rgba(40, 205, 65, 0.2);
         color: #28cd41;
     }
-    
+
     .fitness-badge.primary {
         background: rgba(0, 130, 251, 0.2);
         color: #0082fb;
     }
-    
+
     .fitness-badge.large {
         font-size: 1.2rem;
         padding: 8px 15px;
@@ -479,14 +479,14 @@ function actualizarCronometroDescanso() {
         font-size: 1.1rem;
         color: white;
     }
-    
+
     /* Animación para el cronómetro de descanso cuando se reinicia */
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
         100% { transform: scale(1); }
     }
-    
+
     .pulse-animation {
         animation: pulse 0.5s;
     }
@@ -519,7 +519,7 @@ function actualizarCronometroDescanso() {
 
             span.textContent = valor;
             inputReps.value = valor;
-            
+
             // Reiniciar cronómetro de descanso al cambiar repeticiones
             iniciarCronometroDescanso();
 
@@ -531,7 +531,7 @@ function actualizarCronometroDescanso() {
         document.querySelectorAll('.fitness-ring').forEach(ring => {
             ring.addEventListener('click', () => disminuirReps(ring));
         });
-        
+
         // Detener cronómetro total al finalizar entrenamiento
         const botonFinalizar = document.getElementById('btn-finalizar-entreno');
         if (botonFinalizar) {
@@ -555,7 +555,7 @@ function actualizarCronometroDescanso() {
         nuevaSerie.innerHTML = `
             <div class="fitness-ring me-3" data-original="${originalReps}">
                 <span class="rep-counter">${repsPrevias}</span>
-                <input type="hidden" name="${ejercicioId}_reps_${count}" 
+                <input type="hidden" name="${ejercicioId}_reps_${count}"
                        id="${ejercicioId}_reps_${count}" value="${repsPrevias}">
             </div>
             <div class="serie-info">
@@ -573,7 +573,7 @@ function actualizarCronometroDescanso() {
         });
 
         lista.appendChild(nuevaSerie);
-        
+
         // Reiniciar cronómetro de descanso al añadir nueva serie
         iniciarCronometroDescanso();
     }

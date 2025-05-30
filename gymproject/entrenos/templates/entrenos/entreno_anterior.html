@@ -121,7 +121,12 @@
         </div>
     </div>
     {% endif %}
-
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title mb-3">📈 Progreso semanal</h5>
+            <canvas id="graficoProgreso" height="150"></canvas>
+        </div>
+    </div>
     <!-- Botón de acción principal -->
     <div class="action-button-container">
         <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}"
@@ -130,7 +135,34 @@
         </a>
     </div>
 </div>
-
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('graficoProgreso');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ progreso_fechas|safe }},
+                    datasets: [{
+                        label: 'Volumen total',
+                        data: {{ progreso_valores|safe }},
+                        borderColor: '#32FF00',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+        }
+    });
+</script>
 <style>
     /* Apple Fitness Style */
     .apple-fitness-container {
