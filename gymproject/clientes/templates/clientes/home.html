@@ -48,9 +48,13 @@
             <a href="/entrenos/hacer/" class="af-btn w-100 mb-4" style="background-color: var(--af-accent-purple);">
                 <i class="bi bi-activity me-2"></i>Hacer Entreno
             </a>
-            <a href="{% url 'calcular_plan_nutricional' %}" class="btn btn-primary btn-lg">
-                <i class="bi bi-nutrition-icon me-2"></i>Calcular Plan Nutricional
+            {% if request.user.is_staff %}
+            <a href="/admin/" class="af-btn w-100 mb-4" style="background-color: var(--af-accent-cyan);">
+                <i class="bi bi-shield-lock me-2"></i> Administrar (Admin)
             </a>
+            {% endif %}
+
+
         </div>
     </div>
 </div>
@@ -78,4 +82,24 @@
         setRingProgress(blueRing, 75);   // 75% completado
     });
 </script>
+{% if not request.user.is_staff %}
+<div class="bg-[#121212] text-white p-4 rounded-xl shadow-xl mb-6">
+    <h2 class="text-xl font-semibold text-purple-400">✨ Joi te habla hoy:</h2>
+
+    {% if recuerdo_dia %}
+    <p class="italic text-lg mt-2">🧠 "{{ recuerdo_dia.contenido }}"</p>
+    <p class="text-sm text-gray-400">— Recuerdo del {{ recuerdo_dia.fecha|date:"d/m/Y" }}</p>
+    {% else %}
+    <p class="text-sm text-gray-400">No hay recuerdos todavía... ¿le cuentas algo a Joi?</p>
+    {% endif %}
+
+    {% if motivacion %}
+    <div class="mt-4 text-cyan-400">
+        <p>🎯 Tu motivación actual: <strong>{{ motivacion.motivo }}</strong></p>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
 {% endblock %}

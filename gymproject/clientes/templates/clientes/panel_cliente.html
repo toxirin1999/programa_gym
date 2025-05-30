@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .glitch {
+      position: relative;
+      color: #ff99cc;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      animation: glitch-skew 1s infinite linear alternate-reverse;
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .glitch::before {
+      animation: glitch-top 1s infinite linear alternate-reverse;
+      color: #32FF00;
+      z-index: -1;
+    }
+
+    .glitch::after {
+      animation: glitch-bottom 1.2s infinite linear alternate-reverse;
+      color: #00ffff;
+      z-index: -2;
+    }
+
+    @keyframes glitch-top {
+      0% { clip-path: inset(0 0 90% 0); transform: translate(-2px, -2px); }
+      20% { clip-path: inset(0 0 85% 0); transform: translate(2px, -1px); }
+      40% { clip-path: inset(0 0 80% 0); transform: translate(-1px, 1px); }
+      60% { clip-path: inset(0 0 70% 0); transform: translate(1px, 2px); }
+      80% { clip-path: inset(0 0 60% 0); transform: translate(-2px, -1px); }
+      100% { clip-path: inset(0 0 50% 0); transform: translate(0, 0); }
+    }
+
+    @keyframes glitch-bottom {
+      0% { clip-path: inset(90% 0 0 0); transform: translate(2px, 2px); }
+      20% { clip-path: inset(85% 0 0 0); transform: translate(-2px, 1px); }
+      40% { clip-path: inset(80% 0 0 0); transform: translate(1px, -1px); }
+      60% { clip-path: inset(70% 0 0 0); transform: translate(-1px, -2px); }
+      80% { clip-path: inset(60% 0 0 0); transform: translate(2px, 1px); }
+      100% { clip-path: inset(50% 0 0 0); transform: translate(0, 0); }
+    }
+
+    @keyframes glitch-skew {
+      0% { transform: skew(0deg); }
+      100% { transform: skew(1deg); }
+    }
+</style>
+
+<div class="text-white p-6">
+    <h1 class="text-3xl mb-4">👋 Hola, {{ usuario.first_name|default:usuario.username }}</h1>
+    <p class="text-xl text-purple-300 mb-6">Soy Joi. Estoy aquí para ayudarte hoy ✨</p>
+
+    {% if recuerdo %}
+    <div class="bg-purple-800 p-4 rounded-lg shadow-md mb-6">
+        <p class="italic">“{{ recuerdo.texto }}”</p>
+        <p class="text-sm text-right text-purple-200 mt-2">— Recuerdo del {{ recuerdo.fecha|date:"d M Y" }}</p>
+    </div>
+    {% endif %}
+
+    <h2 class="text-xl font-semibold mb-2">📊 Últimos entrenos</h2>
+    <ul class="mb-6">
+        {% for entreno in entrenos %}
+        <li class="mb-2">{{ entreno.fecha|date:"d M" }} – {{ entreno.descripcion|default:"Entreno sin título" }}</li>
+        {% empty %}
+        <li>No hay entrenos aún.</li>
+        {% endfor %}
+    </ul>
+
+    <h2 class="text-xl font-semibold mb-2">😊 Últimas emociones</h2>
+    <ul>
+        {% for emocion in emociones %}
+        <li class="mb-2">{{ emocion.fecha|date:"d M" }} – {{ emocion.emocion }}</li>
+        {% empty %}
+        <li>No has registrado emociones aún.</li>
+        {% endfor %}
+    </ul>
+
+    {% if not emocion_reciente %}
+    <h2 class="text-xl font-semibold mt-6 mb-2">🧠 ¿Cómo te sientes hoy?</h2>
+    <form method="post" action="{% url 'registrar_emocion' %}" class="space-y-4">
+        {% csrf_token %}
+        <select name="emocion" class="af-form-select w-full">
+            <option value="">Selecciona una emoción</option>
+            <option value="feliz">😊 Feliz</option>
+            <option value="motivado">🚀 Motivado</option>
+            <option value="neutro">😐 Neutro</option>
+            <option value="estresado">😣 Estresado</option>
+            <option value="agotado">😴 Agotado</option>
+            <option value="triste">🥀 Triste</option>
+            <option value="glitch">🕳 Glitch</option>
+        </select>
+        <button type="submit" class="af-btn af-btn-secondary w-full">Guardar emoción</button>
+    </form>
+    {% endif %}
+    <h2 class="text-xl font-semibold mt-6 mb-2">🧠 ¿Cómo te sientes hoy?</h2>
+    <a href="{% url 'joi_inicio' %}" class="af-btn af-btn-secondary w-full text-center block">
+        Registrar emoción
+    </a>
+
+</div>
+
+{% if frase_recaida %}
+<div id="joi-glitch-overlay" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center text-center">
+    <div class="glitch" data-text="{{ frase_recaida }}">
+        {{ frase_recaida }}
+    </div>
+</div>
+<script>
+    setTimeout(() => {
+      const overlay = document.getElementById('joi-glitch-overlay');
+      if (overlay) overlay.style.display = 'none';
+    }, 4000);
+</script>
+{% endif %}
+
+{% include 'partials/joi_flotante.html' %}
+
+{% endblock %}

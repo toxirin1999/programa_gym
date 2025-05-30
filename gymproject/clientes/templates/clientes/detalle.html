@@ -5,6 +5,15 @@
 {% block title %}Detalle Cliente{% endblock %}
 
 {% block content %}
+{% if cliente.user %}
+<tr>
+    <th>Usuario de acceso</th>
+    <td>
+        <code>{{ cliente.user.username }}</code>
+    </td>
+</tr>
+{% endif %}
+
 <div class="container">
     <div class="text-center mb-4">
         <div class="mb-3">

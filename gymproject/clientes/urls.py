@@ -8,10 +8,15 @@ from django.urls import path
 from . import views
 from clientes import views as clientes_views
 from .views import historial_cliente  # Asumiendo que esta importación es necesaria para alguna otra URL
+from django.contrib.auth.decorators import login_required
+from django.urls import path
+from .views import redirigir_usuario
+from .views import panel_cliente
+from clientes import views
+from joi import views as joi_views
 
 urlpatterns = [
     # Clientes
-    path('', views.index, name='clientes_index'),
     path('agregar/', views.agregar_cliente, name='agregar_cliente'),
     path('editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
     path('eliminar/<int:cliente_id>/', views.eliminar_cliente, name='eliminar_cliente'),
@@ -29,11 +34,15 @@ urlpatterns = [
 
     # ELIMINA LA SIGUIENTE LÍNEA, YA QUE LA FUNCIÓN 'plan_nutricional_resultado' NO EXISTE:
     # path('/nutricion/plan_resultado/', views.plan_nutricional_resultado, name='plan_nutricional_resultado'),
-
+    path('', login_required(redirigir_usuario), name='home_redirect'),
     path('datos-graficas/<int:cliente_id>/', views.datos_graficas, name='datos_graficas'),
     # Medidas (con prefijo para no pisar rutas de clientes)
     path('medidas/', views.lista_medidas, name='lista_medidas'),
     path('historial/<int:cliente_id>/', historial_cliente, name='historial_cliente'),
+    path('mi-panel/', panel_cliente, name='panel_cliente'),
+    path('clientes/', views.lista_clientes, name='lista_clientes'),
+    path('registrar_emocion/', views.registrar_emocion, name='registrar_emocion'),
+    path('inicio/', joi_views.inicio_view, name='joi_inicio'),
 
     path('cliente/<int:cliente_id>/recordatorio/', views.actualizar_recordatorio_peso,
          name='actualizar_recordatorio_peso'),

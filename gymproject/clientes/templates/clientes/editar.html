@@ -63,6 +63,28 @@
 
         <h4 class="mt-4">Foto</h4>
         <div class="mb-3">{{ form.foto.label_tag }} {{ form.foto|add_class:"form-control" }}</div>
+        <hr>
+        <h4 class="mt-4">Usuario vinculado</h4>
+
+        {% if cliente.user %}
+        <div class="mb-3">
+            <label class="form-label">Usuario actual</label>
+            <input type="text" class="form-control" value="{{ cliente.user.username }}" name="username" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nueva contraseña (opcional)</label>
+            <input type="password" class="form-control" name="password" placeholder="Déjalo vacío para no cambiarla">
+        </div>
+        {% else %}
+        <div class="mb-3">
+            <label class="form-label">Crear usuario</label>
+            <input type="text" class="form-control" name="username" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-control" name="password" required>
+        </div>
+        {% endif %}
 
         <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-check-circle"></i> Guardar

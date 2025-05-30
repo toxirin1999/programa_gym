@@ -6,41 +6,6 @@
 <div class="container mt-4">
     <h2 class="fw-bold mb-3">Clientes</h2>
 
-    <!-- Filtro por nombre, programa y género -->
-    <form method="get" class="row mb-4">
-        <div class="col-md-4">
-            <input type="text" name="nombre" placeholder="Buscar por nombre" class="af-form-control" value="{{ request.GET.nombre }}">
-        </div>
-        <div class="col-md-4">
-            <select name="programa" class="af-form-select">
-                <option value="">Todos los programas</option>
-                {% for programa in programas %}
-                <option value="{{ programa.id }}" {% if request.GET.programa == programa.id|stringformat:"s" %}selected{% endif %}>
-                    {{ programa.nombre }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select name="genero" class="af-form-select">
-                <option value="">Todos los géneros</option>
-                <option value="M" {% if request.GET.genero == "M" %}selected{% endif %}>Masculino</option>
-                <option value="F" {% if request.GET.genero == "F" %}selected{% endif %}>Femenino</option>
-            </select>
-        </div>
-        <div class="col-md-12 mt-2 d-flex justify-content-between align-items-center">
-            <div>
-                <span id="alerta-contador" class="af-alert-counter"></span>
-            </div>
-            <div class="text-end">
-                <button type="submit" class="af-btn" style="background-color: var(--af-ring-blue);">Filtrar</button>
-                <a href="{% url 'clientes_index' %}" class="af-btn af-btn-secondary">Limpiar</a>
-                <button type="button" id="toggle-alerts" class="af-btn" style="background-color: var(--af-accent-yellow); color: #000;">
-                    👀 Mostrar solo clientes en riesgo
-                </button>
-            </div>
-        </div>
-    </form>
 
     {% if clientes %}
     <ul class="af-list">
@@ -54,15 +19,15 @@
                     {{ cliente.nombre }}
 
                     {% if cliente.proximo_registro_peso %}
-                        {% if cliente.proximo_registro_peso <= today %}
-                            <i class="bi bi-calendar-x-fill" style="color: var(--af-ring-red);" title="Peso atrasado para {{ cliente.proximo_registro_peso }}"></i>
-                        {% else %}
-                            <i class="bi bi-calendar-event-fill" style="color: var(--af-accent-yellow);" title="Próximo peso: {{ cliente.proximo_registro_peso }}"></i>
-                        {% endif %}
+                    {% if cliente.proximo_registro_peso <= today %}
+                    <i class="bi bi-calendar-x-fill" style="color: var(--af-ring-red);" title="Peso atrasado para {{ cliente.proximo_registro_peso }}"></i>
+                    {% else %}
+                    <i class="bi bi-calendar-event-fill" style="color: var(--af-accent-yellow);" title="Próximo peso: {{ cliente.proximo_registro_peso }}"></i>
+                    {% endif %}
                     {% endif %}
                     {% if cliente.ultima_revision and cliente.ultima_revision.check_alerts %}
-                        <i class="bi bi-exclamation-triangle-fill" style="color: var(--af-accent-yellow);"
-                           data-bs-toggle="tooltip" title="{{ cliente.ultima_revision.check_alerts }}"></i>
+                    <i class="bi bi-exclamation-triangle-fill" style="color: var(--af-accent-yellow);"
+                       data-bs-toggle="tooltip" title="{{ cliente.ultima_revision.check_alerts }}"></i>
                     {% endif %}
                 </strong><br>
                 <small>Email: {{ cliente.email }} | Teléfono: {{ cliente.telefono }}</small><br>
@@ -105,40 +70,40 @@
 
 <!-- Script de filtrado por riesgo -->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggle-alerts");
-    const alertaContador = document.getElementById("alerta-contador");
-    const clientes = document.querySelectorAll(".af-list-item");
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("toggle-alerts");
+        const alertaContador = document.getElementById("alerta-contador");
+        const clientes = document.querySelectorAll(".af-list-item");
 
-    let soloAlertas = false;
+        let soloAlertas = false;
 
-    function actualizarContador() {
-        const total = clientes.length;
-        const conRiesgo = document.querySelectorAll(".cliente-riesgo").length;
+        function actualizarContador() {
+            const total = clientes.length;
+            const conRiesgo = document.querySelectorAll(".cliente-riesgo").length;
 
-        let texto = `🟡 ${conRiesgo} cliente${conRiesgo !== 1 ? 's' : ''} en riesgo`;
-        texto += soloAlertas ? ` (mostrando solo alertas)` : ` (de ${total} en total)`;
-        alertaContador.textContent = texto;
-    }
+            let texto = `🟡 ${conRiesgo} cliente${conRiesgo !== 1 ? 's' : ''} en riesgo`;
+            texto += soloAlertas ? ` (mostrando solo alertas)` : ` (de ${total} en total)`;
+            alertaContador.textContent = texto;
+        }
 
-    toggleBtn.addEventListener("click", function () {
-        soloAlertas = !soloAlertas;
+        toggleBtn.addEventListener("click", function () {
+            soloAlertas = !soloAlertas;
 
-        clientes.forEach(item => {
-            const esRiesgo = item.classList.contains("cliente-riesgo");
-            item.style.display = soloAlertas
-                ? (esRiesgo ? "" : "none")
-                : "";
+            clientes.forEach(item => {
+                const esRiesgo = item.classList.contains("cliente-riesgo");
+                item.style.display = soloAlertas
+                    ? (esRiesgo ? "" : "none")
+                    : "";
+            });
+
+            toggleBtn.textContent = soloAlertas
+                ? "🔁 Mostrar todos los clientes"
+                : "👀 Mostrar solo clientes en riesgo";
+
+            actualizarContador();
         });
-
-        toggleBtn.textContent = soloAlertas
-            ? "🔁 Mostrar todos los clientes"
-            : "👀 Mostrar solo clientes en riesgo";
 
         actualizarContador();
     });
-
-    actualizarContador();
-});
 </script>
 {% endblock %}

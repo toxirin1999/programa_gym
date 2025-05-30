@@ -3,12 +3,14 @@ from django.db.models import Count, Avg
 from .models import Cliente, Medida, RevisionProgreso
 from .forms import ClienteForm, MedidaForm, RevisionProgresoForm
 from django.contrib import messages
+from joi.utils import recuperar_frase_de_recaida
 from datetime import date, timedelta
 from django.db.models import Count
 from entrenos.models import EntrenoRealizado
 from datetime import date, timedelta
 from .forms import ObjetivoClienteForm
 from .models import ObjetivoCliente
+from joi.utils import obtener_estado_joi, frase_cambio_forma_joi
 from datetime import timedelta, date
 from django.db.models import F
 from .models import RevisionProgreso  # o como se llame tu modelo de revisiones
@@ -28,7 +30,10 @@ from entrenos.models import EntrenoRealizado
 from django.http import JsonResponse
 from .forms import DietaAsignadaForm
 from django.db.models import Q
+from joi.models import RecuerdoEmocional, MotivacionUsuario
+from joi.models import EstadoEmocional, Entrenamiento, RecuerdoEmocional
 
+from datetime import date
 from entrenos.models import EntrenoRealizado
 from collections import defaultdict
 from datetime import timedelta
@@ -48,6 +53,119 @@ from decimal import Decimal
 from .forms import DatosNutricionalesForm
 # Importa o define tu modelo para guardar los planes nutricionales
 from .models import PlanNutricional
+
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+
+from django.contrib.auth.models import User
+from .models import Cliente
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from joi.models import EstadoEmocional, Entrenamiento, RecuerdoEmocional
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+
+from joi.models import EstadoEmocional
+from django.views.decorators.http import require_POST
+
+from django.shortcuts import render
+from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento
+from joi.utils import obtener_estado_joi, frase_cambio_forma_joi
+from clientes.models import Cliente
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from datetime import date
+
+
+@require_POST
+@login_required
+def registrar_emocion(request):
+    emocion = request.POST.get("emocion")
+    user = request.user
+
+    if emocion:
+        EstadoEmocional.objects.create(user=user, emocion=emocion)
+
+    cliente = Cliente.objects.get(user=user)
+    emociones = EstadoEmocional.objects.filter(user=user).order_by('-fecha')[:5]
+    entrenos = Entrenamiento.objects.filter(user=user).order_by('-fecha')[:5]
+    recuerdo = RecuerdoEmocional.objects.filter(user=user).order_by('-fecha').first()
+
+    estado_joi = obtener_estado_joi(user)
+    frase_forma_joi = frase_cambio_forma_joi(estado_joi)
+
+    return render(request, 'clientes/panel_cliente.html', {
+        'usuario': user,
+        'cliente': cliente,
+        'emociones': emociones,
+        'entrenos': entrenos,
+        'recuerdo': recuerdo,
+        'estado_joi': estado_joi,
+        'frase_forma_joi': frase_forma_joi,
+        'emocion_reciente': emocion,
+    })
+
+
+@login_required
+def redirigir_usuario(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser or request.user.is_staff:
+            return redirect('dashboard')
+        else:
+            return redirect('panel_cliente')  # ← tu vista personalizada con Joi
+    return redirect('login')
+
+
+@login_required
+def panel_cliente(request):
+    usuario = request.user
+
+    cliente = get_object_or_404(Cliente, user=usuario)
+    emociones = EstadoEmocional.objects.filter(user=usuario).order_by('-fecha')[:5]
+
+    entrenos = Entrenamiento.objects.filter(user=usuario).order_by('-fecha')[:5]
+    recuerdo = RecuerdoEmocional.objects.filter(user=usuario).order_by('-fecha').first()
+
+    # Joi context básico
+    estado_joi = obtener_estado_joi(request.user)
+    frase_forma_joi = frase_cambio_forma_joi(estado_joi)
+    frase_extra_joi = "Estoy observando tu progreso emocional..."
+    frase_recaida = None
+
+    if estado_joi in ['glitch', 'triste']:
+        frase_recaida = recuperar_frase_de_recaida(usuario)
+
+    return render(request, 'clientes/panel_cliente.html', {
+        'usuario': usuario,
+        'emociones': emociones,
+        'entrenos': entrenos,
+        'recuerdo': recuerdo,
+        'frase_forma_joi': frase_forma_joi,
+        'estado_joi': estado_joi,
+        'frase_extra_joi': frase_extra_joi,
+        'frase_recaida': frase_recaida,
+    })
+
+
+def register_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Crea el Cliente asociado
+            Cliente.objects.create(
+                user=user,
+                nombre=user.username,
+                email=user.email or '',
+                telefono='',
+            )
+            messages.success(request, "Usuario registrado correctamente. Inicia sesión.")
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'register.html', {'form': form})
 
 
 # Si quieres integrar con una IA más avanzada (como un modelo de lenguaje grande)
@@ -697,14 +815,33 @@ def detalle_cliente(request, cliente_id):
 
 
 # Vista agregar cliente
+from django.contrib.auth.models import User
+from django.contrib import messages
+from .forms import ClienteForm
+from .models import Cliente
+
+
 def agregar_cliente(request):
     if request.method == 'POST':
         form = ClienteForm(request.POST, request.FILES)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
         if form.is_valid():
-            form.save()
-            return redirect('clientes_index')
+            if User.objects.filter(username=username).exists():
+                messages.error(request, "Ese nombre de usuario ya existe.")
+            else:
+                # Crear el usuario
+                user = User.objects.create_user(username=username, password=password)
+                # Guardar cliente con usuario asignado
+                cliente = form.save(commit=False)
+                cliente.user = user
+                cliente.save()
+                messages.success(request, "Cliente y usuario creados correctamente.")
+                return redirect('clientes_index')
     else:
         form = ClienteForm()
+
     return render(request, 'clientes/agregar.html', {
         'form': form,
         'titulo': 'Agregar Cliente',
@@ -713,16 +850,39 @@ def agregar_cliente(request):
 
 
 # Vista editar cliente
+from django.contrib.auth.models import User
+
+
 def editar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
+
     if request.method == 'POST':
         form = ClienteForm(request.POST, request.FILES, instance=cliente)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
         if form.is_valid():
+            # Si ya hay usuario, actualiza username y opcionalmente contraseña
+            if cliente.user:
+                user = cliente.user
+                user.username = username
+                if password:
+                    user.set_password(password)
+                user.save()
+            else:
+                # Crear nuevo user si no tiene
+                user = User.objects.create_user(username=username, password=password)
+                cliente.user = user
+
             form.save()
             return redirect('clientes_index')
     else:
         form = ClienteForm(instance=cliente)
-    return render(request, 'clientes/editar.html', {'form': form, 'cliente': cliente})
+
+    return render(request, 'clientes/editar.html', {
+        'form': form,
+        'cliente': cliente
+    })
 
 
 # Vista eliminar cliente
@@ -735,23 +895,46 @@ def eliminar_cliente(request, cliente_id):
 
 
 # Vista home
+@login_required
 def home(request):
-    return render(request, 'clientes/home.html')
+    recuerdo_dia = None
+    motivacion = None
+
+    if request.user.is_authenticated:
+        recuerdo_dia = RecuerdoEmocional.objects.filter(user=request.user).order_by('-fecha').first()
+        motivacion = MotivacionUsuario.objects.filter(user=request.user).last()
+
+    context = {
+        'recuerdo_dia': recuerdo_dia,
+        'motivacion': motivacion,
+    }
+    return render(request, 'clientes/home.html', context)
 
 
 # Vista index
-def index(request):
-    clientes = Cliente.objects.all()
-    for cliente in clientes:
-        cliente.ultima_revision = cliente.revisiones.order_by('-fecha').first()
+from django.contrib.auth.decorators import login_required
+from .models import Cliente
 
-    programas = Programa.objects.all()
 
-    return render(request, 'clientes/index.html', {
-        'clientes': clientes,
-        'programas': programas,
-        'today': date.today(),
-    })
+@login_required
+def lista_clientes(request):
+    modo = request.GET.get('modo', '')
+    if modo == 'lista':
+        clientes = Cliente.objects.all()
+        for cliente in clientes:
+            cliente.ultima_revision = cliente.revisiones.order_by('-fecha').first()
+        programas = Programa.objects.all()
+        return render(request, 'clientes/index.html', {
+            'clientes': clientes,
+            'programas': programas,
+            'today': date.today(),
+        })
+    else:
+        try:
+            Cliente.objects.get(user=request.user)
+            return redirect('panel_cliente')
+        except Cliente.DoesNotExist:
+            return redirect('dashboard')
 
 
 def asignar_programa_a_cliente(request, programa_id):
