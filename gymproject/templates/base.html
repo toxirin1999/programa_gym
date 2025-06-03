@@ -698,6 +698,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'historial_entrenos' %}">Historial</a>
                     </li>
+                    {% if user.is_authenticated %}
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold">Cerrar sesión</button>
+  </form>
+{% endif %}
                 </ul>
             </div>
         </div>
@@ -741,6 +747,7 @@
             <div class="af-bottom-nav-icon"><i class="bi bi-people"></i></div>
             <span>Clientes</span>
         </a>
+        <a href="{% url 'logros:perfil_gamificacion' %}">Logros y Misiones</a>
         <a href="/rutinas/" class="af-bottom-nav-item {% if request.path == '/rutinas/' %}active{% endif %}">
             <div class="af-bottom-nav-icon"><i class="bi bi-calendar-check"></i></div>
             <span>Programas</span>
