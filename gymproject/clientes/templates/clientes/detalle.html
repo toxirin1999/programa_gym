@@ -35,6 +35,12 @@
                 ⚠ Riesgo
             </span>
         </div>
+        {% if cliente.perfil_gamificacion %}
+        <div class="fitness-stat-card">
+            <div class="stat-value">Nivel {{ cliente.perfil_gamificacion.nivel_actual.numero }}</div>
+            <div class="stat-label">{{ cliente.perfil_gamificacion.puntos_totales }} XP</div>
+        </div>
+        {% endif %}
         {% endif %}
         <a href="{% url 'editar_cliente' cliente.id %}" class="af-action-btn af-action-btn-success mt-2">
             <i class="bi bi-pencil-square"></i> Editar

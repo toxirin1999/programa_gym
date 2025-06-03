@@ -110,12 +110,10 @@ def registrar_emocion(request):
 
 @login_required
 def redirigir_usuario(request):
-    if request.user.is_authenticated:
-        if request.user.is_superuser or request.user.is_staff:
-            return redirect('dashboard')
-        else:
-            return redirect('panel_cliente')  # ← tu vista personalizada con Joi
-    return redirect('login')
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('dashboard')  # Panel del entrenador
+    else:
+        return redirect('panel_cliente')  # Panel del cliente con Joi
 
 
 @login_required
@@ -897,18 +895,19 @@ def eliminar_cliente(request, cliente_id):
 # Vista home
 @login_required
 def home(request):
-    recuerdo_dia = None
-    motivacion = None
-
-    if request.user.is_authenticated:
+    # Si el usuario tiene perfil de cliente, renderiza el panel del cliente
+    if hasattr(request.user, 'cliente_perfil'):
         recuerdo_dia = RecuerdoEmocional.objects.filter(user=request.user).order_by('-fecha').first()
         motivacion = MotivacionUsuario.objects.filter(user=request.user).last()
 
-    context = {
-        'recuerdo_dia': recuerdo_dia,
-        'motivacion': motivacion,
-    }
-    return render(request, 'clientes/home.html', context)
+        context = {
+            'recuerdo_dia': recuerdo_dia,
+            'motivacion': motivacion,
+        }
+        return render(request, 'clientes/panel_cliente.html', context)
+
+    # Si no tiene perfil de cliente, se asume que es entrenador
+    return redirect('dashboard_entrenador')
 
 
 # Vista index
@@ -916,26 +915,22 @@ from django.contrib.auth.decorators import login_required
 from .models import Cliente
 
 
+
 @login_required
 def lista_clientes(request):
-    modo = request.GET.get('modo', '')
-    if modo == 'lista':
-        clientes = Cliente.objects.all()
-        for cliente in clientes:
-            cliente.ultima_revision = cliente.revisiones.order_by('-fecha').first()
-        programas = Programa.objects.all()
-        return render(request, 'clientes/index.html', {
-            'clientes': clientes,
-            'programas': programas,
-            'today': date.today(),
-        })
-    else:
-        try:
-            Cliente.objects.get(user=request.user)
-            return redirect('panel_cliente')
-        except Cliente.DoesNotExist:
-            return redirect('dashboard')
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Acceso solo para entrenadores.")
 
+    clientes = Cliente.objects.all()
+    for cliente in clientes:
+        cliente.ultima_revision = cliente.revisiones.order_by('-fecha').first()
+
+    programas = Programa.objects.all()
+    return render(request, 'clientes/index.html', {
+        'clientes': clientes,
+        'programas': programas,
+        'today': date.today(),
+    })
 
 def asignar_programa_a_cliente(request, programa_id):
     if request.method == 'POST':
