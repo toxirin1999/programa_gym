@@ -1,4 +1,4 @@
-# core/views.py o clientes/views.py si lo prefieres
+# Basic view for home page
 from django.shortcuts import render
 
 

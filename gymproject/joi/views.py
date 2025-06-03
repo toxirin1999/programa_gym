@@ -1,36 +1,26 @@
-from django.shortcuts import render
-from .forms import EstadoEmocionalForm, EntrenamientoForm
-from .models import EstadoEmocional, Entrenamiento
-from django.utils.timezone import now, timedelta
-from django.contrib.auth.models import User
-from .models import EventoLogro
-from datetime import timedelta
-from .models import RecuerdoEmocional
-import random
-# from openai import OpenAI
-from django.conf import settings
-# from openai import OpenAI
-from django.utils.timezone import now
-from django.shortcuts import redirect
-from .models import MotivacionUsuario
-from .models import RecuerdoEmocional
-from .forms import EstadoEmocionalForm, EntrenamientoForm, MotivoForm
-from .models import RecuerdoEmocional, Entrenamiento, EstadoEmocional
-from datetime import timedelta
-# import openai
-from django.conf import settings
-
-from .models import RecuerdoEmocional
-
-from .models import EstadoEmocional, RecuerdoEmocional
-from django.utils.timezone import now
-from datetime import timedelta
-
-import random
-
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
-from .models import EstadoEmocional
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.utils.timezone import now
+from datetime import timedelta
+
+from .forms import (
+    EstadoEmocionalForm,
+    EntrenamientoForm,
+    MotivoForm,
+)
+from .models import (
+    EstadoEmocional,
+    Entrenamiento,
+    EventoLogro,
+    MotivacionUsuario,
+    RecuerdoEmocional,
+)
+from .utils import obtener_estado_joi
+
+import random
+# import openai
 
 User = get_user_model()
 
@@ -76,29 +66,6 @@ def recuperar_frase_de_recaida(usuario):
             frase_original = f"La última vez que estuviste así te dije: “{recuerdo.contenido}”"
             return distorsionar_frase(frase_original)
     return None
-
-
-def obtener_estado_joi(usuario):
-    hoy = now().date()
-    semana = hoy - timedelta(days=6)
-    emociones = EstadoEmocional.objects.filter(user=usuario, fecha__range=(semana, hoy))
-
-    emociones_texto = [e.emocion.lower() for e in emociones]
-    if not emociones_texto:
-        return 'ausente'
-
-    if emociones_texto.count("feliz") >= 2:
-        return 'feliz'
-    if emociones_texto.count("triste") >= 2 or emociones_texto.count("agotado") >= 2:
-        return 'triste'
-    if emociones_texto.count("estresado") >= 2:
-        return 'glitch'
-    if emociones_texto.count("motivado") >= 2:
-        return 'motivada'
-    if emociones_texto.count("neutral") >= 2:
-        return 'contemplativa'
-
-    return 'ausente'
 
 
 def recuerdos_view(request):

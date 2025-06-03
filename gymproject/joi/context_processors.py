@@ -1,14 +1,7 @@
 from .models import EstadoEmocional, RecuerdoEmocional, Entrenamiento
+from .utils import obtener_estado_joi
 
 from datetime import timedelta, date
-
-
-def joi_context(request):
-    if request.user.is_authenticated:
-        estado_joi = obtener_estado_joi(request.user)  # función que devuelve el estado emocional actual
-        return {'estado_joi': estado_joi}
-    return {}
-
 
 def joi_context(request):
     if not request.user.is_authenticated:
