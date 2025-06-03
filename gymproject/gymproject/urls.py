@@ -26,9 +26,9 @@ from clientes import views as cliente_views
 from clientes.views import panel_cliente
 
 urlpatterns = [
-    path('', include('clientes.urls')),
+    path('', clientes_views.redirigir_usuario, name='home'),  # SOLO la raíz
+    path('clientes/', include('clientes.urls')),  # apartado accesible
     path('admin/', admin.site.urls),
-    path('clientes/', include('clientes.urls')),
     path('rutinas/', include('rutinas.urls')),
     path('dietas/', include('dietas.urls')),
     path('entrenos/', include('entrenos.urls')),  # <-- añade esta línea
@@ -40,6 +40,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
     path('redirigir/', redirigir_usuario, name='redirigir_usuario'),
+    path('logros/', include('logros.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

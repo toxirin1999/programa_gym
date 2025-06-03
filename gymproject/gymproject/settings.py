@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'entrenos',
     'widget_tweaks',
     'joi',
+    'logros',
 ]
 
 MIDDLEWARE = [
