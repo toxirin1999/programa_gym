@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Misiones Disponibles{% endblock %}
+
+{% block content %}
+<div class="apple-fitness-container">
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-glass mb-4">
+        <h2 class="display-6 fw-bold">Misiones Disponibles</h2>
+        <div class="subtitle">Completa misiones para ganar puntos y mejorar tu entrenamiento</div>
+    </div>
+
+    <!-- Navegación por categorías -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <ul class="nav nav-pills nav-fill quest-categories mb-3" id="questCategories" role="tablist">
+                {% for categoria, misiones in categorias.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}"
+                            id="cat-{{ categoria|slugify }}-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#cat-{{ categoria|slugify }}"
+                            type="button" role="tab"
+                            aria-controls="cat-{{ categoria|slugify }}"
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {{ categoria }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="questCategoriesContent">
+                {% for categoria, misiones in categorias.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                     id="cat-{{ categoria|slugify }}"
+                     role="tabpanel"
+                     aria-labelledby="cat-{{ categoria|slugify }}-tab">
+
+                    <div class="quests-list">
+                        {% for mision in misiones %}
+                        <div class="quest-card mb-3" onclick="location.href='{% url 'logros:detalle_mision' mision.id %}'">
+                            <div class="row g-0">
+                                <div class="col-2 col-md-1 quest-icon-container">
+                                    {% if mision.icono %}
+                                    <img src="{{ mision.icono.url }}" alt="{{ mision.nombre }}" class="quest-icon">
+                                    {% else %}
+                                    <div class="quest-icon-placeholder">
+                                        <i class="bi bi-flag"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-10 col-md-11">
+                                    <div class="quest-card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="quest-title">{{ mision.nombre }}</h5>
+                                                <p class="quest-description">{{ mision.descripcion }}</p>
+
+                                                <!-- Información adicional según tipo de misión -->
+                                                {% if mision.tipo.periodo != 'permanente' and mision.tipo.periodo != 'progresiva' %}
+                                                <div class="quest-duration">
+                                                    <i class="bi bi-clock"></i>
+                                                    {% if mision.tipo.periodo == 'diaria' %}
+                                                    Misión diaria
+                                                    {% elif mision.tipo.periodo == 'semanal' %}
+                                                    Duración: 7 días
+                                                    {% elif mision.tipo.periodo == 'mensual' %}
+                                                    Duración: 30 días
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+
+                                                {% if mision.ejercicio %}
+                                                <div class="quest-exercise">
+                                                    <i class="bi bi-activity"></i>
+                                                    Ejercicio: {{ mision.ejercicio.nombre }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="fitness-badge primary">+{{ mision.puntos_recompensa }} XP</div>
+                                        </div>
+
+                                        <!-- Meta -->
+                                        <div class="quest-goal mt-2">
+                                            <span class="small">Meta: {{ mision.meta_valor }} 
+                                            {% if "serie" in mision.nombre|lower %}series{% endif %}
+                                            {% if "entreno" in mision.nombre|lower or "entrenamiento" in mision.nombre|lower %}entrenamientos{% endif %}
+                                            {% if "kg" in mision.nombre|lower %}kg{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Volver al perfil -->
+    <a href="{% url 'logros:perfil_gamificacion' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver al perfil
+    </a>
+</div>
+
+<!-- Estilos específicos para la página de misiones -->
+<style>
+    /* Estilos para las pestañas de categorías */
+    .quest-categories {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+    }
+
+    .quest-categories .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin: 0 5px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .quest-categories .nav-link:hover {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .quest-categories .nav-link.active {
+        background: linear-gradient(135deg, #0082fb, #0060d6);
+        color: white;
+    }
+
+    /* Estilos para las tarjetas de misiones */
+    .quests-list {
+        margin-top: 20px;
+    }
+
+    .quest-card {
+        background: rgba(30, 30, 32, 0.7);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .quest-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        border-color: rgba(0, 130, 251, 0.5);
+    }
+
+    .quest-icon-container {
+        background: rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+    }
+
+    .quest-icon {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+
+    .quest-icon-placeholder {
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 130, 251, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0082fb;
+        font-size: 1.2rem;
+    }
+
+    .quest-card-body {
+        padding: 15px;
+    }
+
+    .quest-title {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 5px;
+        font-size: 1.1rem;
+    }
+
+    .quest-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .quest-duration, .quest-exercise {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+        margin-bottom: 3px;
+    }
+
+    .quest-goal {
+        color: #ffcc00;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

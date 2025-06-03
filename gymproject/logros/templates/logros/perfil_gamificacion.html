@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Perfil de Gamificación - {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="apple-fitness-container">
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-glass mb-4">
+        <h2 class="display-6 fw-bold">Perfil de Gamificación</h2>
+        <div class="subtitle">{{ cliente.nombre }}</div>
+    </div>
+
+    <!-- Tarjeta de nivel y puntos -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fitness-card-title">Nivel {{ perfil.nivel_actual.numero }}</h5>
+                    <div class="fitness-subtitle">{{ perfil.nivel_actual.nombre }}</div>
+                </div>
+                <div class="fitness-badge primary large">
+                    {{ perfil.puntos_totales }} XP
+                </div>
+            </div>
+
+            <div class="fitness-divider"></div>
+
+            <!-- Barra de progreso hacia el siguiente nivel -->
+            {% if siguiente_nivel %}
+            <div class="nivel-progress-container">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="small">Nivel {{ perfil.nivel_actual.numero }}</span>
+                    <span class="small">Nivel {{ siguiente_nivel.numero }}</span>
+                </div>
+                <div class="progress nivel-progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ porcentaje_nivel }}%;"
+                         aria-valuenow="{{ porcentaje_nivel }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="small">{{ puntos_faltantes }} XP para el siguiente nivel</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="fitness-stat-card">
+                <div class="stat-value">{{ estadisticas.total_logros }}</div>
+                <div class="stat-label">Logros</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="fitness-stat-card">
+                <div class="stat-value">{{ estadisticas.total_misiones }}</div>
+                <div class="stat-label">Misiones</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="fitness-stat-card">
+                <div class="stat-value">{{ perfil.racha_actual }}</div>
+                <div class="stat-label">Racha actual</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="fitness-stat-card">
+                <div class="stat-value">{{ perfil.entrenos_totales }}</div>
+                <div class="stat-label">Entrenos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Misiones activas -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-flag"></i> Misiones activas
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if misiones_activas %}
+            {% for mision in misiones_activas %}
+            <div class="quest-item mb-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="quest-title">{{ mision.quest.nombre }}</h6>
+                        <p class="quest-description">{{ mision.quest.descripcion }}</p>
+
+                        <!-- Tiempo restante para misiones con tiempo limitado -->
+                        {% if mision.quest.tipo.periodo != 'permanente' and mision.quest.tipo.periodo != 'progresiva' %}
+                        <div class="quest-time-remaining">
+                            <i class="bi bi-clock"></i>
+                            {% if mision.quest.tipo.periodo == 'diaria' %}
+                            Expira hoy
+                            {% elif mision.quest.tipo.periodo == 'semanal' %}
+                            Expira en 7 días
+                            {% elif mision.quest.tipo.periodo == 'mensual' %}
+                            Expira en 30 días
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="fitness-badge primary">+{{ mision.quest.puntos_recompensa }} XP</div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="progress quest-progress mt-2">
+                    {% with porcentaje=mision.progreso_actual|porcentaje:mision.quest.meta_valor %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ porcentaje }}%;"
+                         aria-valuenow="{{ porcentaje }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    {% endwith %}
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span class="small">Progreso: {{ mision.progreso_actual }}/{{ mision.quest.meta_valor }}</span>
+                    {% with porcentaje=mision.progreso_actual|porcentaje:mision.quest.meta_valor %}
+                    <span class="small">{{ porcentaje }}%</span>
+                    {% endwith %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-flag fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">No hay misiones activas actualmente.</p>
+            </div>
+            {% endif %}
+
+            <a href="{% url 'logros:lista_misiones' %}" class="fitness-button outline small w-100 mt-3">
+                <i class="bi bi-list-task"></i> Ver todas las misiones
+            </a>
+        </div>
+    </div>
+
+    <!-- Logros recientes -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-trophy"></i> Logros recientes
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if logros_desbloqueados %}
+            <div class="row achievements-grid">
+                {% for logro_usuario in logros_desbloqueados|slice:":6" %}
+                <div class="col-4 col-md-2 mb-3">
+                    <div class="achievement-item" data-bs-toggle="tooltip" data-bs-placement="top"
+                         title="{{ logro_usuario.logro.nombre }} - {{ logro_usuario.logro.descripcion }}">
+                        {% if logro_usuario.logro.icono %}
+                        <img src="{{ logro_usuario.logro.icono.url }}" alt="{{ logro_usuario.logro.nombre }}" class="achievement-icon">
+                        {% else %}
+                        <div class="achievement-icon-placeholder">
+                            <i class="bi bi-trophy"></i>
+                        </div>
+                        {% endif %}
+                        <div class="achievement-date">{{ logro_usuario.fecha_desbloqueo|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-trophy fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">Aún no has desbloqueado ningún logro.</p>
+            </div>
+            {% endif %}
+
+            <a href="{% url 'logros:lista_logros' %}" class="fitness-button outline small w-100 mt-3">
+                <i class="bi bi-collection"></i> Ver todos los logros
+            </a>
+        </div>
+    </div>
+
+    <!-- Logros en progreso -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-hourglass-split"></i> Logros en progreso
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if logros_progreso %}
+            {% for logro_usuario in logros_progreso %}
+            <div class="achievement-progress-item mb-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="achievement-title">{{ logro_usuario.logro.nombre }}</h6>
+                        <p class="achievement-description">{{ logro_usuario.logro.descripcion }}</p>
+                    </div>
+                    <div class="fitness-badge primary">+{{ logro_usuario.logro.puntos_recompensa }} XP</div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="progress achievement-progress mt-2">
+                    {% with porcentaje=logro_usuario.progreso_actual|porcentaje:logro_usuario.logro.meta_valor %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ porcentaje }}%;"
+                         aria-valuenow="{{ porcentaje }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    {% endwith %}
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span class="small">Progreso: {{ logro_usuario.progreso_actual }}/{{ logro_usuario.logro.meta_valor }}</span>
+                    {% with porcentaje=logro_usuario.progreso_actual|porcentaje:logro_usuario.logro.meta_valor %}
+                    <span class="small">{{ porcentaje }}%</span>
+                    {% endwith %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-hourglass-split fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">No hay logros en progreso actualmente.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Historial de puntos -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-clock-history"></i> Historial de puntos
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if historial_puntos %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th class="text-end">Puntos</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for historial in historial_puntos %}
+                    <tr>
+                        <td>{{ historial.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>{{ historial.descripcion }}</td>
+                        <td class="text-end">+{{ historial.puntos }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-clock-history fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">No hay historial de puntos disponible.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Estilos específicos para la página de gamificación -->
+<style>
+    /* Estilos para las estadísticas */
+    .fitness-stat-card {
+        background: rgba(30, 30, 32, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 15px;
+        text-align: center;
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .fitness-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #0082fb;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    /* Estilos para la barra de progreso de nivel */
+    .nivel-progress-container {
+        padding: 10px 0;
+    }
+
+    .nivel-progress {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .nivel-progress .progress-bar {
+        background: linear-gradient(90deg, #0082fb, #00c3ff);
+        border-radius: 4px;
+    }
+
+    /* Estilos para misiones */
+    .quest-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .quest-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .quest-title {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 5px;
+    }
+
+    .quest-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .quest-time-remaining {
+        color: #ffcc00;
+        font-size: 0.8rem;
+    }
+
+    .quest-progress {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .quest-progress .progress-bar {
+        background: linear-gradient(90deg, #0082fb, #00c3ff);
+        border-radius: 3px;
+    }
+
+    /* Estilos para logros */
+    .achievements-grid {
+        margin: 0 -5px;
+    }
+
+    .achievement-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .achievement-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .achievement-icon {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        margin: 0 auto 5px;
+    }
+
+    .achievement-icon-placeholder {
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 130, 251, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 5px;
+        color: #0082fb;
+        font-size: 1.5rem;
+    }
+
+    .achievement-date {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Estilos para logros en progreso */
+    .achievement-progress-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .achievement-progress-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .achievement-title {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 5px;
+    }
+
+    .achievement-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .achievement-progress {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .achievement-progress .progress-bar {
+        background: linear-gradient(90deg, #0082fb, #00c3ff);
+        border-radius: 3px;
+    }
+
+    /* Estilos para tablas */
+    .table-dark {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .table-dark thead th {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+    }
+
+    .table-dark tbody td {
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .table-hover tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+</style>
+
+<!-- Script para inicializar tooltips de Bootstrap -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

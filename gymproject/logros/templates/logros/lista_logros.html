@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Logros Disponibles{% endblock %}
+
+{% block content %}
+<div class="apple-fitness-container">
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-glass mb-4">
+        <h2 class="display-6 fw-bold">Logros Disponibles</h2>
+        <div class="subtitle">Desbloquea logros para ganar puntos y subir de nivel</div>
+    </div>
+
+    <!-- Navegación por categorías -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <ul class="nav nav-pills nav-fill achievement-categories mb-3" id="achievementCategories" role="tablist">
+                {% for categoria, logros in categorias.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}"
+                            id="cat-{{ categoria|slugify }}-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#cat-{{ categoria|slugify }}"
+                            type="button" role="tab"
+                            aria-controls="cat-{{ categoria|slugify }}"
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {{ categoria }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="achievementCategoriesContent">
+                {% for categoria, logros in categorias.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                     id="cat-{{ categoria|slugify }}"
+                     role="tabpanel"
+                     aria-labelledby="cat-{{ categoria|slugify }}-tab">
+
+                    <div class="row achievements-grid">
+                        {% for logro in logros %}
+                        <div class="col-6 col-md-4 col-lg-3 mb-4">
+                            <div class="achievement-card" onclick="location.href='{% url 'logros:detalle_logro' logro.id %}'">
+                                <div class="achievement-card-header">
+                                    {% if logro.icono %}
+                                    <img src="{{ logro.icono.url }}" alt="{{ logro.nombre }}" class="achievement-icon">
+                                    {% else %}
+                                    <div class="achievement-icon-placeholder">
+                                        <i class="bi bi-trophy"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="achievement-card-body">
+                                    <h6 class="achievement-title">{{ logro.nombre }}</h6>
+                                    <p class="achievement-description">{{ logro.descripcion }}</p>
+                                    <div class="achievement-reward">
+                                        <i class="bi bi-star-fill"></i> +{{ logro.puntos_recompensa }} XP
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Volver al perfil -->
+    <a href="{% url 'logros:perfil_gamificacion' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver al perfil
+    </a>
+</div>
+
+<!-- Estilos específicos para la página de logros -->
+<style>
+    /* Estilos para las pestañas de categorías */
+    .achievement-categories {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+    }
+
+    .achievement-categories .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin: 0 5px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .achievement-categories .nav-link:hover {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .achievement-categories .nav-link.active {
+        background: linear-gradient(135deg, #0082fb, #0060d6);
+        color: white;
+    }
+
+    /* Estilos para las tarjetas de logros */
+    .achievements-grid {
+        margin-top: 20px;
+    }
+
+    .achievement-card {
+        background: rgba(30, 30, 32, 0.7);
+        border-radius: 16px;
+        overflow: hidden;
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .achievement-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        border-color: rgba(0, 130, 251, 0.5);
+    }
+
+    .achievement-card-header {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        text-align: center;
+    }
+
+    .achievement-icon {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+    }
+
+    .achievement-icon-placeholder {
+        width: 60px;
+        height: 60px;
+        background: rgba(0, 130, 251, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: #0082fb;
+        font-size: 1.8rem;
+    }
+
+    .achievement-card-body {
+        padding: 15px;
+    }
+
+    .achievement-title {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 8px;
+        font-size: 1rem;
+    }
+
+    .achievement-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+        height: 60px;
+        overflow: hidden;
+    }
+
+    .achievement-reward {
+        color: #ffcc00;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

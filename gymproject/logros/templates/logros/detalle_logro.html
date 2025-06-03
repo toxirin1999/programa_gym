@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Detalle de Logro{% endblock %}
+
+{% block content %}
+<div class="apple-fitness-container">
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-glass mb-4">
+        <h2 class="display-6 fw-bold">{{ logro.nombre }}</h2>
+        <div class="subtitle">Logro de tipo {{ logro.tipo.get_categoria_display }}</div>
+    </div>
+
+    <!-- Tarjeta de detalle del logro -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <div class="row">
+                <div class="col-md-3 text-center mb-4 mb-md-0">
+                    {% if logro.icono %}
+                    <img src="{{ logro.icono.url }}" alt="{{ logro.nombre }}" class="achievement-detail-icon">
+                    {% else %}
+                    <div class="achievement-detail-icon-placeholder">
+                        <i class="bi bi-trophy"></i>
+                    </div>
+                    {% endif %}
+                    <div class="achievement-reward mt-3">
+                        <span class="fitness-badge primary large">+{{ logro.puntos_recompensa }} XP</span>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <h5 class="achievement-detail-title">Descripción</h5>
+                    <p class="achievement-detail-description">{{ logro.descripcion }}</p>
+
+                    <div class="fitness-divider"></div>
+
+                    <h5 class="achievement-detail-title">Cómo conseguirlo</h5>
+                    <p class="achievement-detail-description">
+                        {% if "tonelada" in logro.nombre|lower or "ton" in logro.nombre|lower %}
+                        Levanta un total acumulado de {{ logro.meta_valor }} kg en cualquier ejercicio.
+                        {% elif "entreno" in logro.nombre|lower or "entrenamiento" in logro.nombre|lower %}
+                        Completa {{ logro.meta_valor }} entrenamientos.
+                        {% elif "racha" in logro.nombre|lower or "consecutivo" in logro.nombre|lower %}
+                        Entrena durante {{ logro.meta_valor }} días consecutivos.
+                        {% elif "récord" in logro.nombre|lower or "record" in logro.nombre|lower %}
+                        Supera tu récord personal en {{ logro.meta_valor }} ejercicios diferentes.
+                        {% elif "perfecto" in logro.nombre|lower %}
+                        Completa {{ logro.meta_valor }} entrenamientos sin fallar ninguna serie.
+                        {% else %}
+                        Alcanza un valor de {{ logro.meta_valor }} en la métrica asociada a este logro.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usuarios que han desbloqueado este logro -->
+    <div class="fitness-card mb-4">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-people"></i> Usuarios que han desbloqueado este logro
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if usuarios_logro %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for usuario_logro in usuarios_logro %}
+                    <tr>
+                        <td>{{ usuario_logro.perfil.cliente.nombre }}</td>
+                        <td>{{ usuario_logro.fecha_desbloqueo|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-people fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">Nadie ha desbloqueado este logro aún. ¡Sé el primero!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Volver a la lista -->
+    <a href="{% url 'logros:lista_logros' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver a la lista de logros
+    </a>
+</div>
+
+<!-- Estilos específicos para la página de detalle de logro -->
+<style>
+    .achievement-detail-icon {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        margin: 0 auto;
+    }
+
+    .achievement-detail-icon-placeholder {
+        width: 120px;
+        height: 120px;
+        background: rgba(0, 130, 251, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: #0082fb;
+        font-size: 3rem;
+    }
+
+    .achievement-detail-title {
+        font-weight: 600;
+        color: #0082fb;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+
+    .achievement-detail-description {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .achievement-reward .fitness-badge.large {
+        font-size: 1.2rem;
+        padding: 8px 15px;
+    }
+
+    /* Estilos para tablas */
+    .table-dark {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .table-dark thead th {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+    }
+
+    .table-dark tbody td {
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .table-hover tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+</style>
+{% endblock %}
