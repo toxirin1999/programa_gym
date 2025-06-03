@@ -1557,7 +1557,11 @@ def mostrar_entreno_anterior(request, cliente_id, rutina_id):
             'tiene_entreno': entreno_anterior is not None,
             'num_series_procesadas': len(series_procesadas),
             'num_ejercicios': len(ejercicios_planificados),
-        }
+        },
+        'estado_joi': 'normal',  # también puedes probar con 'feliz', 'triste', 'glitch'
+        'frase_forma_joi': "¿Listo para continuar lo que empezaste ayer?",
+        'frase_extra_joi': "",
+        'frase_recaida': "",
     }
 
     return render(request, 'entrenos/entreno_anterior.html', context)

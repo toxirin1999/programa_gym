@@ -11,6 +11,7 @@ class EntrenoRealizado(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     rutina = models.ForeignKey(Rutina, on_delete=models.CASCADE)
     fecha = models.DateField(auto_now_add=True)
+    procesado_gamificacion = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.cliente.nombre} - {self.rutina.nombre} ({self.fecha})"
