@@ -21,6 +21,8 @@ from django.urls import reverse
 from .models import Programa
 from collections import defaultdict
 import json
+from joi.utils import frase_motivadora_entrenador
+
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
@@ -78,6 +80,105 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from datetime import date
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+# Si tienes modelos relacionados con entrenos, emociones o logros en otras apps:
+
+from entrenos.models import EntrenoRealizado, EstadoEmocional, LogroDesbloqueado
+# si tienes esta app
+from logros.models import Logro  # o el nombre de tu modelo de logros
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from entrenos.models import EntrenoRealizado, EstadoEmocional, LogroDesbloqueado
+
+from django.shortcuts import render
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from entrenos.models import EntrenoRealizado, DetalleEjercicioRealizado, EstadoEmocional, LogroDesbloqueado
+
+
+@login_required
+def mockup_demo(request):
+    cliente = request.user.cliente_perfil
+
+    entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:3]
+    emociones = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha')[:1]
+    logros = LogroDesbloqueado.objects.filter(cliente=cliente)
+
+    # Cálculos
+    entrenos_count = EntrenoRealizado.objects.filter(cliente=cliente).count()
+    carga_total = 0
+    for entreno in entrenos:
+        for detalle in entreno.detalles.all():
+            carga_total += detalle.peso_kg * detalle.repeticiones * detalle.series
+
+    emociones_lista = [
+        ("😊", "feliz"),
+        ("😐", "neutro"),
+        ("😟", "estresado"),
+        ("😣", "agotado"),
+        ("🥀", "triste"),
+        ("🕳", "glitch"),
+    ]
+
+    return render(request, 'clientes/mockup_demo.html', {
+        'usuario': request.user,
+        'entrenos': entrenos,
+        'emociones_lista': emociones_lista,
+        'entrenos_count': entrenos_count,
+        'carga_total': round(carga_total),
+        'consistencia': 80,
+        'logros': logros,
+    })
+
+
+@login_required
+def inicio_cliente(request):
+    cliente = request.user.cliente_perfil
+
+    # Últimos entrenos
+    entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:5]
+
+    # Últimas emociones
+    emociones = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha')[:5]
+    emocion_reciente = emociones.first()
+
+    # Logros
+    logros = LogroDesbloqueado.objects.filter(cliente=cliente)
+
+    # Cálculos de resumen
+    entrenos_count = entrenos.count()
+
+    # Carga total (suma del peso por entreno)
+    carga_total = 0
+    for entreno in entrenos:
+        for detalle in entreno.detalles.all():
+            carga_total += detalle.peso_kg * detalle.repeticiones * detalle.series
+
+    consistencia = 80  # Puedes cambiar esto por un cálculo real más adelante
+    emociones = [
+        ("😊", "feliz"),
+        ("😐", "neutro"),
+        ("😟", "estresado"),
+        ("😣", "agotado"),
+        ("🥀", "triste"),
+        ("🕳", "glitch"),
+    ]
+    return render(request, 'clientes/inicio.html', {
+        'usuario': request.user,
+        'entrenos': entrenos,
+        'emociones': emociones,
+        'logros': logros,
+        'emocion_reciente': emocion_reciente,
+        'recuerdo': None,  # Puedes integrarlo después
+        'entrenos_count': entrenos_count,
+        'carga_total': round(carga_total),
+        'consistencia': consistencia,
+        'emociones_lista': emociones,
+    })
+
 
 @require_POST
 @login_required
@@ -111,9 +212,9 @@ def registrar_emocion(request):
 @login_required
 def redirigir_usuario(request):
     if request.user.is_superuser or request.user.is_staff:
-        return redirect('dashboard')  # Panel del entrenador
+        return redirect('panel_entrenador')  # ✅ panel nuevo con Joi y diseño moderno
     else:
-        return redirect('panel_cliente')  # Panel del cliente con Joi
+        return redirect('panel_cliente')
 
 
 @login_required
@@ -912,8 +1013,102 @@ def home(request):
 
 # Vista index
 from django.contrib.auth.decorators import login_required
-from .models import Cliente
+from django.http import HttpResponseForbidden
+from .models import Cliente, RevisionProgreso
+from django.utils.timezone import now
+from datetime import timedelta
+from joi.utils import (
+    frase_motivadora_entrenador_estado,
+    recuperar_frase_de_recaida,
+    obtener_estado_joi,
+    frase_cambio_forma_joi
+)
 
+
+@login_required
+def panel_entrenador(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Acceso solo para entrenadores.")
+
+    clientes = Cliente.objects.all()
+    total_clientes = clientes.count()
+    total_revisiones = RevisionProgreso.objects.count()
+
+    # Alertas
+    alertas = []
+    for cliente in clientes:
+        ultima = cliente.revisiones.order_by('-fecha').first()
+        if ultima and ultima.check_alerts():
+            alertas.append((cliente, ultima.check_alerts()))
+    total_alertas = len(alertas)
+
+    # Actividad reciente
+    hoy = now().date()
+    entrenos_semana = RevisionProgreso.objects.filter(fecha__gte=hoy - timedelta(days=7)).count()
+
+    # Estado Joi global
+    if total_alertas >= 4:
+        estado_joi = "glitch"
+    elif entrenos_semana == 0:
+        estado_joi = "triste"
+    else:
+        estado_joi = "presente"
+
+    from datetime import datetime
+
+    # Hora actual
+    hora_actual = datetime.now().hour
+    if 5 <= hora_actual < 12:
+        joi_momento = "mañana"
+    elif 12 <= hora_actual < 18:
+        joi_momento = "tarde"
+    elif 18 <= hora_actual < 22:
+        joi_momento = "noche"
+    else:
+        joi_momento = "madrugada"
+
+    # Estación según mes
+    mes = datetime.now().month
+    if mes in [12, 1, 2]:
+        joi_estacion = "invierno"
+    elif mes in [3, 4, 5]:
+        joi_estacion = "primavera"
+    elif mes in [6, 7, 8]:
+        joi_estacion = "verano"
+    else:
+        joi_estacion = "otoño"
+    from joi.utils import frase_estacion_momento
+    from joi.utils import frase_emocional_recaida
+
+    if estado_joi in ["glitch", "triste"]:
+        frase_recaida = frase_emocional_recaida(estado_joi)
+    else:
+        frase_recaida = None
+
+    frase_estacional_joi = frase_estacion_momento(joi_estacion, joi_momento)
+    frase_forma_joi = frase_cambio_forma_joi(estado_joi)
+    frase_extra_joi = "Estoy observando tu impacto..." if estado_joi == "presente" else "Las señales se están acumulando..."
+    frase_recaida = recuperar_frase_de_recaida(request.user) if estado_joi in ["glitch", "triste"] else None
+
+    return render(request, 'clientes/panel_entrenador.html', {
+        'clientes': clientes,
+        'total_clientes': total_clientes,
+        'total_revisiones': total_revisiones,
+        'entrenos_hoy': RevisionProgreso.objects.filter(fecha=hoy).count(),
+        'entrenos_semana': entrenos_semana,
+        'alertas': alertas,
+
+        # Joi flotante
+        'estado_joi': estado_joi,
+        'frase_forma_joi': frase_forma_joi,
+        'frase_extra_joi': frase_extra_joi,
+        'frase_recaida': frase_recaida,
+        'joi_momento': joi_momento,
+        'joi_estacion': joi_estacion,
+        'frase_estacional_joi': frase_estacional_joi,
+        'frase_recaida': frase_recaida,
+
+    })
 
 
 @login_required
@@ -931,6 +1126,7 @@ def lista_clientes(request):
         'programas': programas,
         'today': date.today(),
     })
+
 
 def asignar_programa_a_cliente(request, programa_id):
     if request.method == 'POST':

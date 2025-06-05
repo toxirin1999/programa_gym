@@ -28,13 +28,14 @@ urlpatterns = [
     # Nutrición
     path('nutricion/calcular/', views.calcular_plan_nutricional, name='calcular_plan_nutricional'),
 
-    # Redirección inteligente (manual, no raíz)
-    path('inicio/', login_required(redirigir_usuario), name='redirigir_usuario'),
+    # Inicio Joi personalizado
+    path('mockup_inicio/', views.inicio_cliente, name='inicio_cliente'),
 
     # Datos y medidas
     path('datos-graficas/<int:cliente_id>/', views.datos_graficas, name='datos_graficas'),
     path('medidas/', views.lista_medidas, name='lista_medidas'),
     path('medidas/agregar/', views.agregar_medida, name='agregar_medida'),
+    path('mockup-demo/', views.mockup_demo, name='mockup_demo'),
 
     # Historial
     path('historial/<int:cliente_id>/', historial_cliente, name='historial_cliente'),
@@ -54,4 +55,5 @@ urlpatterns = [
     # Comparación
     path('comparar/', views.comparar_clientes, name='comparar_clientes'),
     path('comparar/datos/', views.datos_comparacion, name='datos_comparacion'),
+    path('panel-entrenador/', views.panel_entrenador, name='panel_entrenador'),
 ]
