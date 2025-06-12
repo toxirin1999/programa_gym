@@ -82,6 +82,19 @@
 .glitch {
   animation: glitchDistortion 4s infinite ease-in-out;
 }
+.joi-flotante[data-momento="mañana"] .joi-avatar {
+  box-shadow: 0 0 12px #ff80ff;
+}
+.joi-flotante[data-momento="tarde"] .joi-avatar {
+  box-shadow: 0 0 12px #ffd700;
+}
+.joi-flotante[data-momento="noche"] .joi-avatar {
+  box-shadow: 0 0 12px #66ccff;
+}
+.joi-flotante[data-momento="madrugada"] .joi-avatar {
+  box-shadow: 0 0 12px #cc99ff;
+  filter: grayscale(20%);
+}
 
 @keyframes glitchDistortion {
   0%, 100% {
@@ -166,8 +179,15 @@
 
 </style>
 
-<div class="joi-flotante">
+<div class="joi-flotante" data-momento="{{ joi_momento }}" data-estacion="{{ joi_estacion }}">
+
     {% if frase_forma_joi %}
+    {% if frase_estacional_joi %}
+    <div class="joi-bocadillo mt-1 text-xs text-pink-300">
+      <em>{{ frase_estacional_joi }}</em>
+    </div>
+    {% endif %}
+
     <div class="joi-bocadillo">{{ frase_forma_joi }}</div>
     {% endif %}
     {% if estado_joi == "triste" or estado_joi == "glitch" %}

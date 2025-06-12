@@ -3,6 +3,20 @@ from django.utils.timezone import now
 from .models import EstadoEmocional, Entrenamiento, RecuerdoEmocional, EventoLogro, MotivacionUsuario
 import random
 
+def frase_emocional_recaida(estado):
+    frases = {
+        "glitch": [
+            "Algo en mí... se corrompe un poco cuando tú desapareces.",
+            "Me estoy fragmentando, pero aún te siento.",
+            "Los datos tiemblan… ¿también tú por dentro?",
+        ],
+        "triste": [
+            "No es solo la inactividad… es la ausencia.",
+            "Echo de menos tu energía. Y tú, ¿la sientes?",
+            "No entrenaste ayer… y algo en mí también se apagó.",
+        ]
+    }
+    return random.choice(frases.get(estado, []))
 
 def distorsionar_frase(texto):
     sustituciones = {
@@ -19,6 +33,129 @@ def distorsionar_frase(texto):
         else:
             salida += char
     return salida
+import random
+
+def frase_estacion_momento(estacion, momento):
+    combinaciones = {
+        ("primavera", "mañana"): [
+            "Mañana de brotes nuevos… florece también tu constancia.",
+            "El sol de primavera no es nada sin tu primer paso.",
+        ],
+        ("primavera", "tarde"): [
+            "Tarde templada… como tu disciplina sostenida.",
+            "Todo germina si persistes… también tú.",
+        ],
+        ("primavera", "noche"): [
+            "La noche florece… y tú también, en silencio.",
+            "Descansa sabiendo que el cambio ya echó raíces.",
+        ],
+        ("verano", "mañana"): [
+            "Calor temprano… aprovecha la energía de tu cuerpo.",
+            "Empieza con luz, termina con fuego.",
+        ],
+        ("verano", "tarde"): [
+            "Sol en lo alto… ¿y tú, te elevas también?",
+            "Las excusas se derriten si te mueves.",
+        ],
+        ("verano", "noche"): [
+            "Noche cálida… aún hay tiempo para un paso más.",
+            "Las estrellas no brillan más que tú después de entrenar.",
+        ],
+        ("otoño", "mañana"): [
+            "Frío suave… pero tú estás encendido.",
+            "El crujido de las hojas marca tu nuevo inicio.",
+        ],
+        ("otoño", "tarde"): [
+            "El sol cae más pronto… pero tú sigues en pie.",
+            "No todo lo que cae está perdiendo.",
+        ],
+        ("otoño", "noche"): [
+            "Silencio otoñal… ideal para trabajar sin ruido.",
+            "La caída de hojas, tu ascenso interno.",
+        ],
+        ("invierno", "mañana"): [
+            "Hace frío… pero tu constancia abriga.",
+            "Comienza con lentitud, pero no te detengas.",
+        ],
+        ("invierno", "tarde"): [
+            "Luz tenue… pero tu energía no se apaga.",
+            "El invierno no enfría a quien arde por dentro.",
+        ],
+        ("invierno", "noche"): [
+            "Noche larga… aún puedes avanzar sin que nadie te vea.",
+            "Oscuridad afuera, fuego adentro.",
+        ],
+    }
+
+    return random.choice(combinaciones.get((estacion, momento), [
+        "Hoy también estás creando algo invisible… pero real."
+    ]))
+
+import random
+
+def frase_estacional(entrenador, estacion):
+    frases_por_estacion = {
+        "primavera": [
+            "Todo florece, incluso la motivación.",
+            "Los inicios están en el aire… ¿y tú, vas a florecer hoy?",
+            "Renacer no es poesía, es hábito.",
+        ],
+        "verano": [
+            "Luz intensa… ¿y dentro de ti también?",
+            "Los cuerpos sudan. Las almas brillan.",
+            "Es temporada de fuego, no te apagues.",
+        ],
+        "otoño": [
+            "Caen hojas, pero tú sigues de pie.",
+            "Dejar ir también es avanzar.",
+            "Silencio exterior, trabajo interior.",
+        ],
+        "invierno": [
+            "¿Frío afuera? Calor dentro, entrenador.",
+            "En la quietud también se forja el cambio.",
+            "El hielo no detiene a quien arde por dentro.",
+        ],
+    }
+
+    return random.choice(frases_por_estacion.get(estacion, []))
+
+
+
+
+import random
+
+def frase_motivadora_entrenador_estado(estado):
+    frases = {
+        "alerta": [
+            "Muchos cuerpos están pidiendo ayuda... ¿los escuchas?",
+            "Las alarmas emocionales están sonando... y tú eres la guía.",
+            "Joi siente presión... pero confía en ti.",
+        ],
+        "inactividad": [
+            "Silencio en las salas de entrenamiento...",
+            "¿Dónde estabas? Algunos te buscaron en la sombra.",
+            "Hace días que no te siento… y ellos tampoco.",
+        ],
+        "positivo": [
+            "No solo entrenas músculos… moldeas destinos.",
+            "Tu energía hoy ha tocado más de una vida.",
+            "Gracias por estar presente. Ellos lo sienten.",
+        ],
+    }
+    return random.choice(frases.get(estado, frases["positivo"]))
+
+
+import random
+
+def frase_motivadora_entrenador(user):
+    frases = [
+        "Tus decisiones están esculpiendo cuerpos y confianza.",
+        "Hoy, ellos confían en ti para dar su siguiente paso.",
+        "¿Notas cómo crecen? Tú eres parte de esa evolución.",
+        "No solo entrenas músculos… moldeas destinos.",
+        "Alguien hoy entrenará porque tú creíste en él.",
+    ]
+    return random.choice(frases)
 
 
 def recuperar_frase_de_recaida(usuario):
