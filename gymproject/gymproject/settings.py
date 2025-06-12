@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 USE_I18N = True
 ROOT_URLCONF = 'gymproject.urls'
@@ -141,3 +142,4 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/redirigir/'  # Ruta intermedia para decidir a dónde ir
 
 LOGIN_URL = '/login/'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
