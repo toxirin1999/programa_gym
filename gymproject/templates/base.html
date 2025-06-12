@@ -2,799 +2,610 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}MyGym{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <!-- Bootstrap y fuentes -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Apple Fitness Style CSS (Integrado) -->
-    <style>
-        /* Apple Fitness Style CSS */
-        :root {
-            /* Colores principales */
-            --af-background: #000000;
-            --af-card-bg: #1c1c1e;
-            --af-text-primary: #ffffff;
-            --af-text-secondary: #8e8e93;
-
-            /* Colores de anillos de actividad */
-            --af-ring-red: #ff3b30;
-            --af-ring-green: #34c759;
-            --af-ring-blue: #007aff;
-
-            /* Colores de acento */
-            --af-accent-pink: #ff2d55;
-            --af-accent-orange: #ff9500;
-            --af-accent-yellow: #ffcc00;
-            --af-accent-purple: #af52de;
-
-            /* Bordes y sombras */
-            --af-border-radius: 16px;
-            --af-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Estilos base */
-        body {
-          background-color: #0f0f0f;
-          color: white;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          padding: 20px;
-          margin: 0;
-        }
-
-        .container {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        h1 {
-          font-size: 28px;
-          font-weight: bold;
-          margin-bottom: 20px;
-          color: white;
-        }
-
-        .grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
-        .card {
-          background-color: #1a1a1a;
-          border-radius: 12px;
-          padding: 16px;
-          border: 1px solid #333;
-        }
-
-        .card-title {
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 10px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .green-text {
-          color: #32FF00;
-        }
-
-        .red-text {
-          color: #ff4d4d;
-        }
-
-        .yellow-text {
-          color: #FFD700;
-        }
-
-        .cyan-text {
-          color: #00FFFF;
-        }
-
-        .pink-text {
-          color: #FF69B4;
-        }
-
-        .full-width {
-          grid-column: span 2;
-        }
-
-        .checkmark {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          background-color: #32FF00;
-          border-radius: 50%;
-        }
-
-        .circle-empty {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          background-color: #333;
-          border-radius: 50%;
-        }
-
-        .consistency-circles {
-          display: flex;
-          gap: 4px;
-          margin: 10px 0;
-        }
-
-        .btn {
-          background-color: #0066ff;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          padding: 12px;
-          font-weight: 600;
-          width: 100%;
-          margin-top: 10px;
-          cursor: pointer;
-        }
-
-        .progress-chart {
-          width: 100%;
-          height: 150px;
-        }
-
-        .progress-img {
-          max-width: 60px;
-          border-radius: 5px;
-          float: right;
-        }
-
-        .arrow-up {
-          color: #32FF00;
-        }
-
-        .arrow-down {
-          color: #ff4d4d;
-        }
-
-        .arrow-right {
-          color: #32FF00;
-        }
-
-        a {
-            color: var(--af-ring-blue);
-            text-decoration: none;
-            transition: opacity 0.2s ease;
-        }
-
-        a:hover {
-            opacity: 0.8;
-        }
-
-        /* Navbar estilo Apple Fitness */
-        .af-navbar {
-            background-color: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px 0;
-        }
-
-        .af-navbar .navbar-brand {
-            color: #32FF00;
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
-
-        .af-navbar .nav-link {
-            color: #32FF00;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: background-color 0.2s ease;
-        }
-
-        .af-navbar .nav-link:hover,
-        .af-navbar .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Tarjetas estilo Apple Fitness */
-        .af-card {
-            background-color: var(--af-card-bg);
-            border-radius: var(--af-border-radius);
-            box-shadow: var(--af-card-shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .af-card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #32FF00;
-        }
-
-        .af-card-subtitle {
-            font-size: 0.9rem;
-            color: var(--af-text-secondary);
-            margin-bottom: 16px;
-        }
-
-        /* Botones estilo Apple Fitness */
-        .af-btn {
-            background-color: var(--af-ring-blue);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-block;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        .af-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .af-btn-red {
-            background-color: var(--af-ring-red);
-        }
-
-        .af-btn-green {
-            background-color: var(--af-ring-green);
-        }
-
-        .af-btn-secondary {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #32FF00;
-        }
-
-        /* Anillos de actividad */
-        .activity-rings-container {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            margin: 0 auto;
-        }
-
-        .activity-ring-svg {
-            transform: rotate(-90deg);
-            transform-origin: center;
-        }
-
-        .ring-background-circle {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.1);
-            stroke-width: 10;
-        }
-
-        .ring-progress-circle {
-            fill: none;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 1s ease;
-        }
-
-        .ring-progress-red {
-            stroke: var(--af-ring-red);
-        }
-
-        .ring-progress-green {
-            stroke: var(--af-ring-green);
-        }
-
-        .ring-progress-blue {
-            stroke: var(--af-ring-blue);
-        }
-
-        /* Estadísticas y métricas */
-        .af-metric {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .af-metric-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: var(--af-ring-blue);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            color: white;
-        }
-
-        .af-metric-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #32FF00;
-            margin: 0;
-        }
-
-        .af-metric-label {
-            font-size: 0.9rem;
-            color: var(--af-text-secondary);
-            margin: 0;
-        }
-
-        /* Navegación inferior */
-        .af-bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1000;
-        }
-
-        .af-bottom-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--af-text-secondary);
-            text-decoration: none;
-            font-size: 0.8rem;
-        }
-
-        .af-bottom-nav-item.active {
-            color: #32FF00;
-        }
-
-        .af-bottom-nav-icon {
-            font-size: 1.5rem;
-            margin-bottom: 4px;
-        }
-
-        /* Alertas estilo Apple Fitness */
-        .af-alert {
-            display: flex;
-            align-items: center;
-            background-color: var(--af-card-bg);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            border-left: 4px solid var(--af-ring-blue);
-        }
-
-        .af-alert-success {
-            border-left-color: var(--af-ring-green);
-        }
-
-        .af-alert-danger {
-            border-left-color: var(--af-ring-red);
-        }
-
-        .af-alert-warning {
-            border-left-color: var(--af-accent-yellow);
-        }
-
-        .af-alert-icon {
-            margin-right: 12px;
-            font-size: 1.25rem;
-        }
-
-        .af-alert-content {
-            flex: 1;
-        }
-
-        .af-alert-message {
-            margin: 0;
-        }
-
-        /* Footer estilo Apple Fitness */
-        .af-footer {
-            background-color: var(--af-background);
-            color: var(--af-text-secondary);
-            padding: 20px 0;
-            text-align: center;
-            font-size: 0.9rem;
-            margin-bottom: 60px; /* Espacio para la navegación inferior */
-        }
-
-        /* Utilidades */
-        .text-center {
-            text-align: center;
-        }
-
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-
-        .mb-5 {
-            margin-bottom: 3rem;
-        }
-
-        .w-100 {
-            width: 100%;
-        }
-
-        .me-2 {
-            margin-right: 0.5rem;
-        }
-        /* Estilos para tablas y listas estilo Apple Fitness */
-
-/* Estilos para listas */
-.af-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    border-radius: var(--af-border-radius);
-    overflow: hidden;
-    background-color: transparent;
-}
-
-.af-list-item {
-    background-color: var(--af-card-bg);
-    padding: 16px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.af-list-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.af-list-item-warning {
-    border-left: 4px solid var(--af-accent-yellow);
-}
-
-.af-list-item-danger {
-    border-left: 4px solid var(--af-ring-red);
-}
-
-.af-list-item-success {
-    border-left: 4px solid var(--af-ring-green);
-}
-
-/* Estilos para tablas */
-.af-table-container {
-    border-radius: var(--af-border-radius);
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.af-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    color: #32FF00;
-}
-
-.af-table th {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--af-text-secondary);
-    font-weight: 600;
-    text-align: left;
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.af-table td {
-    padding: 14px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    vertical-align: middle;
-}
-
-.af-table tbody tr {
-    background-color: var(--af-card-bg);
-    transition: background-color 0.2s ease;
-}
-
-.af-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.af-table tbody tr.af-row-warning {
-    background-color: rgba(255, 204, 0, 0.1);
-}
-
-.af-table tbody tr.af-row-danger {
-    background-color: rgba(255, 59, 48, 0.1);
-}
-
-.af-table tbody tr.af-row-success {
-    background-color: rgba(52, 199, 89, 0.1);
-}
-
-/* Estilos para badges */
-.af-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin-right: 6px;
-    margin-bottom: 6px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #32FF00;
-}
-
-.af-badge-blue {
-    background-color: rgba(0, 122, 255, 0.2);
-    color: var(--af-ring-blue);
-}
-
-.af-badge-green {
-    background-color: rgba(52, 199, 89, 0.2);
-    color: var(--af-ring-green);
-}
-
-.af-badge-red {
-    background-color: rgba(255, 59, 48, 0.2);
-    color: var(--af-ring-red);
-}
-
-.af-badge-yellow {
-    background-color: rgba(255, 204, 0, 0.2);
-    color: var(--af-accent-yellow);
-}
-
-.af-badge-purple {
-    background-color: rgba(175, 82, 222, 0.2);
-    color: var(--af-accent-purple);
-}
-
-.af-badge-orange {
-    background-color: rgba(255, 149, 0, 0.2);
-    color: var(--af-accent-orange);
-}
-
-.af-badge-gray {
-    background-color: rgba(142, 142, 147, 0.2);
-    color: var(--af-text-secondary);
-}
-
-/* Estilos para botones de acción */
-.af-action-btn {
-    background-color: transparent;
-    color: #32FF00;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-right: 6px;
-    transition: all 0.2s ease;
-}
-
-.af-action-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
-}
-
-.af-action-btn-primary {
-    color: var(--af-ring-blue);
-}
-
-.af-action-btn-success {
-    color: var(--af-ring-green);
-}
-
-.af-action-btn-danger {
-    color: var(--af-ring-red);
-}
-
-/* Estilos para formularios */
-.af-form-control {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #32FF00;
-    padding: 10px 14px;
-    font-size: 1rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.af-form-control:focus {
-    border-color: var(--af-ring-blue);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
-    outline: none;
-}
-
-.af-form-control::placeholder {
-    color: var(--af-text-secondary);
-}
-
-.af-form-select {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #32FF00;
-    padding: 10px 14px;
-    font-size: 1rem;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238e8e93' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 40px;
-}
-
-.af-form-select:focus {
-    border-color: var(--af-ring-blue);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
-    outline: none;
-}
-
-/* Estilos para alertas y contadores */
-.af-alert-counter {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    background-color: rgba(255, 204, 0, 0.2);
-    color: var(--af-accent-yellow);
-}
-
-/* Estilos para iconos */
-.af-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.af-icon-blue {
-    background-color: rgba(0, 122, 255, 0.2);
-    color: var(--af-ring-blue);
-}
-
-.af-icon-green {
-    background-color: rgba(52, 199, 89, 0.2);
-    color: var(--af-ring-green);
-}
-
-.af-icon-red {
-    background-color: rgba(255, 59, 48, 0.2);
-    color: var(--af-ring-red);
-}
-
-.af-icon-yellow {
-    background-color: rgba(255, 204, 0, 0.2);
-    color: var(--af-accent-yellow);
-}
-
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Dashboard – Nueva Gym{% endblock %}</title>
+    <!-- En el <head> -->
+<link rel="stylesheet" href="{% static 'css/blade-runner-atmosphere.css' %}">
+
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/dashboard_bladestyle.css' %}">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Bootstrap JS (necesario para tooltips, modals, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    .hamburger-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(49, 207, 244, 0.3), rgba(0, 35, 48, 0.7));
+      border: 1px solid rgba(49, 207, 244, 0.25);
+      box-shadow: 0 0 15px rgba(49, 207, 244, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .hamburger-btn:hover {
+      box-shadow: 0 0 20px rgba(49, 207, 244, 0.3);
+    }
+
+    .hamburger-btn span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background-color: #fff;
+      margin: 2px 0;
+      transition: all 0.3s ease;
+    }
+
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(3px, 3px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(3px, -3px);
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 280px;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(15, 23, 41, 0.95), rgba(15, 23, 41, 0.85));
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(49, 207, 244, 0.25);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      transition: left 0.3s ease;
+      overflow-y: auto;
+      padding: 80px 0 30px;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .side-menu a {
+      display: flex;
+      align-items: center;
+      padding: 15px 25px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .side-menu a:hover {
+      background: linear-gradient(to right, rgba(49, 207, 244, 0.1), transparent);
+      border-left: 3px solid #31cff4;
+    }
+
+    .side-menu a.active {
+      background: linear-gradient(to right, rgba(49, 207, 244, 0.2), transparent);
+      border-left: 3px solid #31cff4;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+      display: none;
+    }
+
+    .menu-overlay.open {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger-btn {
+        top: 15px;
+        left: 15px;
+        width: 35px;
+        height: 35px;
+      }
+
+      .side-menu {
+        width: 250px;
+        left: -250px;
+      }
+
+      .side-menu a {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+    }
+
+    #tsparticles canvas {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: -10 !important;
+      pointer-events: none;
+    }
+    <!-- Estilos para el sistema de notificaciones -->
+  <style>
+    /* Estilos para el dropdown de notificaciones */
+    .notif-dropdown {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .notif-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(49, 207, 244, 0.3), rgba(0, 35, 48, 0.7));
+      border: 1px solid rgba(49, 207, 244, 0.25);
+      box-shadow: 0 0 15px rgba(49, 207, 244, 0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .notif-btn:hover {
+      box-shadow: 0 0 20px rgba(49, 207, 244, 0.3);
+    }
+
+    .notif-icon {
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: #ff4d4d;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.7rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .notif-content {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: linear-gradient(135deg, rgba(15, 23, 41, 0.95), rgba(15, 23, 41, 0.85));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(49, 207, 244, 0.25);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1001;
+    }
+
+    .notif-content.show {
+      display: block;
+    }
+
+    .notif-header {
+      padding: 15px;
+      border-bottom: 1px solid rgba(49, 207, 244, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notif-title {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .notif-list {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .notif-item {
+      padding: 15px;
+      border-bottom: 1px solid rgba(49, 207, 244, 0.1);
+      transition: background-color 0.2s ease;
+    }
+
+    .notif-item:hover {
+      background-color: rgba(49, 207, 244, 0.1);
+    }
+
+    .notif-item-new {
+      border-left: 3px solid #31cff4;
+    }
+
+    .notif-item-title {
+      font-weight: 500;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    .notif-item-icon {
+      margin-right: 8px;
+      font-size: 1.2rem;
+    }
+
+    .notif-item-time {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-left: auto;
+    }
+
+    .notif-item-message {
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+
+    .notif-footer {
+      padding: 10px 15px;
+      text-align: center;
+      border-top: 1px solid rgba(49, 207, 244, 0.25);
+    }
+
+    .notif-footer a {
+      color: #31cff4;
+      text-decoration: none;
+    }
+
+    .notif-empty {
+      padding: 20px;
+      text-align: center;
+      color: #aaa;
+    }
+
+    @media (max-width: 768px) {
+      .notif-dropdown {
+        top: 15px;
+        right: 15px;
+      }
+
+      .notif-content {
+        width: 280px;
+        right: -10px;
+      }
+    }
+
+    /* Animación de pulso para nuevas notificaciones */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .pulse {
+      animation: pulse 0.5s ease-in-out;
+    }
+  </style>
 </head>
-<body>
-    <!-- Navbar estilo Apple Fitness -->
-    <nav class="af-navbar navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="/">MyGym</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/clientes/">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/rutinas/">Programas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/dietas/">Dietas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/anuncios/">Anuncios</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/entrenos/hacer/">Hacer entreno</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/clientes/panel/">Dashboard</a></li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'historial_entrenos' %}">Historial</a>
-                    </li>
-                    {% if user.is_authenticated %}
-  <form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold">Cerrar sesión</button>
-  </form>
+
+<body class="min-h-screen text-slate-100 flex justify-center">
+  <div id="tsparticles" class="fixed inset-0 -z-10 pointer-events-none"></div>
+
+  <div class="hamburger-btn" id="hamburgerBtn">
+    <span></span><span></span><span></span>
+  </div>
+
+  <div class="side-menu" id="sideMenu">
+    <a href="{% url 'home' %}">🏠 Inicio</a>
+    <a href="/clientes/">👥 Clientes</a>
+    <a href="/rutinas/">📋 Rutinas</a>
+    <a href="/dietas/">🥗 Dietas</a>
+    {% if request.user.is_authenticated and request.user.cliente_perfil and request.user.cliente_perfil.rutina_actual %}
+  <a href="{% url 'entreno_anterior' request.user.cliente_perfil.id request.user.cliente_perfil.rutina_actual.id %}">
+    ️‍♂️ Entreno
+  </a>
+{% else %}
+  <a href="{% url 'hacer_entreno' %}">️‍♂️ Entrenos</a>
 {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Contenido principal -->
-    <div class="container py-4 d-flex justify-content-center">
-        <div class="af-card w-100" style="max-width: 1100px;">
-            {% block content %}{% endblock %}
-        </div>
-    </div>
+    <a href="{% url 'logros:perfil_gamificacion' %}">🏆 Logros</a>
+    <a href="/anuncios/">📢 Anuncios</a>
+    <a href="{% url 'mapa_energia' %}" class="btn-fucsia mt-4">
+  🔋 Ver mapa de energía
+</a>
 
-    <!-- Mensajes y alertas -->
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="af-alert {% if message.tags == 'success' %}af-alert-success{% elif message.tags == 'error' %}af-alert-danger{% elif message.tags == 'warning' %}af-alert-warning{% endif %}">
-            <div class="af-alert-icon">
-                {% if message.tags == 'success' %}<i class="bi bi-check-circle"></i>
-                {% elif message.tags == 'error' %}<i class="bi bi-exclamation-circle"></i>
-                {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle"></i>
-                {% else %}<i class="bi bi-info-circle"></i>{% endif %}
-            </div>
-            <div class="af-alert-content">
-                <div class="af-alert-message">{{ message }}</div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-        {% endfor %}
-    </div>
+    <a href="{% url 'calendario_bitacoras' %}" class="btn-fucsia mt-4">
+  🗓 Ver calendario de bitácoras
+</a>
+    <a href="/joi/">🤖 Joi</a>
+    {% if cliente %}
+    <a href="{% url 'historial_cliente' cliente.id %}" class="btn btn-outline-info btn-sm">
+      📋 Ver historial
+    </a>
     {% endif %}
-
-    <!-- Footer estilo Apple Fitness -->
-    <footer class="af-footer">
-        &copy; {{ year|default:"2025" }} MyGym · Hecho con ❤️ en Django
-    </footer>
-
-    <!-- Navegación inferior estilo Apple Fitness -->
-    <div class="af-bottom-nav">
-        <a href="/clientes/" class="af-bottom-nav-item {% if request.path == '/clientes/' %}active{% endif %}">
-            <div class="af-bottom-nav-icon"><i class="bi bi-people"></i></div>
-            <span>Clientes</span>
+    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="menu-link">Cerrar sesión</button>
+    </form>
+    <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAnalisis" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="bi bi-graph-up"></i> Análisis
+    </a>
+    <div class="dropdown-menu" aria-labelledby="navbarDropdownAnalisis">
+        <a class="dropdown-item" href="{% url 'logros:analisis_global' %}">
+            <i class="bi bi-bar-chart"></i> Análisis Global
         </a>
-        <a href="{% url 'logros:perfil_gamificacion' %}">Logros y Misiones</a>
-        <a href="/rutinas/" class="af-bottom-nav-item {% if request.path == '/rutinas/' %}active{% endif %}">
-            <div class="af-bottom-nav-icon"><i class="bi bi-calendar-check"></i></div>
-            <span>Programas</span>
+        {% if cliente %}
+        <a class="dropdown-item" href="{% url 'logros:analisis_cliente' cliente.id %}">
+            <i class="bi bi-graph-up"></i> Análisis de {{ cliente.nombre }}
         </a>
-        <a href="/entrenos/hacer/" class="af-bottom-nav-item {% if request.path == '/entrenos/hacer/' %}active{% endif %}">
-            <div class="af-bottom-nav-icon"><i class="bi bi-activity"></i></div>
-            <span>Entrenar</span>
-        </a>
-        <a href="{% url 'historial_entrenos' %}" class="af-bottom-nav-item {% if 'historial' in request.path %}active{% endif %}">
-            <div class="af-bottom-nav-icon"><i class="bi bi-clock-history"></i></div>
-            <span>Historial</span>
-        </a>
-        <a href="/clientes/panel/" class="af-bottom-nav-item {% if request.path == '/clientes/panel/' %}active{% endif %}">
-            <div class="af-bottom-nav-icon"><i class="bi bi-speedometer2"></i></div>
-            <span>Dashboard</span>
-        </a>
+        {% endif %}
     </div>
+    <div class="notif-dropdown" id="notifDropdown" data-cliente-id="{{ cliente.id|default:'0' }}">
+    <div class="notif-btn" id="notifBtn">
+      <span class="notif-icon">🔔</span>
+      <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+    </div>
+    <div class="notif-content" id="notifContent">
+      <div class="notif-header">
+        <span class="notif-title">Notificaciones</span>
+        <span id="notifMarkAllRead" style="cursor: pointer; font-size: 0.8rem; color: #31cff4;">Marcar todo como leído</span>
+      </div>
+      <ul class="notif-list" id="notifList">
+        <li class="notif-empty" id="notifEmpty">No hay notificaciones nuevas</li>
+        <!-- Las notificaciones se cargarán aquí dinámicamente -->
+      </ul>
+      <div class="notif-footer">
+        <a href="{% url 'logros:listar_notificaciones' cliente.id|default:'0' %}">Ver todas las notificaciones</a>
+      </div>
+    </div>
+  </div>
+</li>
+  </div>
 
-    <!-- Scripts -->
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <div class="menu-overlay" id="menuOverlay"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Función para configurar el progreso de los anillos
-            function setRingProgress(ringElement, percent) {
-                if (!ringElement) return;
 
-                const circle = ringElement;
-                const radius = circle.r.baseVal.value;
-                const circumference = 2 * Math.PI * radius;
+  <main>
+    {% block content %}{% endblock %}
+  </main>
 
-                circle.style.strokeDasharray = `${circumference} ${circumference}`;
-                const offset = circumference - (percent / 100) * circumference;
-                circle.style.strokeDashoffset = offset;
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+
+      function toggleMenu() {
+        hamburgerBtn.classList.toggle('active');
+        sideMenu.classList.toggle('open');
+        menuOverlay.classList.toggle('open');
+      }
+
+      hamburgerBtn.addEventListener('click', toggleMenu);
+      menuOverlay.addEventListener('click', toggleMenu);
+
+      const menuLinks = document.querySelectorAll('.side-menu a');
+      const currentPath = window.location.pathname;
+      menuLinks.forEach(link => {
+        link.addEventListener('click', function () {
+          if (window.innerWidth <= 768) toggleMenu();
+        });
+        const linkHref = link.getAttribute('href');
+        if (linkHref === currentPath || (linkHref !== '/' && currentPath.startsWith(linkHref))) {
+          link.classList.add('active');
+        }
+      });
+    });
+     document.addEventListener('DOMContentLoaded', function() {
+      // Elementos del DOM para notificaciones
+      const notifBtn = document.getElementById('notifBtn');
+      const notifContent = document.getElementById('notifContent');
+      const notifBadge = document.getElementById('notifBadge');
+      const notifList = document.getElementById('notifList');
+      const notifEmpty = document.getElementById('notifEmpty');
+      const notifMarkAllRead = document.getElementById('notifMarkAllRead');
+      const notifDropdown = document.getElementById('notifDropdown');
+
+      // Cliente ID (debe ser proporcionado por la plantilla)
+      const clienteId = notifDropdown.dataset.clienteId;
+
+      if (!clienteId || clienteId === '0') {
+        console.log('No hay cliente ID disponible para cargar notificaciones');
+        return;
+      }
+
+      // Función para cargar notificaciones
+      function cargarNotificaciones() {
+        fetch(`/logros/api/notificaciones/${clienteId}/`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Error al cargar notificaciones');
+            }
+            return response.json();
+          })
+          .then(data => {
+            const notificaciones = data.notificaciones || [];
+
+            // Actualizar contador
+            if (notificaciones.length > 0) {
+              notifBadge.textContent = notificaciones.length;
+              notifBadge.style.display = 'flex';
+              notifEmpty.style.display = 'none';
+            } else {
+              notifBadge.style.display = 'none';
+              notifEmpty.style.display = 'block';
             }
 
-            // Buscar anillos en la página y configurar su progreso
-            const redRings = document.querySelectorAll('.ring-progress-red');
-            const greenRings = document.querySelectorAll('.ring-progress-green');
-            const blueRings = document.querySelectorAll('.ring-progress-blue');
+            // Limpiar lista de notificaciones
+            const items = notifList.querySelectorAll('.notif-item');
+            items.forEach(item => item.remove());
 
-            redRings.forEach(ring => setRingProgress(ring, 75));
-            greenRings.forEach(ring => setRingProgress(ring, 75));
-            blueRings.forEach(ring => setRingProgress(ring, 75));
-        });
-    </script>
+            // Añadir notificaciones
+            notificaciones.forEach(notif => {
+              const item = document.createElement('li');
+              item.className = 'notif-item notif-item-new';
 
-    {% block extra_js %}{% endblock %}
+              const fecha = new Date(notif.fecha);
+              const fechaFormateada = `${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()} ${fecha.getHours()}:${String(fecha.getMinutes()).padStart(2, '0')}`;
+
+              item.innerHTML = `
+                <div class="notif-item-title">
+                  <span class="notif-item-icon">${notif.icono}</span>
+                  <span>${notif.titulo}</span>
+                  <span class="notif-item-time">${fechaFormateada}</span>
+                </div>
+                <div class="notif-item-message">${notif.mensaje}</div>
+              `;
+
+              item.addEventListener('click', () => {
+                marcarComoLeida(notif.id);
+                if (notif.url_accion) {
+                  window.location.href = notif.url_accion;
+                }
+              });
+
+              notifList.insertBefore(item, notifEmpty);
+            });
+          })
+          .catch(error => console.error('Error al cargar notificaciones:', error));
+      }
+
+      // Función para marcar una notificación como leída
+      function marcarComoLeida(notifId) {
+        fetch(`/logros/notificaciones/marcar-leida/${notifId}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al marcar notificación como leída');
+          }
+          cargarNotificaciones();
+        })
+        .catch(error => console.error('Error:', error));
+      }
+
+      // Función para marcar todas las notificaciones como leídas
+      function marcarTodasComoLeidas() {
+        fetch(`/logros/notificaciones/marcar-todas-leidas/${clienteId}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al marcar todas las notificaciones como leídas');
+          }
+          cargarNotificaciones();
+        })
+        .catch(error => console.error('Error:', error));
+      }
+
+      // Función para obtener el token CSRF
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      // Eventos
+      notifBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        notifContent.classList.toggle('show');
+        if (notifContent.classList.contains('show')) {
+          cargarNotificaciones();
+        }
+      });
+
+      notifMarkAllRead.addEventListener('click', function(e) {
+        e.stopPropagation();
+        marcarTodasComoLeidas();
+      });
+
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener('click', function(e) {
+        if (!notifDropdown.contains(e.target)) {
+          notifContent.classList.remove('show');
+        }
+      });
+
+      // Cargar notificaciones al inicio
+      cargarNotificaciones();
+
+      // Cargar notificaciones cada 60 segundos
+      setInterval(cargarNotificaciones, 60000);
+
+      // Mostrar animación de pulso cuando llegan nuevas notificaciones
+      let lastCount = 0;
+      setInterval(() => {
+        const currentCount = parseInt(notifBadge.textContent) || 0;
+        if (currentCount > lastCount && lastCount > 0) {
+          notifBtn.classList.add('pulse');
+          setTimeout(() => {
+            notifBtn.classList.remove('pulse');
+          }, 1000);
+        }
+        lastCount = currentCount;
+      }, 60500);
+    });
+
+  </script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const joi = document.querySelector('.joi-flotante');
+
+    if (joi) {
+      setInterval(() => {
+        if (Math.random() < 0.15) { // 15% de probabilidad cada ciclo
+          joi.classList.add('joi-glitch');
+          setTimeout(() => joi.classList.remove('joi-glitch'), 300);
+        }
+      }, 5000); // prueba cada 5 segundos
+    }
+  });
+</script>
+
+{% block extra_js %}{% endblock %}
+<!-- Antes del cierre de </body> -->
+<script src="{% static 'js/blade-runner-particles.js' %}"></script>
 </body>
 </html>
