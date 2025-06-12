@@ -19,7 +19,8 @@ urlpatterns = [
     path('ejercicios/', views.lista_ejercicios, name='lista_ejercicios'),
     path('ejercicios/agregar/', views.agregar_ejercicio_general, name='agregar_ejercicio_general'),
     # rutinas/urls.py
-    path('programas/editar/<int:programa_id>/', views.agregar_ejercicio_general, name='editar_programa'),
+    path('programas/editar/<int:programa_id>/', views.editar_programa, name='editar_programa'),
+
     # Cambiar el nombre a algo más descriptivo
 
     # Rutinas
