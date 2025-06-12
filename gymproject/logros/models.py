@@ -9,6 +9,7 @@ from clientes.models import Cliente
 from rutinas.models import Ejercicio
 from entrenos.models import EntrenoRealizado, SerieRealizada
 
+
 class Nivel(models.Model):
     """
     Modelo para definir los niveles del sistema de gamificación.
@@ -36,12 +37,12 @@ class Nivel(models.Model):
         null=True,
         verbose_name=_("Icono")
     )
-    
+
     class Meta:
         verbose_name = _("Nivel")
         verbose_name_plural = _("Niveles")
         ordering = ['numero']
-    
+
     def __str__(self):
         return f"{self.numero} - {self.nombre} ({self.puntos_requeridos} pts)"
 
@@ -55,8 +56,14 @@ class TipoLogro(models.Model):
         ('consistencia', _('Consistencia')),
         ('superacion', _('Superación')),
         ('especial', _('Especial')),
+        # Nuevas categorías
+        ('exploracion', _('Exploración')),
+        ('equilibrio', _('Equilibrio')),
+        ('social', _('Social')),
+        ('tecnica', _('Técnica')),
+        ('recuperacion', _('Recuperación')),
     ]
-    
+
     nombre = models.CharField(
         max_length=50,
         verbose_name=_("Nombre")
@@ -71,11 +78,11 @@ class TipoLogro(models.Model):
         blank=True,
         verbose_name=_("Descripción")
     )
-    
+
     class Meta:
         verbose_name = _("Tipo de Logro")
         verbose_name_plural = _("Tipos de Logros")
-    
+
     def __str__(self):
         return f"{self.nombre} ({self.get_categoria_display()})"
 
@@ -122,12 +129,12 @@ class Logro(models.Model):
         auto_now_add=True,
         verbose_name=_("Fecha de creación")
     )
-    
+
     class Meta:
         verbose_name = _("Logro")
         verbose_name_plural = _("Logros")
         ordering = ['tipo', 'meta_valor']
-    
+
     def __str__(self):
         return self.nombre
 
@@ -142,8 +149,10 @@ class TipoQuest(models.Model):
         ('mensual', _('Mensual')),
         ('progresiva', _('Progresiva')),
         ('permanente', _('Permanente')),
+        # Nueva categoría
+        ('especial', _('Especial')),
     ]
-    
+
     nombre = models.CharField(
         max_length=50,
         verbose_name=_("Nombre")
@@ -163,11 +172,11 @@ class TipoQuest(models.Model):
         blank=True,
         verbose_name=_("Descripción")
     )
-    
+
     class Meta:
         verbose_name = _("Tipo de Misión")
         verbose_name_plural = _("Tipos de Misiones")
-    
+
     def __str__(self):
         return f"{self.nombre} ({self.get_periodo_display()})"
 
@@ -230,12 +239,45 @@ class Quest(models.Model):
         auto_now_add=True,
         verbose_name=_("Fecha de creación")
     )
-    
+    # Nuevos campos para misiones progresivas y especiales
+    orden_secuencia = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_("Orden en secuencia"),
+        help_text=_("Para misiones progresivas, indica el orden en la secuencia")
+    )
+    grupo_secuencia = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name=_("Grupo de secuencia"),
+        help_text=_("Identificador del grupo de misiones progresivas")
+    )
+    requisito_anterior = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name=_("Requisito anterior"),
+        help_text=_("Nombre de la misión que debe completarse antes")
+    )
+    fecha_inicio_evento = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Fecha inicio evento"),
+        help_text=_("Para misiones especiales con tiempo limitado")
+    )
+    fecha_fin_evento = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("Fecha fin evento"),
+        help_text=_("Para misiones especiales con tiempo limitado")
+    )
+
     class Meta:
         verbose_name = _("Misión")
         verbose_name_plural = _("Misiones")
         ordering = ['tipo', 'nombre']
-    
+
     def __str__(self):
         return self.nombre
 
@@ -284,20 +326,20 @@ class PerfilGamificacion(models.Model):
         auto_now=True,
         verbose_name=_("Última actualización")
     )
-    
+
     class Meta:
         verbose_name = _("Perfil de Gamificación")
         verbose_name_plural = _("Perfiles de Gamificación")
-    
+
     def __str__(self):
         return f"Perfil de {self.cliente.nombre} - Nivel {self.nivel_actual.numero if self.nivel_actual else 1}"
-    
+
     def actualizar_nivel(self):
         """Actualiza el nivel del usuario según sus puntos totales"""
         nuevo_nivel = Nivel.objects.filter(
             puntos_requeridos__lte=self.puntos_totales
         ).order_by('-puntos_requeridos').first()
-        
+
         if nuevo_nivel and (not self.nivel_actual or nuevo_nivel.numero > self.nivel_actual.numero):
             self.nivel_actual = nuevo_nivel
             self.save(update_fields=['nivel_actual'])
@@ -333,13 +375,13 @@ class LogroUsuario(models.Model):
         default=False,
         verbose_name=_("Completado")
     )
-    
+
     class Meta:
         verbose_name = _("Logro de Usuario")
         verbose_name_plural = _("Logros de Usuarios")
         unique_together = ('perfil', 'logro')
         ordering = ['-fecha_desbloqueo']
-    
+
     def __str__(self):
         return f"{self.perfil.cliente.nombre} - {self.logro.nombre}"
 
@@ -377,13 +419,13 @@ class QuestUsuario(models.Model):
         default=False,
         verbose_name=_("Completada")
     )
-    
+
     class Meta:
         verbose_name = _("Misión de Usuario")
         verbose_name_plural = _("Misiones de Usuarios")
         unique_together = ('perfil', 'quest')
         ordering = ['-fecha_inicio']
-    
+
     def __str__(self):
         return f"{self.perfil.cliente.nombre} - {self.quest.nombre}"
 
@@ -434,11 +476,38 @@ class HistorialPuntos(models.Model):
         default=timezone.now,
         verbose_name=_("Fecha")
     )
-    
+
     class Meta:
         verbose_name = _("Historial de Puntos")
         verbose_name_plural = _("Historial de Puntos")
         ordering = ['-fecha']
-    
+
     def __str__(self):
         return f"{self.perfil.cliente.nombre} - {self.puntos} pts - {self.fecha.strftime('%d/%m/%Y')}"
+
+
+# logros/models.py - Añadir al final del archivo
+
+class Notificacion(models.Model):
+    TIPOS = (
+        ('logro', 'Logro Desbloqueado'),
+        ('mision', 'Misión Completada'),
+        ('nivel', 'Subida de Nivel'),
+        ('racha', 'Racha Conseguida'),
+        ('sistema', 'Sistema'),
+    )
+
+    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    titulo = models.CharField(max_length=100)
+    mensaje = models.TextField()
+    icono = models.CharField(max_length=50, default='🏆')
+    fecha = models.DateTimeField(auto_now_add=True)
+    leida = models.BooleanField(default=False)
+    url_accion = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"{self.get_tipo_display()}: {self.titulo} ({self.cliente.nombre})"
