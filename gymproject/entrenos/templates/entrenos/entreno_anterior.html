@@ -1,477 +1,117 @@
 {% extends 'base.html' %}
-{% load entreno_tags %}  <!-- ¡Esta línea es crucial! -->
+{% load entreno_tags %}
 {% load static %}
 
-{% block title %}Último Entreno de {{ cliente.nombre }}{% endblock %}
+{% block title %}Entreno anterior – {{ cliente.nombre }}{% endblock %}
 
 {% block content %}
-<div class="apple-fitness-container">
-    <!-- Cabecera con efecto de cristal -->
-    <div class="header-glass mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                {% if cliente.foto %}
-                <img src="{{ cliente.foto.url }}" alt="Foto de {{ cliente.nombre }}"
-                     class="rounded-circle"
-                     style="width: 88px; height: 88px; object-fit: cover; border: 2px solid #32FF00;">
-                {% else %}
-                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                     style="width: 48px; height: 48px;">
-                    <i class="bi bi-person"></i>
-                </div>
-                {% endif %}
-                <h2 class="display-6 fw-bold mb-0">{{ cliente.nombre }}</h2>
+<div class="contenedor-principal py-6 px-4">
+    <div class="demo-panel">
+        <div class="flex items-center gap-4">
+            {% if cliente.foto %}
+            <img src="{{ cliente.foto.url }}" alt="Foto de {{ cliente.nombre }}" class="w-16 h-16 rounded-full border-2 border-[#32FF00] object-cover">
+            {% endif %}
+            <div>
+                <h2>{{ cliente.nombre }}</h2>
+                <p class="title">{{ rutina.nombre }}</p>
             </div>
-            <span class="fitness-badge primary">{{ rutina.nombre }}</span>
         </div>
-        <div class="subtitle">Último entreno</div>
     </div>
 
     {% if entreno %}
-    <!-- Fecha con icono -->
-    <div class="date-display mb-4">
-        <i class="bi bi-calendar-check"></i>
-        <span>{{ entreno.fecha|date:"d M Y" }}</span>
-    </div>
+    <div class="demo-panel">
+        <h3 class="text-xl font-bold text-[#32FF00] mb-4">📅 {{ entreno.fecha|date:"d M Y" }}</h3>
 
-    <!-- Tarjeta de series realizadas -->
-    <div class="fitness-card mb-4">
-        <div class="fitness-card-body">
-            <h5 class="fitness-card-title mb-3">
-                <i class="bi bi-list-check"></i> Series realizadas
-            </h5>
-
-            {% if series_procesadas %}
-            {% regroup series_procesadas by ejercicio as series_por_ejercicio %}
-
-            <div class="exercise-list">
-                {% for grupo in series_por_ejercicio %}
-                <div class="exercise-item">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="exercise-name">{{ grupo.grouper.nombre }}</h6>
-                            <div class="series-chips mt-2">
-                                {% for serie in grupo.list %}
-                                <span class="series-chip">
-                                    #{{ serie.serie_numero }}: {{ serie.repeticiones }}×{{ serie.peso_kg }}kg
-                                </span>
-                                {% endfor %}
-                            </div>
+        <h4 class="text-white text-lg font-semibold mb-2">Series realizadas</h4>
+        {% regroup series_procesadas by ejercicio as series_por_ejercicio %}
+        <div class="space-y-3">
+            {% for grupo in series_por_ejercicio %}
+            <div class="info-card p-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 style="color: #00ffff; margin-bottom: 20px;">{{ grupo.grouper.nombre }}</h2>
+                        <div class="text-sm text-gray-300 flex flex-wrap gap-2 mt-1">
+                            {% for serie in grupo.list %}
+                            <span class="text-lime-400 font-bold text-lg animate-pulse">
+                                {{ serie.serie_numero }}: {{ serie.repeticiones }}×{{ serie.peso_kg }}kg
+                                <br>
+                    </span>
+                            {% endfor %}
                         </div>
-                        <span class="fitness-badge volume">
-                            {{ grupo.list|sum_volumen }}kg
-                        </span>
                     </div>
+
                 </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="bi bi-clipboard-x"></i>
-                    <p>Sin series registradas.</p>
-                </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <div class="empty-state">
-                <i class="bi bi-clipboard-x"></i>
-                <p>Sin series registradas o datos no disponibles.</p>
-            </div>
-            {% endif %}
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Plan próximo entreno -->
     {% if plan %}
-    <div class="fitness-card highlight mb-4">
-        <div class="fitness-card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-arrow-up-circle"></i> Plan próximo entreno
-            </h5>
-        </div>
-        <div class="fitness-card-body">
-            <div class="exercise-list">
-                {% for ejercicio in plan %}
-                <div class="exercise-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="exercise-name">{{ ejercicio.nombre }}</h6>
-                            <div class="exercise-details">
-                                {{ ejercicio.series }}×{{ ejercicio.repeticiones }} @ {{ ejercicio.peso_kg }}kg
-                            </div>
-                        </div>
-                        {% if ejercicio.peso_adaptado %}
-                        <span class="fitness-badge success">
-                            <i class="bi bi-arrow-up"></i> +10% ({{ ejercicio.peso_base }}kg → {{ ejercicio.peso_kg }}kg)
-                        </span>
-                        {% endif %}
+    <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-4">📋 Plan próximo entreno</h4>
+        <div class="space-y-3">
+            {% for ejercicio in plan %}
+            <div class="info-card p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 style="color: #00ffff; margin-bottom: 20px;">{{ ejercicio.nombre }}</h2>
+                        <p class="text-lime-400 font-bold text-lg animate-pulse">{{ ejercicio.series }}x{{ ejercicio.repeticiones }} @ {{ ejercicio.peso_kg }}kg</p>
                     </div>
+                    {% if ejercicio.peso_adaptado %}
+                    <span class="text-lime-400 text-sm font-semibold">
+                    +10% ({{ ejercicio.peso_base }}kg → {{ ejercicio.peso_kg }}kg)
+                  </span>
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
         </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="bloque-panel glass-rojo text-center py-6">
+        <p class="text-white">Este cliente aún no ha realizado esta rutina.</p>
     </div>
     {% endif %}
 
-    {% else %}
-    <!-- Mensaje cuando no hay entrenos -->
-    <div class="alert-fitness">
-        <div class="alert-icon">
-            <i class="bi bi-info-circle"></i>
-        </div>
-        <div class="alert-content">
-            Este cliente aún no ha realizado esta rutina.
-        </div>
+    <div class="bg-[#1a1a1a] p-4 rounded-xl mt-6 shadow-md border border-cyan-800 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-4">📈 Progreso semanal</h4>
+        <canvas id="graficoProgreso" height="150"></canvas>
     </div>
-    {% endif %}
-    <div class="fitness-card mb-4">
-        <div class="fitness-card-body">
-            <h5 class="fitness-card-title mb-3">📈 Progreso semanal</h5>
-            <canvas id="graficoProgreso" height="150"></canvas>
-        </div>
-    </div>
-    <!-- Botón de acción principal -->
-    <div class="action-button-container">
-        <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}"
-           class="fitness-button primary large">
-            <i class="bi bi-plus-circle"></i> Empezar nuevo entreno
+
+    <div class="mt-6">
+        <a href="{% url 'empezar_entreno' rutina.id %}?cliente_id={{ cliente.id }}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+            <i class="bi bi-play-circle"></i> Empezar nuevo entreno
         </a>
     </div>
-    {% include 'joi/partials/joi_flotante.html' %}
-
-
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('graficoProgreso');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: {{ progreso_fechas|safe }},
-                    datasets: [{
-                        label: 'Volumen total',
-                        data: {{ progreso_valores|safe }},
-                        borderColor: '#32FF00',
-                        tension: 0.3,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
-                    }
-                }
-            });
-        }
-     const joyMessage = document.getElementById('joy-message');
-
-        // Aquí puedes poner una lógica que detecte el tipo de entrenamiento
-        // o rutina que se va a realizar, por ejemplo, si es un entrenamiento de fuerza
-        // o resistencia, y hacer que Joi reaccione de forma diferente.
-
-        const entreno = "{{ rutina.nombre }}";  // Aquí obtenemos la rutina asignada
-
-        if (entreno.includes("Fuerza")) {
-            joyMessage.textContent = "¡Vamos a darlo todo en este entrenamiento de fuerza! 💥";
-        } else if (entreno.includes("Resistencia")) {
-            joyMessage.textContent = "¡A resistir con todo! Mantén el ritmo, {{ cliente.nombre }}! 🏃‍♂️";
-        } else {
-            joyMessage.textContent = "¡Estás listo para el entrenamiento, {{ cliente.nombre }}! 💪";
-        }
-
-        joyMessage.style.display = "block";
+      const ctx = document.getElementById('graficoProgreso');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: {{ progreso_fechas|safe }},
+            datasets: [{
+              label: 'Volumen total',
+              data: {{ progreso_valores|safe }},
+              borderColor: '#32FF00',
+              tension: 0.3,
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+              y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+            }
+          }
+        });
+      }
     });
 </script>
-<style>
-    /* Apple Fitness Style */
-    .apple-fitness-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px 15px;
-        color: #f5f5f7;
-    }
-
-    .header-glass {
-        background: rgba(30, 30, 32, 0.8);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: 16px;
-        padding: 24px;
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .header-glass .subtitle {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1rem;
-        margin-top: 5px;
-    }
-
-    .date-display {
-        display: flex;
-        align-items: center;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1rem;
-    }
-
-    .date-display i {
-        margin-right: 8px;
-        color: #0082fb;
-    }
-
-    .fitness-card {
-        background: rgba(30, 30, 32, 0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .fitness-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .fitness-card.highlight {
-        border: 1px solid rgba(40, 205, 65, 0.3);
-    }
-
-    .fitness-card-header {
-        background: linear-gradient(135deg, rgba(40, 205, 65, 0.2), rgba(40, 205, 65, 0.1));
-        padding: 16px 20px;
-        color: #28cd41;
-        font-weight: 600;
-        border-bottom: 1px solid rgba(40, 205, 65, 0.2);
-    }
-
-    .fitness-card-header h5 {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .fitness-card-body {
-        padding: 20px;
-    }
-
-    .fitness-card-title {
-        font-weight: 600;
-        font-size: 1.25rem;
-        color: white;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .exercise-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .exercise-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 15px;
-        transition: all 0.3s ease;
-    }
-
-    .exercise-item:hover {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .exercise-name {
-        font-weight: 500;
-        color: white;
-        margin-bottom: 5px;
-    }
-
-    .exercise-details {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.9rem;
-    }
-
-    .series-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .series-chip {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 4px 10px;
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.8);
-    }
-
-    .fitness-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-
-    .fitness-badge.primary {
-        background: rgba(0, 130, 251, 0.2);
-        color: #0082fb;
-    }
-
-    .fitness-badge.success {
-        background: rgba(40, 205, 65, 0.2);
-        color: #28cd41;
-    }
-
-    .fitness-badge.volume {
-        background: rgba(0, 130, 251, 0.15);
-        color: #0082fb;
-        font-weight: 600;
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 30px;
-        color: rgba(255, 255, 255, 0.5);
-        text-align: center;
-    }
-
-    .empty-state i {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-
-    .alert-fitness {
-        display: flex;
-        align-items: center;
-        background: rgba(0, 130, 251, 0.1);
-        border-left: 4px solid #0082fb;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-
-    .alert-icon {
-        font-size: 1.5rem;
-        color: #0082fb;
-        margin-right: 15px;
-    }
-
-    .action-button-container {
-        margin-top: 30px;
-        margin-bottom: 30px;
-    }
-
-    .fitness-button {
-        border: none;
-        border-radius: 25px;
-        padding: 15px 25px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        text-decoration: none;
-        text-align: center;
-    }
-
-    .fitness-button.primary {
-        background: linear-gradient(135deg, #0082fb, #0060d6);
-        color: white;
-    }
-
-    .fitness-button.primary:hover {
-        background: linear-gradient(135deg, #0060d6, #0082fb);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 130, 251, 0.3);
-        color: white;
-        text-decoration: none;
-    }
-
-    .fitness-button.large {
-        padding: 15px 25px;
-        font-size: 1.1rem;
-    }
-    .text-ia {
-    color: #32FF00;
-    font-weight: 500;
-}
-
-.text-usuario {
-    color: #FF4C4C;
-    font-weight: 500;
-}
-.joy-avatar {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: rgba(0, 130, 251, 0.8);
-    padding: 15px;
-    border-radius: 50%;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    z-index: 9999;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 1s ease-in-out;
-}
-
-.avatar-image {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin-bottom: 10px;
-}
-
-.joy-message {
-    color: #fff;
-    font-size: 1rem;
-    font-weight: bold;
-    display: none; /* Inicialmente oculto */
-    padding: 5px 10px;
-    border-radius: 10px;
-    background-color: rgba(50, 255, 0, 0.8);
-}
-
-@keyframes fadeIn {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-</style>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const joyMessage = document.getElementById('joy-message');
-
-        // Aquí puedes poner una lógica que detecte el tipo de entrenamiento
-        // o rutina que se va a realizar, por ejemplo, si es un entrenamiento de fuerza
-        // o resistencia, y hacer que Joi reaccione de forma diferente.
-
-        const entreno = "{{ rutina.nombre }}";  // Aquí obtenemos la rutina asignada
-
-        if (entreno.includes("Fuerza")) {
-            joyMessage.textContent = "¡Vamos a darlo todo en este entrenamiento de fuerza! 💥";
-        } else if (entreno.includes("Resistencia")) {
-            joyMessage.textContent = "¡A resistir con todo! Mantén el ritmo, {{ cliente.nombre }}! 🏃‍♂️";
-        } else {
-            joyMessage.textContent = "¡Estás listo para el entrenamiento, {{ cliente.nombre }}! 💪";
-        }
-
-        joyMessage.style.display = "block";  // Mostrar el mensaje de Joi
-    });
-</script>
-
 {% endblock %}

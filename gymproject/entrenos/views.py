@@ -5,6 +5,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import LogroDesbloqueado, EstadoEmocional
+from decimal import Decimal
 
 from django.utils.dateformat import DateFormat
 from django.utils.translation import gettext as _
@@ -1600,6 +1601,7 @@ class CustomJSONEncoder(DjangoJSONEncoder):
 def resumen_entreno(request, entreno_id):
     try:
         entreno_actual = get_object_or_404(EntrenoRealizado, id=entreno_id)
+        entreno = get_object_or_404(EntrenoRealizado, id=entreno_id)
         cliente = entreno_actual.cliente
         rutina = entreno_actual.rutina
     except Exception as e:
@@ -1790,6 +1792,7 @@ def resumen_entreno(request, entreno_id):
     }
     context = {
         'entreno_actual': entreno_actual,
+        'entreno': entreno,
         'entreno_actual_json': entreno_actual_json,
         'logros_hoy_json': logros_hoy_json,
         'sugerencias_inteligentes_json': sugerencias_inteligentes_json,

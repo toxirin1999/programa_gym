@@ -438,6 +438,16 @@ input:checked + .slider:before {
                 </label>
                 <span>Recordatorio 1h antes</span>
             </div>
+            {% if entreno and entreno.id %}
+    {% if not entreno.procesado_gamificacion %}
+    <a href="{% url 'logros:procesar_entreno' entreno.id %}" class="fitness-button primary">
+        <i class="bi bi-star"></i> Procesar para Logros
+    </a>
+    {% endif %}
+{% else %}
+    <!-- Opcional: Mostrar un mensaje o botón deshabilitado -->
+    <button class="fitness-button" disabled>Procesar para Logros (No disponible)</button>
+{% endif %}
         </div>
 
         <!-- Botón de procesar para logros con validación -->

@@ -57,15 +57,22 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if cliente.rutina_actual %}
-                            <a href="{% url 'entreno_anterior' cliente.id cliente.rutina_actual.id %}?cliente_id={{ cliente.id }}"
+                            {% if cliente.programa %}
+                            {% with rutina=cliente.programa.rutinas.first %}
+                            {% if rutina %}
+                            <a href="{% url 'entreno_anterior' cliente.id rutina.id %}?cliente_id={{ cliente.id }}"
                                class="fitness-button small"
-                               data-bs-toggle="tooltip" title="Iniciar rutina asignada al cliente">
+                               data-bs-toggle="tooltip" title="Iniciar rutina del programa">
                                 <i class="bi bi-play-circle"></i> Ver siguiente entreno
                             </a>
                             {% else %}
+                            <span class="text-warning">Programa sin rutinas</span>
+                            {% endif %}
+                            {% endwith %}
+                            {% else %}
                             <span class="text-muted">N/A</span>
                             {% endif %}
+
                         </td>
                     </tr>
                     {% endfor %}
