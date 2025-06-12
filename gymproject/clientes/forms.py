@@ -8,6 +8,56 @@ from .models import DietaAsignada
 
 from django import forms
 
+from django import forms
+from .models import BitacoraDiaria
+
+
+class SugerenciaForm(forms.Form):
+    decision = forms.ChoiceField(
+        choices=[('aceptar', 'Aplicar sugerencia'), ('ignorar', 'Ignorar')],
+        widget=forms.RadioSelect
+    )
+
+
+class BitacoraDiariaForm(forms.ModelForm):
+    class Meta:
+        model = BitacoraDiaria
+        fields = [
+            'horas_sueno', 'humor', 'rpe', 'peso_kg', 'energia_subjetiva', 'dolor_articular', 'nota_personal',
+            'autoconciencia', 'descarga_cognitiva', 'rumiacion_baja',
+            'mindfulness_am', 'mindfulness_pm',
+            'emocion_dia', 'cosas_positivas', 'aprendizaje',
+            'limito_socialmente', 'check_in_energia',
+            'quien_quiero_ser', 'tareas_dia', 'que_puedo_mejorar', 'reflexion_diaria'  # ✅ AÑADIDOS
+        ]
+
+        widgets = {
+            'horas_sueno': forms.NumberInput(attrs={'class': 'input', 'step': '0.25'}),
+            'rpe': forms.NumberInput(attrs={'class': 'input', 'min': 1, 'max': 10}),
+            'humor': forms.Select(attrs={'class': 'input'}),
+            'nota_personal': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+
+            'emocion_dia': forms.TextInput(attrs={'class': 'input'}),
+            'cosas_positivas': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'aprendizaje': forms.Textarea(attrs={'class': 'input', 'rows': 2}),
+            'check_in_energia': forms.Select(attrs={'class': 'input'}),
+            'quien_quiero_ser': forms.Textarea(attrs={'class': 'input', 'rows': 2}),
+            'tareas_dia': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'que_puedo_mejorar': forms.Textarea(attrs={'class': 'input', 'rows': 2}),
+            'reflexion_diaria': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'energia_subjetiva': forms.NumberInput(attrs={'class': 'input', 'min': 0, 'max': 10}),
+            'dolor_articular': forms.NumberInput(attrs={'class': 'input', 'min': 0, 'max': 10}),
+            'autoconciencia': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'descarga_cognitiva': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'rumiacion_baja': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'peso_kg': forms.NumberInput(
+                attrs={'class': 'input border-2 border-green-400 rounded-xl px-4 py-2 shadow-sm',
+                       'placeholder': 'Ej: 85.0',
+                       'step': '0.1'
+                       }),
+
+        }
+
 
 class DatosNutricionalesForm(forms.Form):
     edad = forms.IntegerField(label="Edad", min_value=1, max_value=120)

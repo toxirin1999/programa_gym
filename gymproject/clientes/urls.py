@@ -1,14 +1,22 @@
 from django.urls import path
 from . import views
+from .views import calendario_bitacoras
+from .views import registrar_bitacora
 from clientes import views as clientes_views
 from .views import historial_cliente, redirigir_usuario, panel_cliente
 from django.contrib.auth.decorators import login_required
 from joi import views as joi_views
+from .views import recuerdos_semanales
 
 urlpatterns = [
     # Vista raíz: lista de clientes (entrenador)
     path('', views.lista_clientes, name='lista_clientes'),
-
+    path('bitacora/calendario/', calendario_bitacoras, name='calendario_bitacoras'),
+    path('bitacora/registrar/', registrar_bitacora, name='registrar_bitacora'),
+    path('bitacora/ajax/', views.obtener_bitacora_dia, name='bitacora_ajax'),
+    path('mapa/energia/', views.mapa_energia, name='mapa_energia'),
+    path('joi/cuidado/', views.recomendacion_cuidado, name='recomendacion_cuidado'),
+    path('blade-demo/', views.blade_runner_demo, name='blade_runner_demo'),
     # Clientes
     path('agregar/', views.agregar_cliente, name='agregar_cliente'),
     path('editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
@@ -27,15 +35,17 @@ urlpatterns = [
 
     # Nutrición
     path('nutricion/calcular/', views.calcular_plan_nutricional, name='calcular_plan_nutricional'),
+    path('recuerdos/semana/', recuerdos_semanales, name='recuerdos_semanales'),
 
     # Inicio Joi personalizado
-    path('mockup_inicio/', views.inicio_cliente, name='inicio_cliente'),
+    # path('mockup_inicio/', views.inicio_cliente, name='inicio_cliente'),
 
     # Datos y medidas
     path('datos-graficas/<int:cliente_id>/', views.datos_graficas, name='datos_graficas'),
     path('medidas/', views.lista_medidas, name='lista_medidas'),
     path('medidas/agregar/', views.agregar_medida, name='agregar_medida'),
-    path('mockup-demo/', views.mockup_demo, name='mockup_demo'),
+    # path('mockup-demo/', views.mockup_demo, name='mockup_demo'),
+    path('responder-sugerencia/', views.responder_sugerencia, name='responder_sugerencia'),
 
     # Historial
     path('historial/<int:cliente_id>/', historial_cliente, name='historial_cliente'),

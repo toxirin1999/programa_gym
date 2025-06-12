@@ -3,12 +3,104 @@ from django.conf import settings
 from rutinas.models import Programa
 from rutinas.models import Rutina
 from dietas.models import Dieta  # asegúrate de tener esto importado
-
+from django import forms
 # En tu archivo models.py (o donde tengas tus modelos)
 from django.db import models
 
-
 # from models import Cliente  # Asegúrate de que tu modelo Cliente esté importado
+
+from django.db import models
+from django.contrib.auth.models import User
+
+
+class SugerenciaAceptada(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    semana_inicio = models.DateField()
+    tipo = models.CharField(max_length=20, choices=[
+        ('subir', 'Subir carga'),
+        ('bajar', 'Bajar carga'),
+        ('mantener', 'Mantener carga')
+    ])
+    aceptada = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} ({'✅' if self.aceptada else '❌'})"
+
+
+class MiniReto(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    semana_inicio = models.DateField()
+    descripcion = models.CharField(max_length=200)
+    cumplido = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.descripcion} ({'✅' if self.cumplido else '❌'})"
+
+
+class EstadoSemanal(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    semana_inicio = models.DateField()
+    semana_fin = models.DateField()
+    promedio_sueno = models.DecimalField(max_digits=4, decimal_places=2)
+    promedio_rpe = models.DecimalField(max_digits=4, decimal_places=2)
+    humor_dominante = models.CharField(max_length=20, choices=[
+        ('verde', '😊 Bien'),
+        ('amarillo', '😐 Neutro'),
+        ('rojo', '😞 Bajo')
+    ])
+    mensaje_joi = models.TextField(blank=True)
+    sugerencia = models.TextField(blank=True, null=True)  # ← AÑADIDO
+
+    def __str__(self):
+        return f"Semana {self.semana_inicio} - {self.semana_fin} ({self.cliente})"
+
+
+class BitacoraDiaria(models.Model):
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    fecha = models.DateField(auto_now_add=True)
+    horas_sueno = models.DecimalField(max_digits=4, decimal_places=2)
+    humor = models.CharField(max_length=20, choices=[
+        ('verde', '😊 Bien'),
+        ('amarillo', '😐 Neutro'),
+        ('rojo', '😞 Bajo')
+    ])
+    rpe = models.PositiveSmallIntegerField(help_text="Esfuerzo percibido (1-10)")
+    nota_personal = models.TextField(blank=True)
+    mindfulness_am = models.BooleanField(default=False)
+    mindfulness_pm = models.BooleanField(default=False)
+    peso_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    energia_subjetiva = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Energía subjetiva de 0 a 10")
+    dolor_articular = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Dolor articular de 0 a 10")
+    autoconciencia = models.TextField(null=True, blank=True, help_text="¿Qué emoción domina (0-10)?")
+    descarga_cognitiva = models.TextField(null=True, blank=True, help_text="Escribe 5’ “lo que me preocupa AHORA”")
+    rumiacion_baja = models.BooleanField(null=True, blank=True, help_text="¿La rumiación bajó después de escribir?")
+
+    emocion_dia = models.CharField(max_length=100, blank=True)
+    cosas_positivas = models.TextField(blank=True, help_text="Escribe 3 cosas que funcionaron hoy.")
+    aprendizaje = models.TextField(blank=True)
+    # Quién quiero ser hoy
+    quien_quiero_ser = models.TextField(blank=True, help_text="Describe qué tipo de persona quieres ser hoy.")
+
+    # Lista de tareas del día (como texto plano)
+    tareas_dia = models.TextField(blank=True,
+                                  help_text="Escribe hasta 5 tareas importantes para hoy, separadas por saltos de línea.")
+
+    # Mejora del día
+    que_puedo_mejorar = models.TextField(blank=True, help_text="Reflexiona sobre qué podrías mejorar del día.")
+
+    # Reflexión final
+    reflexion_diaria = models.TextField(blank=True, help_text="Escribe una reflexión libre sobre tu día.")
+
+    limito_socialmente = models.BooleanField(null=True, help_text="¿Respondiste solo, sin iniciar?")
+
+    check_in_energia = models.CharField(max_length=10, choices=[
+        ('si', 'Sí, doy más de lo que recibo'),
+        ('no', 'No, está equilibrado'),
+        ('duda', 'No estoy seguro/a')
+    ], blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.cliente} - {self.fecha}"
 
 
 class DietaAsignada(models.Model):

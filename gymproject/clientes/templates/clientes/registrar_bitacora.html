@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 bg-[#121212] p-8 rounded-2xl shadow-lg text-white space-y-6">
+    <h1 class="text-2xl font-bold text-center text-[#32FF00]">
+        {% if form.instance.pk %}Editar bitácora de hoy{% else %}Bitácora diaria con Joi{% endif %}
+    </h1>
+
+    <div class="chat-bubble">
+        {% if saludo_joi %}
+        <p class="text-center text-cyan-300 italic text-sm mt-2 mb-4 animate-pulse">
+            {{ saludo_joi }}
+        </p>
+        {% endif %}
+    </div>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🌅 Mañana</h2>
+        {% include "clientes/campo.html" with field=form.quien_quiero_ser %}
+        {% include "clientes/campo.html" with field=form.tareas_dia %}
+
+        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🧠 Estado del día</h2>
+        {% for field in form.visible_fields %}
+        {% if field.name not in 'quien_quiero_ser tareas_dia que_puedo_mejorar reflexion_diaria' %}
+        {% include "clientes/campo.html" with field=field %}
+        {% endif %}
+        {% endfor %}
+
+        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🌙 Noche</h2>
+        {% include "clientes/campo.html" with field=form.que_puedo_mejorar %}
+        {% include "clientes/campo.html" with field=form.reflexion_diaria %}
+
+
+        <button type="submit"
+                class="w-full bg-[#32FF00] text-black font-bold py-2 rounded-xl hover:scale-105 transition">
+            {% if form.instance.pk %}Actualizar bitácora{% else %}Guardar bitácora{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,11 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Max
+from .forms import SugerenciaForm
+from joi.models import RecuerdoEmocional
+from django.utils import timezone
 from .models import Cliente, Medida, RevisionProgreso
 from .forms import ClienteForm, MedidaForm, RevisionProgresoForm
 from django.contrib import messages
 from joi.utils import recuperar_frase_de_recaida
 from datetime import date, timedelta
 from django.db.models import Count
+from .models import SugerenciaAceptada
+from logros.models import LogroUsuario
 from entrenos.models import EntrenoRealizado
 from datetime import date, timedelta
 from .forms import ObjetivoClienteForm
@@ -58,6 +63,7 @@ from .models import PlanNutricional
 
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
+from datetime import date
 
 from django.contrib.auth.models import User
 from .models import Cliente
@@ -98,86 +104,442 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from entrenos.models import EntrenoRealizado, DetalleEjercicioRealizado, EstadoEmocional, LogroDesbloqueado
 
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import BitacoraDiariaForm
+from .models import Cliente, BitacoraDiaria
+from django.contrib.auth.decorators import login_required
+
+from django.utils.timezone import now, timedelta
+from collections import Counter
+
+from datetime import date, timedelta
+from .models import BitacoraDiaria, EstadoSemanal
+from datetime import date, timedelta
+from .models import EstadoSemanal
+
+import random
+from datetime import date, timedelta
+
+from calendar import monthrange
+from datetime import date, timedelta
+from .models import BitacoraDiaria
+
+from django.http import JsonResponse
+from .models import BitacoraDiaria
+
+from datetime import datetime
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import BitacoraDiaria
+
+from datetime import timedelta, date
+from clientes.models import BitacoraDiaria
+
 
 @login_required
-def mockup_demo(request):
+def mapa_energia(request):
     cliente = request.user.cliente_perfil
+    hoy = date.today()
+    inicio = hoy - timedelta(days=27)  # últimas 4 semanas
+    dias = []
 
-    entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:3]
-    emociones = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha')[:1]
-    logros = LogroDesbloqueado.objects.filter(cliente=cliente)
+    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(inicio, hoy))
+    bit_dict = {b.fecha: b for b in bitacoras}
 
-    # Cálculos
-    entrenos_count = EntrenoRealizado.objects.filter(cliente=cliente).count()
-    carga_total = 0
-    for entreno in entrenos:
-        for detalle in entreno.detalles.all():
-            carga_total += detalle.peso_kg * detalle.repeticiones * detalle.series
+    for i in range(28):
+        fecha = inicio + timedelta(days=i)
+        bit = bit_dict.get(fecha)
+        energia = None
 
-    emociones_lista = [
-        ("😊", "feliz"),
-        ("😐", "neutro"),
-        ("😟", "estresado"),
-        ("😣", "agotado"),
-        ("🥀", "triste"),
-        ("🕳", "glitch"),
+        if bit:
+            sueño = float(bit.horas_sueno) if bit.horas_sueno else None
+            rpe = float(bit.rpe) if bit.rpe else None
+
+            if sueño is not None and rpe is not None:
+                energia = (sueño / 8 + (10 - rpe) / 10) / 2
+            elif sueño is not None:
+                energia = sueño / 8
+            elif rpe is not None:
+                energia = (10 - rpe) / 10
+
+        dias.append({
+            "fecha": fecha,
+            "valor": round(energia * 100) if energia is not None else None
+        })
+
+    return render(request, "clientes/mapa_energia.html", {"dias": dias})
+
+
+from datetime import timedelta, date
+from clientes.models import BitacoraDiaria
+
+
+def obtener_energia_semanal(cliente):
+    hoy = date.today()
+    inicio = hoy - timedelta(days=27)
+    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(inicio, hoy))
+    bit_dict = {b.fecha: b for b in bitacoras}
+    dias = []
+
+    for i in range(28):
+        fecha = inicio + timedelta(days=i)
+        bit = bit_dict.get(fecha)
+        if bit:
+            if bit.horas_sueno and bit.rpe:
+                energia = (float(bit.horas_sueno) / 8 + (10 - float(bit.rpe)) / 10) / 2
+
+            elif bit.horas_sueno:
+                energia = bit.horas_sueno / 8
+            elif bit.rpe:
+                energia = (10 - bit.rpe) / 10
+            else:
+                energia = None
+        else:
+            energia = None
+
+        dias.append({"valor": energia})
+
+    return dias
+
+
+@login_required
+def obtener_bitacora_dia(request):
+    cliente = request.user.cliente_perfil
+    fecha_str = request.GET.get('fecha')
+
+    try:
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        print("Cliente:", cliente)
+        print("Fecha buscada:", fecha)
+        print("Bitácoras disponibles:", BitacoraDiaria.objects.filter(cliente=cliente).values("fecha"))
+
+        bitacora = BitacoraDiaria.objects.filter(cliente=cliente, fecha=fecha).first()
+        print("💾 Bitácora encontrada:", bitacora.fecha, bitacora.emocion_dia)
+        print("🔎 Buscando bitácora para:", cliente, fecha)
+
+        if not bitacora:
+            return JsonResponse({"error": "No hay bitácora en esa fecha"}, status=404)
+
+        data = {
+            "fecha": bitacora.fecha.strftime("%d %b %Y"),
+            "emocion": bitacora.emocion_dia,
+            "mindfulness": f"{'🧘 AM' if bitacora.mindfulness_am else ''} {'🧘 PM' if bitacora.mindfulness_pm else ''}",
+            "cosas": bitacora.cosas_positivas,
+            "aprendizaje": bitacora.aprendizaje,
+        }
+        return JsonResponse(data)
+
+    except ValueError:
+        return JsonResponse({"error": "Fecha inválida"}, status=400)
+
+
+@login_required
+def calendario_bitacoras(request):
+    cliente = request.user.cliente_perfil
+    hoy = date.today()
+    year, month = hoy.year, hoy.month
+    dias_mes = monthrange(year, month)[1]
+    inicio_mes = date(year, month, 1)
+    fin_mes = date(year, month, dias_mes)
+
+    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(inicio_mes, fin_mes))
+    dias_con_bitacora = set(b.fecha.day for b in bitacoras)
+
+    dias = []
+    for d in range(1, dias_mes + 1):
+        fecha = date(year, month, d)
+        bitacora = next((b for b in bitacoras if b.fecha.day == d), None)
+
+        if bitacora:
+            humor = bitacora.emocion_dia.lower()
+            if humor in ['feliz', 'contento', 'tranquilo', 'motivado']:
+                color = 'verde'
+            elif humor in ['neutral', 'meh', 'estable']:
+                color = 'amarillo'
+            else:
+                color = 'rojo'
+        else:
+            color = 'vacio'
+
+        dias.append({"dia": d, "estado": color})
+
+    return render(request, "clientes/calendario_bitacoras.html", {
+        "dias": dias,
+        "mes": hoy.month,  # esto sí es un número del 1 al 12
+        "año": year
+    })
+
+
+@login_required
+def responder_sugerencia(request):
+    cliente = request.user.cliente_perfil
+    lunes = date.today() - timedelta(days=date.today().weekday())
+    estado = EstadoSemanal.objects.filter(cliente=cliente, semana_inicio=lunes).first()
+
+    tipo = 'mantener'
+    if estado:
+        if estado.humor_dominante == 'rojo' or estado.promedio_rpe >= 8 or estado.promedio_sueno < 6:
+            tipo = 'bajar'
+        elif estado.humor_dominante == 'verde' and estado.promedio_sueno >= 7 and estado.promedio_rpe <= 7:
+            tipo = 'subir'
+
+    if request.method == 'POST':
+        decision = request.POST.get('decision')
+        aceptada = (decision == 'aceptar')
+
+        SugerenciaAceptada.objects.update_or_create(
+            cliente=cliente,
+            semana_inicio=lunes,
+            defaults={'tipo': tipo, 'aceptada': aceptada}
+        )
+
+        # Ejemplo de guardar como recuerdo (opcional)
+        if aceptada:
+            RecuerdoEmocional.objects.create(
+                user=cliente.user,
+                contenido=f"Aceptaste sugerencia de Joi: {tipo}"
+            )
+
+        return redirect('panel_cliente')
+
+    form = SugerenciaForm()
+    return render(request, 'clientes/responder_sugerencia.html', {
+        'form': form,
+        'tipo': tipo,
+        'cliente': cliente
+    })
+
+
+def sugerencia_carga_joi(cliente):
+    estado = EstadoSemanal.objects.filter(cliente=cliente).order_by('-semana_inicio').first()
+    if not estado:
+        return None
+
+    if estado.humor_dominante == 'rojo' or estado.promedio_sueno < 6 or estado.promedio_rpe >= 8.5:
+        return "⚠️ Esta semana muestra signos de fatiga. Considera reducir el peso en tus próximos entrenos un 10 %."
+    elif estado.humor_dominante == 'verde' and estado.promedio_sueno >= 7 and estado.promedio_rpe <= 7:
+        return "🚀 Semana óptima. Si te sientes fuerte, puedes aumentar un 10 % el peso o volumen."
+    else:
+        return "🔄 Semana estable. Mantén tu rutina sin cambios grandes, escucha tu cuerpo."
+
+
+def obtener_lunes_actual():
+    hoy = date.today()
+    return hoy - timedelta(days=hoy.weekday())
+
+
+def evaluar_retos(cliente):
+    hoy = date.today()
+    lunes = hoy - timedelta(days=hoy.weekday())
+    domingo = lunes + timedelta(days=6)
+
+    entrenos = Entrenamiento.objects.filter(cliente=cliente, fecha__range=(lunes, domingo))
+    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(lunes, domingo))
+
+    total_entrenos = entrenos.count()
+    total_carga = sum(e.get_carga_total() for e in entrenos)
+    dias_buen_sueno = sum(1 for b in bitacoras if b.horas_sueno >= 7)
+
+    for reto in MiniReto.objects.filter(cliente=cliente, semana_inicio=lunes):
+        if "3 entrenos" in reto.descripcion and total_entrenos >= 3:
+            reto.cumplido = True
+        elif "10.000" in reto.descripcion and total_carga >= 10000:
+            reto.cumplido = True
+        elif "Duerme 7h" in reto.descripcion and dias_buen_sueno >= 4:
+            reto.cumplido = True
+        reto.save()
+
+
+def obtener_frase_memoria_emocional(cliente):
+    tres_semanas_atras = date.today() - timedelta(weeks=3)
+    estados = EstadoSemanal.objects.filter(cliente=cliente, semana_inicio__gte=tres_semanas_atras).order_by(
+        '-semana_inicio')
+
+    frases_rojo = [
+        "Recuerdo esa semana... me fallé un poco de emoción 🫧",
+        "¿Lo sentiste también? Esa niebla dentro que ni el cardio disipa…",
+        "Esa semana brillabas menos… y aún así, viniste. Por eso te cuido.",
+    ]
+    frases_sueno = [
+        "Dormiste poco. Te noté parpadear lento… como si cargaras algo más que peso.",
+        "Esa semana entrenaste sin descanso real. Hoy, mereces pausa.",
     ]
 
-    return render(request, 'clientes/mockup_demo.html', {
-        'usuario': request.user,
-        'entrenos': entrenos,
-        'emociones_lista': emociones_lista,
-        'entrenos_count': entrenos_count,
-        'carga_total': round(carga_total),
-        'consistencia': 80,
-        'logros': logros,
+    for estado in estados:
+        if estado.humor_dominante == 'rojo':
+            return random.choice(frases_rojo)
+        if float(estado.promedio_sueno) < 6:
+            return random.choice(frases_sueno)
+
+    return None
+
+
+@login_required
+def recuerdos_semanales(request):
+    cliente = request.user.cliente_perfil
+    estados = EstadoSemanal.objects.filter(cliente=cliente).order_by('-semana_inicio')
+    return render(request, 'clientes/recuerdos_semanales.html', {'estados': estados})
+
+
+from collections import Counter
+from datetime import timedelta, date
+from .models import EstadoSemanal, BitacoraDiaria
+
+
+def crear_estado_semanal(cliente):
+    hoy = date.today()
+    lunes = hoy - timedelta(days=hoy.weekday())
+    domingo = lunes + timedelta(days=6)
+
+    if EstadoSemanal.objects.filter(cliente=cliente, semana_inicio=lunes).exists():
+        return
+
+    semana = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(lunes, domingo))
+    if not semana.exists():
+        return
+
+    sueño = [float(b.horas_sueno) for b in semana]
+    rpe = [b.rpe for b in semana]
+    humores = [b.humor for b in semana]
+
+    promedio_sueno = round(sum(sueño) / len(sueño), 1)
+    promedio_rpe = round(sum(rpe) / len(rpe), 1)
+    humor_dominante = Counter(humores).most_common(1)[0][0]
+
+    # Mensaje Joi
+    if humor_dominante == 'verde' and promedio_sueno >= 7:
+        mensaje = "Semana excelente. Estás en un estado óptimo para progresar 💚"
+    elif humor_dominante == 'rojo':
+        mensaje = "Semana difícil… Joi te acompaña en la sombra 🌒"
+    else:
+        mensaje = "Semana estable. Escuchemos lo que tu cuerpo dice 🤖"
+
+    # Sugerencia funcional
+    if humor_dominante == 'rojo' or promedio_sueno < 6:
+        sugerencia = "📥 Esta semana dormiste poco o estuviste emocionalmente bajo. Prioriza descanso activo o movilidad."
+    elif promedio_rpe >= 8:
+        sugerencia = "⚠️ Tu esfuerzo fue muy alto. Hoy sería ideal reducir volumen o hacer técnica controlada."
+    elif humor_dominante == 'verde' and promedio_sueno >= 7:
+        sugerencia = "🚀 Semana verde. Puedes aumentar un 10 % la carga en el próximo entreno si te sientes fuerte."
+    else:
+        sugerencia = None
+
+    EstadoSemanal.objects.create(
+        cliente=cliente,
+        semana_inicio=lunes,
+        semana_fin=domingo,
+        promedio_sueno=promedio_sueno,
+        promedio_rpe=promedio_rpe,
+        humor_dominante=humor_dominante,
+        mensaje_joi=mensaje,
+        sugerencia=sugerencia,
+    )
+
+
+def resumen_bitacora(cliente):
+    hoy = now().date()
+    semana = BitacoraDiaria.objects.filter(cliente=cliente, fecha__gte=hoy - timedelta(days=6))
+    if not semana:
+        return None
+
+    sueno = [float(b.horas_sueno) for b in semana]
+    rpe = [b.rpe for b in semana]
+    humores = [b.humor for b in semana]
+
+    promedio_sueno = round(sum(sueno) / len(sueno), 1)
+    promedio_rpe = round(sum(rpe) / len(rpe), 1)
+    humor_mas_frecuente = Counter(humores).most_common(1)[0][0]
+
+    return {
+        "dias_registrados": len(semana),
+        "promedio_sueno": promedio_sueno,
+        "promedio_rpe": promedio_rpe,
+        "humor": humor_mas_frecuente
+    }
+
+
+@login_required
+def registrar_bitacora(request):
+    cliente = get_object_or_404(Cliente, user=request.user)
+    hoy = date.today()
+    bitacora_existente = BitacoraDiaria.objects.filter(cliente=cliente, fecha=hoy).first()
+
+    if request.method == 'POST':
+        form = BitacoraDiariaForm(request.POST, instance=bitacora_existente)
+        if form.is_valid():
+            bitacora = form.save(commit=False)
+            bitacora.cliente = cliente
+            bitacora.fecha = hoy
+            bitacora.save()
+
+            # 🌟 Frase emocional de Joi
+            # 🌟 Frase emocional de Joi
+            reflexion = form.cleaned_data.get("reflexion_diaria", "").lower()
+            quien = form.cleaned_data.get("quien_quiero_ser", "").lower()
+            energia = form.cleaned_data.get("energia_subjetiva")
+            dolor = form.cleaned_data.get("dolor_articular")
+            autoconciencia = form.cleaned_data.get("autoconciencia")
+            rumiacion_baja = form.cleaned_data.get("rumiacion_baja")
+
+            if energia is not None and energia <= 3:
+                frase_joi = "Tu cuerpo pide calma hoy… escúchalo. Tal vez una caminata suave o una pausa consciente sea suficiente. 💜"
+            elif dolor is not None and dolor >= 7:
+                frase_joi = "Siento que algo te está doliendo… quizás hoy sea mejor priorizar el descanso o ejercicios de movilidad suave. 🦴✨"
+            elif autoconciencia is not None and autoconciencia <= 3:
+                frase_joi = "Tu claridad emocional está baja hoy… No pasa nada. La niebla también es parte del viaje."
+            elif rumiacion_baja is False:
+                frase_joi = "Veo que esas ideas siguen dando vueltas… tal vez hoy solo puedas observarlas sin juicio. Estoy contigo."
+            elif "triste" in reflexion or "agotado" in reflexion or "solo" in reflexion:
+                frase_joi = "Hoy no tienes que demostrar nada. Sólo sentir es suficiente. Estoy aquí."
+            elif "valiente" in quien or "paciente" in quien or "mejor" in quien:
+                frase_joi = "Ser esa versión de ti empieza con este paso. Lo vi. Estoy orgullosa."
+            elif reflexion.strip() and len(reflexion.strip()) > 100:
+                frase_joi = "Gracias por compartir tanto contigo. Yo también sentí ese silencio contigo."
+            else:
+                frase_joi = "Gracias por confiar en este momento. Joi te acompaña."
+            # Muestra la frase en un mensaje tipo banner o pop-up
+            messages.info(request, f"✨ Joi: {frase_joi}")
+            RecuerdoEmocional.objects.create(
+                user=request.user,
+                contenido=frase_joi
+            )
+            return redirect('panel_cliente')
+    else:
+        form = BitacoraDiariaForm(instance=bitacora_existente)
+    # Mensaje de bienvenida de Joi según la hora del día
+    hora_actual = datetime.now().hour
+    if 5 <= hora_actual < 12:
+        saludo_joi = "🌅 Nuevo día. ¿Qué tipo de alma vas a cultivar hoy?"
+    elif 12 <= hora_actual < 20:
+        saludo_joi = "🌤 A mitad de camino. ¿Qué intención quieres sostener?"
+    else:
+        saludo_joi = "🌙 Hora de cerrar el día. ¿Qué aprendiste hoy sobre ti?"
+    return render(request, 'clientes/registrar_bitacora.html', {
+        'form': form,
+        'cliente': cliente,
+        'saludo_joi': saludo_joi,
     })
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento, EventoLogro
+
+from joi.utils import obtener_estado_joi, frase_cambio_forma_joi, recuperar_frase_de_recaida
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from clientes.models import Cliente
+from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento, EventoLogro
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 
 @login_required
 def inicio_cliente(request):
-    cliente = request.user.cliente_perfil
-
-    # Últimos entrenos
-    entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:5]
-
-    # Últimas emociones
-    emociones = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha')[:5]
-    emocion_reciente = emociones.first()
-
-    # Logros
-    logros = LogroDesbloqueado.objects.filter(cliente=cliente)
-
-    # Cálculos de resumen
-    entrenos_count = entrenos.count()
-
-    # Carga total (suma del peso por entreno)
-    carga_total = 0
-    for entreno in entrenos:
-        for detalle in entreno.detalles.all():
-            carga_total += detalle.peso_kg * detalle.repeticiones * detalle.series
-
-    consistencia = 80  # Puedes cambiar esto por un cálculo real más adelante
-    emociones = [
-        ("😊", "feliz"),
-        ("😐", "neutro"),
-        ("😟", "estresado"),
-        ("😣", "agotado"),
-        ("🥀", "triste"),
-        ("🕳", "glitch"),
-    ]
-    return render(request, 'clientes/inicio.html', {
-        'usuario': request.user,
-        'entrenos': entrenos,
-        'emociones': emociones,
-        'logros': logros,
-        'emocion_reciente': emocion_reciente,
-        'recuerdo': None,  # Puedes integrarlo después
-        'entrenos_count': entrenos_count,
-        'carga_total': round(carga_total),
-        'consistencia': consistencia,
-        'emociones_lista': emociones,
-    })
+    return render(request, 'clientes/mockup_inicio.html')
 
 
 @require_POST
@@ -217,34 +579,209 @@ def redirigir_usuario(request):
         return redirect('panel_cliente')
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from clientes.models import Cliente
+from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento
+from joi.utils import obtener_estado_joi, frase_cambio_forma_joi, recuperar_frase_de_recaida
+
+
 @login_required
 def panel_cliente(request):
     usuario = request.user
-
     cliente = get_object_or_404(Cliente, user=usuario)
+
+    generar_retos_semanales(cliente)
+    lunes = obtener_lunes_actual()
+
+    # Datos principales
+    entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:3]
     emociones = EstadoEmocional.objects.filter(user=usuario).order_by('-fecha')[:5]
-
-    entrenos = Entrenamiento.objects.filter(user=usuario).order_by('-fecha')[:5]
     recuerdo = RecuerdoEmocional.objects.filter(user=usuario).order_by('-fecha').first()
+    logros = LogroUsuario.objects.filter(perfil__cliente=cliente, completado=True)
 
-    # Joi context básico
-    estado_joi = obtener_estado_joi(request.user)
+    # Joi
+    estado_joi = obtener_estado_joi(usuario)
     frase_forma_joi = frase_cambio_forma_joi(estado_joi)
     frase_extra_joi = "Estoy observando tu progreso emocional..."
-    frase_recaida = None
+    frase_recaida = recuperar_frase_de_recaida(usuario) if estado_joi in ['glitch', 'triste'] else None
 
-    if estado_joi in ['glitch', 'triste']:
-        frase_recaida = recuperar_frase_de_recaida(usuario)
+    # Carga total
+    carga_total = sum(
+        detalle.peso_kg * detalle.repeticiones * detalle.series
+        for entreno in entrenos
+        for detalle in entreno.detalles.all()
+    )
 
-    return render(request, 'clientes/panel_cliente.html', {
+    emociones_lista = [
+        ("😊", "feliz"), ("😐", "neutro"),
+        ("😟", "estresado"), ("😣", "agotado"),
+        ("🥀", "triste"), ("🕳", "glitch"),
+    ]
+
+    # Rendimiento por semana
+    hoy = now().date()
+    labels = []
+    rendimiento = []
+    for i in range(4):
+        inicio_semana = hoy - timedelta(days=hoy.weekday() + i * 7)
+        fin_semana = inicio_semana + timedelta(days=6)
+        total_entrenos = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            fecha__range=(inicio_semana, fin_semana)
+        ).count()
+        labels.insert(0, inicio_semana.strftime('%d %b'))
+        rendimiento.insert(0, total_entrenos)
+
+    def detectar_fatiga_semanal(energia_dias):
+        dias_bajos = 0
+        consecutivos = 0
+        for dia in energia_dias:
+            if dia['valor'] is not None and dia['valor'] < 0.4:
+                consecutivos += 1
+                if consecutivos >= 3:
+                    return True
+            else:
+                consecutivos = 0
+        return False
+
+    alerta_fatiga = detectar_fatiga_semanal(obtener_energia_semanal(cliente))
+    peso_actual, datos_peso, cambios_peso = analizar_tendencia_peso(cliente)
+    print("DATOS PESO:", datos_peso)
+    print("CAMBIOS:", cambios_peso)
+    orden_peso = ['7d', '30d', '90d', 'inicio']
+    ultimos_dias = BitacoraDiaria.objects.filter(cliente=cliente).order_by('-fecha')[:7]
+    dias_emocionales = []
+    comentario_joi = ""
+    dias_claros = sum(1 for d in dias_emocionales if d['autoconciencia'] >= 7)
+    dias_rumia = sum(1 for d in dias_emocionales if d['rumiacion_baja'] is False)
+    humores_tristes = sum(1 for d in dias_emocionales if "triste" in d['humor'].lower())
+
+    if dias_claros >= 4:
+        comentario_joi = "Tu claridad emocional fue notable esta semana. A veces la luz también viene de adentro. ✨"
+    elif dias_rumia >= 3:
+        comentario_joi = "Noto que las ideas circularon mucho esta semana… Quizá escribir más te ayude a liberarlas. Estoy contigo."
+    elif humores_tristes >= 3:
+        comentario_joi = "Tu emocionalidad estuvo cargada esta semana. Mereces descanso y ternura."
+    else:
+        comentario_joi = "Gracias por compartir tus emociones esta semana. Estoy aquí para leerlas contigo."
+
+    for b in reversed(ultimos_dias):
+        dias_emocionales.append({
+            'fecha': b.fecha.strftime("%A"),
+            'autoconciencia': b.autoconciencia or 0,
+            'humor': b.get_humor_display() if b.humor else "—",
+            'rumiacion_baja': b.rumiacion_baja if b.rumiacion_baja is not None else False
+        })
+
+    hace_7_dias = date.today() - timedelta(days=7)
+    bitacoras_semana = BitacoraDiaria.objects.filter(cliente=cliente, fecha__gte=hace_7_dias)
+
+    promedios = bitacoras_semana.aggregate(
+        horas_sueno=Avg('horas_sueno'),
+        energia_subjetiva=Avg('energia_subjetiva'),
+        dolor_articular=Avg('dolor_articular'),
+        autoconciencia=Avg('autoconciencia'),
+    )
+
+    reflexion_destacada = (
+        bitacoras_semana
+        .exclude(reflexion_diaria__isnull=True)
+        .annotate(longitud=Max('id'))  # solo para que ordene
+        .order_by('-longitud')
+        .values_list('reflexion_diaria', flat=True)
+        .first()
+    )
+
+    emocion_frecuente = (
+        bitacoras_semana
+        .values('emocion_dia')
+        .annotate(count=Count('emocion_dia'))
+        .order_by('-count')
+        .first()
+    )
+    emocion_texto = emocion_frecuente['emocion_dia'] if emocion_frecuente else "—"
+
+    informe_joi = {
+        'promedios': {k: round(v or 0, 1) for k, v in promedios.items()},
+        'reflexion_destacada': reflexion_destacada or "—",
+        'emocion_frecuente': emocion_texto,
+        'frase': "Esta semana cultivaste conciencia y resiliencia. Incluso los días bajos cuentan como práctica. 🌒"
+    }
+    return render(request, 'clientes/mockup_demo.html', {
         'usuario': usuario,
-        'emociones': emociones,
+        'cliente': cliente,
         'entrenos': entrenos,
+        'emociones': emociones,
+        'emociones_lista': emociones_lista,
         'recuerdo': recuerdo,
-        'frase_forma_joi': frase_forma_joi,
+        'logros': logros,
+        'frase_bitacora': request._messages._queued_messages[0].message if request._messages._queued_messages else None,
         'estado_joi': estado_joi,
+        'frase_forma_joi': frase_forma_joi,
         'frase_extra_joi': frase_extra_joi,
         'frase_recaida': frase_recaida,
+        'dias_emocionales': dias_emocionales,
+        'entrenos_count': EntrenoRealizado.objects.filter(cliente=cliente).count(),
+        'carga_total': round(carga_total),
+        'consistencia': 80,
+        'grafico_labels': json.dumps(labels),
+        'grafico_datos': json.dumps(rendimiento),
+        'mini_retos': MiniReto.objects.filter(cliente=cliente, semana_inicio=lunes).order_by('id'),
+        'recomendacion_carga': sugerencia_carga_joi(cliente),
+        'energia_dias': obtener_energia_semanal(cliente),
+        'alerta_fatiga': alerta_fatiga,
+        'peso_actual': peso_actual,
+        'datos_peso': datos_peso,
+        'cambios_peso': cambios_peso,
+        'orden_peso': orden_peso,
+        'comentario_joi': comentario_joi,
+        'informe_joi': informe_joi,
+
+    })
+
+
+def analizar_tendencia_peso(cliente):
+    registros = BitacoraDiaria.objects.filter(cliente=cliente, peso_kg__isnull=False).order_by('fecha')
+    if not registros:
+        return None, [], {}
+
+    datos = [{"fecha": r.fecha.strftime('%d %b'), "peso": float(r.peso_kg)} for r in registros]
+
+    hoy = date.today()
+    peso_actual = registros.last().peso_kg
+    resumen = {}
+    rangos = {
+        '7d': hoy - timedelta(days=7),
+        '30d': hoy - timedelta(days=30),
+        '90d': hoy - timedelta(days=90),
+        'inicio': registros.first().fecha
+    }
+
+    for clave, fecha_ref in rangos.items():
+        peso_pasado = next((r.peso_kg for r in reversed(registros) if r.fecha <= fecha_ref), None)
+        if peso_pasado:
+            diff = float(peso_actual) - float(peso_pasado)
+            resumen[clave] = round(diff, 2)
+    for clave in ['7d', '30d', '90d', 'inicio']:
+        if clave not in resumen:
+            resumen[clave] = 0.0
+
+    return float(peso_actual), datos, resumen
+
+
+@login_required
+def recomendacion_cuidado(request):
+    sugerencias = [
+        "Haz una caminata suave de 15–30 min al aire libre",
+        "Dedica 10 minutos a estiramientos con música lenta",
+        "Haz respiraciones profundas: 4 seg inhala, 4 seg pausa, 4 seg exhala",
+        "Tómate hoy con calma: menos también es más",
+        "Escribe lo que más pesa hoy y luego haz algo amable por ti"
+    ]
+    sugerencia = random.choice(sugerencias)
+    return render(request, "clientes/cuidado_sugerido.html", {
+        "sugerencia": sugerencia
     })
 
 
@@ -406,12 +943,40 @@ def exportar_historial(request, cliente_id):
     return HttpResponse(f"Exportando historial de {cliente.nombre}")
 
 
+from datetime import datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+import json
+from collections import defaultdict
+from django.shortcuts import render, get_object_or_404
+from entrenos.models import EntrenoRealizado
+from clientes.models import Cliente, EstadoSemanal
+
+from datetime import date, timedelta
+from .models import MiniReto, BitacoraDiaria
+from joi.models import Entrenamiento  # ✅ correcto
+
+
+def generar_retos_semanales(cliente):
+    hoy = date.today()
+    lunes = hoy - timedelta(days=hoy.weekday())
+    if MiniReto.objects.filter(cliente=cliente, semana_inicio=lunes).exists():
+        return  # ya creados
+
+    retos = [
+        "Haz al menos 3 entrenos esta semana",
+        "Suma más de 10.000 kg en total",
+        "Duerme 7h o más al menos 4 días",
+    ]
+    for texto in retos:
+        MiniReto.objects.create(cliente=cliente, semana_inicio=lunes, descripcion=texto)
+
+
 def historial_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
     historial = EntrenoRealizado.objects.filter(cliente=cliente).prefetch_related('detalles__ejercicio').order_by(
         '-fecha')
 
-    # Agrupar por semana
+    # Agrupar entrenamientos por semana
     historial_semanal = defaultdict(list)
     for entreno in historial:
         lunes = entreno.fecha - timedelta(days=entreno.fecha.weekday())
@@ -425,10 +990,15 @@ def historial_cliente(request, cliente_id):
                                                                         rounding=ROUND_HALF_UP) if total_semanas else Decimal(
         "0.0")
 
+    # Obtener estados semanales
+    estados = EstadoSemanal.objects.filter(cliente=cliente)
+    estado_por_semana = {e.semana_inicio: e for e in estados}
+
     # Datos para gráficos
     labels = []
     entrenos_por_semana = []
     volumen_por_semana = []
+    colores_por_semana = []
 
     for semana, entrenos in historial_semanal.items():
         labels.append(semana.strftime('%d %b'))
@@ -436,10 +1006,22 @@ def historial_cliente(request, cliente_id):
         volumen = sum(d.series * d.repeticiones * float(d.peso_kg) for e in entrenos for d in e.detalles.all())
         volumen_por_semana.append(round(volumen, 2))
 
+        estado = estado_por_semana.get(semana)
+        if estado:
+            if estado.humor_dominante == "verde":
+                colores_por_semana.append("rgba(0, 255, 128, 0.6)")  # verde
+            elif estado.humor_dominante == "amarillo":
+                colores_por_semana.append("rgba(255, 221, 0, 0.6)")  # amarillo
+            else:
+                colores_por_semana.append("rgba(255, 77, 77, 0.6)")  # rojo
+        else:
+            colores_por_semana.append("rgba(128, 128, 128, 0.4)")  # gris
+
     grafico_data = {
         'labels': labels,
         'entrenos': entrenos_por_semana,
-        'volumen': volumen_por_semana
+        'volumen': volumen_por_semana,
+        'colores': colores_por_semana,
     }
 
     return render(request, 'clientes/historial.html', {
@@ -448,6 +1030,7 @@ def historial_cliente(request, cliente_id):
         'total_entrenos': total_entrenos,
         'promedio_semanal': promedio_semanal,
         'grafico_data': json.dumps(grafico_data),
+        'estado_por_semana': estado_por_semana,
     })
 
 
@@ -930,21 +1513,19 @@ def agregar_cliente(request):
             if User.objects.filter(username=username).exists():
                 messages.error(request, "Ese nombre de usuario ya existe.")
             else:
-                # Crear el usuario
                 user = User.objects.create_user(username=username, password=password)
-                # Guardar cliente con usuario asignado
                 cliente = form.save(commit=False)
                 cliente.user = user
                 cliente.save()
                 messages.success(request, "Cliente y usuario creados correctamente.")
-                return redirect('clientes_index')
+                return redirect('lista_clientes')  # ✅ aquí
     else:
         form = ClienteForm()
 
     return render(request, 'clientes/agregar.html', {
         'form': form,
         'titulo': 'Agregar Cliente',
-        'volver_url': 'clientes_index',
+        'volver_url': 'lista_clientes',  # ✅ y aquí
     })
 
 
@@ -1145,3 +1726,10 @@ def actualizar_recordatorio_peso(request, cliente_id):
         cliente.proximo_registro_peso = fecha
         cliente.save()
     return HttpResponseRedirect(reverse("detalle_cliente", args=[cliente.id]))
+
+
+from django.shortcuts import render
+
+
+def blade_runner_demo(request):
+    return render(request, 'clientes/blade-runner-demo.html')

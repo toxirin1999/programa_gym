@@ -1,229 +1,871 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Inicio Fitness+</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-          margin: 0;
-          padding: 2rem;
-          background: linear-gradient(to bottom right, #0f1117, #101828);
-          font-family: 'Inter', sans-serif;
-          color: white;
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}Inicio – Nueva Gym{% endblock %}
+
+{% block extra_css %}
+<!-- Efectos atmosféricos Blade Runner -->
+<link rel="stylesheet" href="{% static 'css/blade-runner-atmosphere.css' %}">
+<style>
+/* Estilos adicionales para integración perfecta */
+.blade-runner-atmosphere {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00ffff 0%, #ff0080 50%, #ffff00 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    0% {
+        text-shadow: 0 0 30px rgba(0, 255, 255, 0.5) !important;
+    }
+    100% {
+        text-shadow: 0 0 50px rgba(0, 255, 255, 0.8), 0 0 80px rgba(255, 0, 128, 0.3) !important;
+    }
+}
+/* Asegurar que el contenido principal esté por encima */
+.main-wrapper {
+    position: relative;
+    z-index: 10;
+}
+
+/* Mejorar la integración visual */
+.header-halo,
+.metric-card,
+.quote-box,
+.timeline-section,
+.chat-bubble {
+    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Efectos especiales para Joi */
+.joi-flotante {
+    filter: drop-shadow(0 0 20px rgba(49, 207, 244, 0.4));
+    transition: all 0.3s ease;
+}
+
+.joi-flotante:hover {
+    filter: drop-shadow(0 0 30px rgba(49, 207, 244, 0.8)) brightness(1.1);
+    transform: scale(1.05);
+}
+
+/* Controles de efectos atmosféricos */
+.atmosphere-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+}
+
+.atmosphere-btn {
+    background: linear-gradient(135deg, #00ffff 0%, #0080ff 100%);
+    border: none;
+    border-radius: 4px;
+    color: #000000;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.atmosphere-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+}
+
+/* Indicador de estado */
+.status-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    z-index: 1000;
+    color: #00ff00;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Sistema de partículas Blade Runner -->
+<script src="{% static 'js/blade-runner-particles.js' %}"></script>
+
+<!-- Scripts adicionales para efectos holográficos -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Añadir efectos holográficos a elementos específicos
+        const metricCards = document.querySelectorAll('.metric-card');
+        const timelineSections = document.querySelectorAll('.timeline-section');
+        const chatBubble = document.querySelector('.chat-bubble');
+        const quoteBoxes = document.querySelectorAll('.quote-box');
+
+        // Añadir pulsos holográficos a las métricas
+        metricCards.forEach((card, index) => {
+            const colors = [
+                'rgba(0, 245, 160, 0.2)',  // Verde
+                'rgba(49, 207, 244, 0.2)', // Cian
+                'rgba(160, 108, 254, 0.2)' // Púrpura
+            ];
+
+            if (typeof addHolographicPulse === 'function') {
+                addHolographicPulse(card, colors[index % colors.length]);
+            }
+
+            // Efecto de hover mejorado
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+                this.style.boxShadow = `0 15px 40px ${colors[index % colors.length]}`;
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+                this.style.boxShadow = '';
+            });
+        });
+
+        // Añadir efectos de escaneo a las secciones de timeline
+        timelineSections.forEach(section => {
+            if (typeof addScanEffect === 'function') {
+                addScanEffect(section);
+            }
+        });
+
+        // Efecto especial para la burbuja de chat
+        if (chatBubble) {
+            chatBubble.addEventListener('mouseenter', function() {
+                this.style.borderColor = 'rgba(49, 207, 244, 0.6)';
+                this.style.boxShadow = '0 0 30px rgba(49, 207, 244, 0.3)';
+            });
+
+            chatBubble.addEventListener('mouseleave', function() {
+                this.style.borderColor = '';
+                this.style.boxShadow = '';
+            });
         }
 
-        .container {
-          max-width: 480px;
-          margin: 0 auto;
-          position: relative;
-          z-index: 1;
+        // Efectos para los botones de emoji
+        const emojiButtons = document.querySelectorAll('.emoji-btn');
+        emojiButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Efecto de onda al hacer clic
+                this.style.transform = 'scale(1.3)';
+                this.style.boxShadow = '0 0 20px rgba(49, 207, 244, 0.5)';
+
+                setTimeout(() => {
+                    this.style.transform = '';
+                    this.style.boxShadow = '';
+                }, 200);
+
+                // Crear partículas temporales
+                createClickParticles(this);
+            });
+        });
+
+        // Efecto especial para el botón GLITCH
+        const glitchBtn = document.querySelector('.glitch-btn');
+        if (glitchBtn) {
+            glitchBtn.addEventListener('click', function() {
+                // Efecto de glitch intenso
+                this.style.animation = 'glitchIntense 0.5s ease-in-out';
+
+                // Crear efecto de distorsión temporal en toda la pantalla
+                createGlitchEffect();
+
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 500);
+            });
         }
 
-        .joi-floating {
-          position: absolute;
-          top: 0;
-          right: 0px;
-          z-index: 0;
-          pointer-events: none;
+        // Función para crear partículas al hacer clic
+        function createClickParticles(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.width = '4px';
+                particle.style.height = '4px';
+                particle.style.background = 'rgba(49, 207, 244, 0.8)';
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '9999';
+                particle.style.boxShadow = '0 0 10px rgba(49, 207, 244, 0.8)';
+
+                const angle = (i / 8) * Math.PI * 2;
+                const velocity = 100;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                particle.style.animation = `particleExplosion 0.8s ease-out forwards`;
+                particle.style.setProperty('--vx', vx + 'px');
+                particle.style.setProperty('--vy', vy + 'px');
+
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 800);
+            }
         }
 
-        .joi-floating-img {
-          height: 200px;
-          object-fit: cover;
+        // Función para crear efecto de glitch global
+        function createGlitchEffect() {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.background = 'linear-gradient(45deg, rgba(255, 0, 100, 0.1), rgba(0, 255, 255, 0.1))';
+            overlay.style.pointerEvents = 'none';
+            overlay.style.zIndex = '9998';
+            overlay.style.animation = 'glitchOverlay 0.5s ease-in-out';
+            overlay.style.mixBlendMode = 'screen';
 
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 500);
         }
 
-        .joi-header {
-          position: relative;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          z-index: 1;
+        // Mejorar el efecto de la imagen de Joi
+        const joiImage = document.querySelector('.joi-flotante');
+        if (joiImage) {
+            // Añadir efecto de resplandor holográfico
+            joiImage.style.filter = 'drop-shadow(0 0 20px rgba(49, 207, 244, 0.4))';
+
+            // Efecto de hover especial
+            joiImage.addEventListener('mouseenter', function() {
+                this.style.filter = 'drop-shadow(0 0 30px rgba(49, 207, 244, 0.8)) brightness(1.1)';
+                this.style.transform = 'scale(1.05)';
+            });
+
+            joiImage.addEventListener('mouseleave', function() {
+                this.style.filter = 'drop-shadow(0 0 20px rgba(49, 207, 244, 0.4))';
+                this.style.transform = '';
+            });
         }
 
-        .joi-header h1 {
-          font-size: 2rem;
-          font-weight: 500;
-          margin: 0 0 0.5rem;
+        // Controles para efectos atmosféricos
+        let effectsActive = true;
+        let currentIntensity = 'medium';
+
+        function setAtmosphereIntensity(level) {
+            if (window.bladeRunnerEffects) {
+                window.bladeRunnerEffects.setIntensity(level);
+                currentIntensity = level;
+                updateStatusIndicator();
+            }
         }
 
-        .joi-dialog {
-          color: #00ffff;
-          font-size: 1rem;
-          font-style: italic;
-          margin: 0;
+        function toggleAtmosphereEffects() {
+            if (window.bladeRunnerEffects) {
+                if (effectsActive) {
+                    window.bladeRunnerEffects.pause();
+                    effectsActive = false;
+                } else {
+                    window.bladeRunnerEffects.resume();
+                    effectsActive = true;
+                }
+                updateStatusIndicator();
+            }
         }
 
-        .quote-box {
-          background: linear-gradient(to right, #4b0082, #6a0dad);
-          border-radius: 1rem;
-          padding: 1rem;
-          margin-bottom: 2rem;
-          z-index: 1;
-          position: relative;
+        function updateStatusIndicator() {
+            const statusIndicator = document.getElementById('atmosphereStatus');
+            if (statusIndicator) {
+                if (!effectsActive) {
+                    statusIndicator.textContent = 'Efectos Pausados';
+                    statusIndicator.style.color = '#ffff00';
+                } else if (currentIntensity === 'low') {
+                    statusIndicator.textContent = 'Intensidad Baja';
+                    statusIndicator.style.color = '#ff8000';
+                } else {
+                    statusIndicator.textContent = 'Efectos Activos';
+                    statusIndicator.style.color = '#00ff00';
+                }
+            }
         }
 
-        .metrics {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 2rem;
-          z-index: 1;
-          position: relative;
-        }
+        // Exponer funciones globalmente
+        window.setAtmosphereIntensity = setAtmosphereIntensity;
+        window.toggleAtmosphereEffects = toggleAtmosphereEffects;
 
-        .metric-box {
-          background: #1a1a1a;
-          padding: 1rem;
-          border-radius: 1rem;
-          text-align: center;
-          flex: 1;
-          margin: 0 0.5rem;
-        }
+        // Inicializar indicador de estado
+        setTimeout(() => {
+            updateStatusIndicator();
+        }, 1000);
 
-        .metric-box h2 {
-          margin: 0;
-          font-size: 1.5rem;
-          font-weight: 600;
-        }
+        // Añadir animaciones CSS dinámicas
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes particleExplosion {
+                0% {
+                    transform: translate(0, 0) scale(1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(--vx), var(--vy)) scale(0);
+                    opacity: 0;
+                }
+            }
 
-        .metric-box p {
-          margin: 0;
-          font-size: 0.8rem;
-          color: #aaa;
-        }
+            @keyframes glitchIntense {
+                0%, 100% { transform: translateX(0); }
+                10% { transform: translateX(-5px) skew(-2deg); }
+                20% { transform: translateX(5px) skew(2deg); }
+                30% { transform: translateX(-3px) skew(-1deg); }
+                40% { transform: translateX(3px) skew(1deg); }
+                50% { transform: translateX(-2px); }
+                60% { transform: translateX(2px); }
+                70% { transform: translateX(-1px); }
+                80% { transform: translateX(1px); }
+                90% { transform: translateX(0); }
+            }
 
-        .emotion-box {
-          background: #1f1f1f;
-          border-radius: 1rem;
-          padding: 1rem;
-          text-align: center;
-          margin-bottom: 2rem;
-          z-index: 1;
-          position: relative;
-        }
+            @keyframes glitchOverlay {
+                0%, 100% { opacity: 0; }
+                10%, 30%, 50%, 70%, 90% { opacity: 0.3; }
+                20%, 40%, 60%, 80% { opacity: 0; }
+            }
 
-        .emojis button {
-          font-size: 1.8rem;
-          margin: 0.2rem;
-          background: none;
-          border: none;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
+            /* Mejoras adicionales para elementos existentes */
+            .metric-card {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                position: relative !important;
+                overflow: hidden !important;
+            }
 
-        .emojis button:hover {
-          transform: scale(1.2);
-        }
+            .metric-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                transition: left 0.5s ease;
+            }
 
-        .timeline {
-          background: #151515;
-          padding: 1rem;
-          border-radius: 1rem;
-          margin-bottom: 2rem;
-          z-index: 1;
-          position: relative;
-        }
+            .metric-card:hover::before {
+                left: 100%;
+            }
 
-        .timeline h3 {
-          margin-top: 0;
-          font-size: 1rem;
-          color: #32FF00;
-        }
+            .timeline-item {
+                transition: all 0.3s ease !important;
+                position: relative !important;
+            }
 
-        .timeline ul {
-          padding-left: 0;
-          list-style: none;
-        }
+            .timeline-item:hover {
+                background: rgba(49, 207, 244, 0.05) !important;
+                border-radius: 8px !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                transform: translateX(5px) !important;
+            }
 
-        .timeline li {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.9rem;
-          padding: 0.3rem 0;
-          border-bottom: 1px solid #2a2a2a;
-        }
+            .emoji-btn {
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                position: relative !important;
+            }
 
-        .badges {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
+            .emoji-btn:hover {
+                transform: scale(1.2) rotate(5deg) !important;
+                background: rgba(49, 207, 244, 0.1) !important;
+                box-shadow: 0 0 15px rgba(49, 207, 244, 0.3) !important;
+            }
 
-        .badge {
-          background: rgba(255, 255, 255, 0.1);
-          padding: 0.3rem 0.7rem;
-          border-radius: 9999px;
-          font-size: 0.8rem;
-          color: #32FF00;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
+            .chat-bubble {
+                transition: all 0.3s ease !important;
+            }
 
-    <div class="joi-floating">
-        <img src="/static/images/joi.jpg" alt="Joi" class="joi-floating-img">
-    </div>
+            .quote-box {
+                transition: all 0.3s ease !important;
+            }
 
-    <div class="joi-header">
-        <h1>Hola, {{ usuario.first_name|default:usuario.username }}</h1>
-        <p class="joi-dialog">Corres como si algo te persiguiera...<br>¿qué es?</p>
-    </div>
+            .quote-box:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 10px 30px rgba(160, 108, 254, 0.3) !important;
+            }
 
-    <div class="quote-box">
-        <p><strong>Recuerdo del día</strong></p>
-        <p>La desmotivación es la sombra de un objetivo mal iluminado.</p>
-    </div>
+            /* Efectos especiales para el gráfico */
+            #graficoRendimiento {
+                filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3)) !important;
+                transition: filter 0.3s ease !important;
+            }
 
-    <div class="metrics">
-        <div class="metric-box">
-            <h2>{{ entrenos_count }}</h2>
-            <p>Entrenos</p>
-        </div>
-        <div class="metric-box">
-            <h2>{{ carga_total }}kg</h2>
-            <p>Carga total</p>
-        </div>
-        <div class="metric-box">
-            <h2>{{ consistencia }}%</h2>
-            <p>Consistencia</p>
-        </div>
-    </div>
+            #graficoRendimiento:hover {
+                filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)) !important;
+            }
 
-    <div class="emotion-box">
-        <h3>¿Cómo te sientes hoy?</h3>
-        <div class="emojis">
-            <button>😊</button>
-            <button>😐</button>
-            <button>😟</button>
-            <button>😣</button>
-            <button>🥀</button>
-            <button>🕳</button>
-        </div>
-    </div>
+            /* Animación sutil para los logros */
+            .timeline-section li {
+                animation: fadeInUp 0.6s ease-out forwards;
+                opacity: 0;
+                transform: translateY(20px);
+            }
 
-    <div class="timeline">
-        <h3>Últimos entrenos</h3>
-        <ul>
-            {% for entreno in entrenos %}
-            <li><span>{{ entreno.descripcion }}</span><span>{{ entreno.fecha|date:'M d' }}</span></li>
-            {% empty %}
-            <li>No hay entrenos recientes.</li>
-            {% endfor %}
-        </ul>
-    </div>
+            .timeline-section li:nth-child(1) { animation-delay: 0.1s; }
+            .timeline-section li:nth-child(2) { animation-delay: 0.2s; }
+            .timeline-section li:nth-child(3) { animation-delay: 0.3s; }
+            .timeline-section li:nth-child(4) { animation-delay: 0.4s; }
+            .timeline-section li:nth-child(5) { animation-delay: 0.5s; }
 
-    <div class="timeline">
-        <h3>Logros desbloqueados</h3>
-        <div class="badges">
-            {% for logro in logros %}
-            <span class="badge">{{ logro.nombre }}</span>
-            {% empty %}
-            <p>No hay logros aún.</p>
-            {% endfor %}
+            @keyframes fadeInUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Efecto de typing para el texto del recuerdo */
+            .quote-box p {
+                overflow: hidden;
+                border-right: 2px solid rgba(160, 108, 254, 0.7);
+                white-space: nowrap;
+                animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+            }
+
+            @keyframes typing {
+                from { width: 0; }
+                to { width: 100%; }
+            }
+
+            @keyframes blink-caret {
+                from, to { border-color: transparent; }
+                50% { border-color: rgba(160, 108, 254, 0.7); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Efectos atmosféricos Blade Runner -->
+<div class="blade-runner-atmosphere">
+    <!-- Niebla de fondo -->
+    <div class="background-fog"></div>
+
+    <!-- Resplandor ambiental -->
+    <div class="ambient-glow"></div>
+
+    <!-- Luces volumétricas -->
+    <div class="volumetric-light volumetric-light-1"></div>
+    <div class="volumetric-light volumetric-light-2"></div>
+    <div class="volumetric-light volumetric-light-3"></div>
+</div>
+
+<!-- Controles de efectos atmosféricos -->
+<div class="atmosphere-controls">
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('low')">Bajo</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('medium')">Medio</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('high')">Alto</button>
+    <button class="atmosphere-btn" onclick="toggleAtmosphereEffects()">Pausar</button>
+</div>
+
+<!-- Indicador de estado -->
+<div class="status-indicator">
+    <span id="atmosphereStatus">Efectos Activos</span>
+</div>
+
+<div class="w-full flex justify-center">
+    <div class="main-wrapper">
+        <div class="header-halo">
+            <!-- Saludo y avatar -->
+            <header class="header-section">
+                <h1 style="
+    color: transparent;
+    background: linear-gradient(135deg, #00ffff 0%, #ff0080 50%, #ffff00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 3rem;
+    font-weight: 700;
+    text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    animation: titleGlow 3s ease-in-out infinite alternate;
+">Hola, {{ cliente.nombre }}</h1>
+                <div class="background-image">
+                    {% if estado_visual_joi == "brillante" %}
+                    <img src="{% static 'images/joi_activa.jpg' %}" alt="Joi feliz" class="joi-flotante w-48 mx-auto animate-pulse"/>
+                    {% elif estado_visual_joi == "apagada" %}
+                    <img src="{% static 'images/joi_glitch.png' %}" alt="Joi glitch" class="joi-flotante w-48 mx-auto opacity-40 blur-sm grayscale"/>
+                    {% elif estado_visual_joi == "neutral" %}
+                    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi neutra" class="joi-flotante w-48 mx-auto"/>
+                    {% else %}
+                    <img src="{% static 'images/joi23.png' %}" alt="Joi" class="joi-flotante w-48 mx-auto"/>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Burbuja de chat -->
+            <div class="chat-bubble">
+                <p>
+                    {{ frase_bitacora|default:"¿Cómo dormiste esta semana?" }}
+                </p>
+                {% if frase_memoria_emocional %}
+                <p class="mt-2 text-red-300 italic">{{ frase_memoria_emocional }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Recordatorio -->
+            <div class="quote-box">
+                <h2>Recuerdo del día</h2>
+                <p>{{ recuerdo.contenido }}</p>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metrics-container">
+                <div class="metric-card interactive-glow">
+                    <h2>{{ entrenos_count }}</h2>
+                    <p>Entrenos</p>
+                </div>
+                <div class="metric-card interactive-glow">
+                    <h2>{{ carga_total|floatformat:0 }} <span class="metric-unit">kg</span></h2>
+                    <p>Carga total</p>
+                </div>
+                <div class="metric-card interactive-glow">
+                    <h2>82</h2>
+                    <p>Consistencia</p>
+                </div>
+            </div>
+
+            <!-- Emojis -->
+            <div class="quote-box">
+                <h3>¿Cómo te sientes hoy?</h3>
+
+                {% if alerta_fatiga %}
+                <div class="bg-[#1f1f1f] border border-red-500 p-4 rounded-xl mt-6 text-white shadow-md">
+                    <h3 class="text-red-400 font-semibold mb-2">🫧 Joi detecta fatiga acumulada</h3>
+                    <p class="text-sm mb-3">Tu sistema parece fatigado esta semana. Quizás sea buen momento para cuidarte con más suavidad.</p>
+                    <a href="{% url 'recomendacion_cuidado' %}" class="block w-full text-center bg-red-500 hover:bg-red-400 text-white font-bold py-2 rounded-xl transition">
+                        ¿Qué puedo hacer hoy para cuidarme?
+                    </a>
+                </div>
+                {% endif %}
+
+                <a href="/clientes/bitacora/registrar/" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                    Registrar bitácora de hoy
+                </a>
+                <a href="{% url 'calendario_bitacoras' %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                    🗓 Ver calendario de bitácoras
+                </a>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h3>Últimos entrenos</h3>
+                    <span>2s senanaa</span>
+                </div>
+                <ul class="timeline-list">
+                    <li class="timeline-item">
+                        <span class="timeline-number green">22</span>
+                        <span class="timeline-content">Cardio</span>
+                        <span class="timeline-date">Apr 21</span>
+                        <span class="timeline-type">Cardio</span>
+                    </li>
+                    <li class="timeline-item">
+                        <span class="timeline-number purple">21</span>
+                        <span class="timeline-content">Pull</span>
+                        <span class="timeline-date">Apr 19</span>
+                        <span class="timeline-type">Pull</span>
+                    </li>
+                    <li class="timeline-item">
+                        <span class="timeline-number yellow">19</span>
+                        <span class="timeline-content">Piernas</span>
+                        <span class="timeline-date">Apr 18</span>
+                        <span class="timeline-type">Piernas</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="timeline-section">
+                <h3 class="text-lg font-semibold mb-4 text-cyan-400">📊 Rendimiento por semana</h3>
+                <canvas id="graficoRendimiento" height="150"></canvas>
+            </div>
+
+            <div class="timeline-section">
+                <h3 class="text-lg font-semibold mb-4 text-yellow-400">🏆 Logros desbloqueados</h3>
+                {% if logros %}
+    <ul class="space-y-2">
+        {% for logro in logros %}
+            <li class="flex items-center gap-4 bg-[#222] p-3 rounded-lg shadow-sm interactive-glow">
+                <span class="text-2xl">{{ logro.logro.icono|default:"🌟" }}</span>
+                <div>
+                    <p class="font-semibold text-white">{{ logro.logro.nombre }}</p>
+                    <p class="text-sm text-gray-400">{{ logro.fecha|date:"d M Y" }}</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% else %}
+    <p class="text-sm text-gray-400">Aún no hay logros desbloqueados.</p>
+    <p>{{ logros|length }} logros encontrados</p>
+{% endif %}
+            </div>
+
+            <div class="timeline-section">
+                {% if resumen_bitacora %}
+                <div class="bg-[#1a1a1a] p-6 rounded-xl shadow-md text-white mt-6 space-y-2 interactive-glow">
+                    <h2 class="text-xl font-bold text-[#32FF00]">📓 Resumen semanal con Joi</h2>
+                    <p>📅 Días registrados: <span class="text-cyan-300">{{ resumen_bitacora.dias_registrados }}/7</span></p>
+                    <p>💤 Sueño promedio: <span class="text-purple-300">{{ resumen_bitacora.promedio_sueno }} h</span></p>
+                    <p>🔥 RPE promedio: <span class="text-orange-300">{{ resumen_bitacora.promedio_rpe }}/10</span></p>
+                    <p>😊 Estado emocional dominante:
+                        {% if resumen_bitacora.humor == 'verde' %}
+                        <span class="text-green-400">😊 Bien</span>
+                        {% elif resumen_bitacora.humor == 'amarillo' %}
+                        <span class="text-yellow-400">😐 Neutro</span>
+                        {% else %}
+                        <span class="text-red-400">😞 Bajo</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if estados and estados.0.sugerencia %}
+                <div class="bg-[#1a1a1a] p-4 rounded-xl mt-6 shadow-md border border-cyan-800 interactive-glow">
+                    <h3 class="text-[#31cff4] font-semibold mb-2">🔮 Recomendación inteligente de Joi</h3>
+                    <p class="text-white">{{ estados.0.sugerencia }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+                <h3 class="text-yellow-300 font-semibold mb-2">🎯 Mini-retos de la semana</h3>
+                <ul class="text-white space-y-1 text-sm">
+                    {% for reto in mini_retos %}
+                    <li class="transition-all duration-300 hover:text-yellow-300 hover:transform hover:translateX-2">
+                        {% if reto.cumplido %}
+                        ✅ <s>{{ reto.descripcion }}</s>
+                        {% else %}
+                        ⏳ {{ reto.descripcion }}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if recomendacion_carga %}
+            <div class="bg-[#111827] border border-cyan-700 p-4 rounded-xl mt-6 shadow interactive-glow">
+                <h3 class="text-cyan-300 font-semibold mb-2">📡 Sugerencia de Joi para esta semana</h3>
+                <p class="text-white text-sm">{{ recomendacion_carga }}</p>
+                <a href="{% url 'responder_sugerencia' %}" class="btn-fucsia mt-2 text-sm interactive-glow">
+                    Decidir si aplicar esta sugerencia
+                </a>
+            </div>
+            {% endif %}
+            <div class="mt-6 bg-[#1a1a1a] p-4 rounded-xl shadow-inner border border-cyan-700">
+                <h3 class="text-cyan-300 text-sm font-semibold mb-2">🔋 Mapa de energía (últimos 28 días)</h3>
+                <div class="grid grid-cols-7 gap-1">
+                    {% for dia in energia_dias %}
+                    <div class="h-3 rounded-full"
+                         style="background-color:
+             {% if dia.valor == None %} #2c2c2c
+             {% elif dia.valor >= 0.8 %} #32FF00
+             {% elif dia.valor >= 0.6 %} #90ee90
+             {% elif dia.valor >= 0.4 %} #facc15
+             {% elif dia.valor >= 0.2 %} #f87171
+             {% else %} #dc2626
+             {% endif %};">
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="text-[0.7rem] text-center text-gray-400 mt-2">🟢🟡🔴 energía diaria</p>
+            </div>
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+            {% if cambios_peso %}
+            <div class="mt-6">
+                <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Peso</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    {% for periodo, cambio in cambios_peso.items %}
+                    <div class="rounded-xl p-3 shadow-sm
+                        {% if cambio >= 0 %}
+                            bg-green-100 text-green-600 border border-green-300
+                        {% else %}
+                            bg-red-100 text-red-600 border border-red-300
+                        {% endif %}">
+                        <p class="text-2xl font-bold">
+                            {% if cambio > 0 %}+{% endif %}{{ cambio|floatformat:1 }} kg
+                        </p>
+                        <p class="text-xs text-gray-700 mt-1">
+                        {% if periodo == 'inicio' %}Ganado total
+                        {% else %}{{ periodo|slice:":-1" }} días
+                        {% endif %}
+                        </p>
+                    </div>
+                {% endfor %}
+                </div>
+             </div>
+            {% endif %}
+            </div>
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+              <h3 class="text-yellow-300 font-semibold mb-2">🧠 Mapa emocional semanal</h3>
+
+            <div class="grid grid-cols-7 gap-2 text-xs text-center">
+                {% for dia in dias_emocionales %}
+                <div class="space-y-2 p-2 rounded-xl bg-[#1a1a1a] border border-slate-700 shadow-inner">
+                <div class="font-bold text-cyan-400">{{ dia.fecha }}</div>
+
+                <!-- Autoconciencia -->
+                <div class="rounded-full w-8 h-8 mx-auto flex items-center justify-center text-white font-bold
+                    {% if dia.autoconciencia <= 3 %} bg-red-500
+                    {% elif dia.autoconciencia <= 6 %} bg-yellow-400 text-black
+                    {% else %} bg-green-500
+                    {% endif %}">
+                    {{ dia.autoconciencia }}
+                </div>
+                <div class="text-slate-300">Autoconciencia</div>
+
+                <!-- Humor -->
+                <div class="italic text-sm text-emerald-300">
+                    {{ dia.humor }}
+                </div>
+                <div class="text-slate-300">Humor</div>
+
+                  <!-- Rumiación -->
+                <div class="{% if dia.rumiacion_baja %}text-green-400{% else %}text-red-500{% endif %} font-bold">
+                    {% if dia.rumiacion_baja %}✔{% else %}✖{% endif %}
+                </div>
+                <div class="text-slate-300">Rumiación</div>
+                </div>
+                {% endfor %}
+
+            </div>
+            <div class="mt-4 text-sm text-[#32FF00] italic text-center">
+                ✨ Joi: {{ comentario_joi }}
+                </div>
+            </div>
+
+            </div>
+            <div class="metric-card interactive-glow">
+                 <h2 class="text-lg text-[#32FF00] font-semibold mb-4">Informe emocional de la semana</h2>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+                    <div>
+                    <div class="text-slate-400">Sueño</div>
+                    <div class="text-xl font-bold text-cyan-400">{{ informe_joi.promedios.horas_sueno }} h</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Energía</div>
+                    <div class="text-xl font-bold text-yellow-300">{{ informe_joi.promedios.energia_subjetiva }}</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Dolor</div>
+                    <div class="text-xl font-bold text-red-400">{{ informe_joi.promedios.dolor_articular }}</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Autoconciencia</div>
+                    <div class="text-xl font-bold text-green-400">{{ informe_joi.promedios.autoconciencia }}</div>
+                    </div>
+                </div>
+
+
+
+                  <div class="mt-4 text-sm text-[#32FF00] italic text-center">
+                    ✨ Joi: {{ informe_joi.frase }}
+                </div>
+                </div>
         </div>
     </div>
 </div>
-</body>
-</html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctxPeso = document.getElementById('graficoPeso').getContext('2d');
+    new Chart(ctxPeso, {
+      type: 'line',
+      data: {
+        labels: [{% for punto in datos_peso %}"{{ punto.fecha }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          label: 'Peso (kg)',
+          data: [{% for punto in datos_peso %}{{ punto.peso }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          borderColor: '#32FF00',
+          backgroundColor: 'rgba(50, 255, 0, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+          y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+        }
+      }
+    });
+
+    const ctxRendimiento = document.getElementById('graficoRendimiento').getContext('2d');
+    new Chart(ctxRendimiento, {
+      type: 'line',
+      data: {
+        labels: [{% for punto in datos_rendimiento %}"{{ punto.semana }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          label: 'Rendimiento',
+          data: [{% for punto in datos_rendimiento %}{{ punto.valor }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          borderColor: '#31CFF4',
+          backgroundColor: 'rgba(49, 207, 244, 0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+          y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+        }
+      }
+    });
+</script>
+{% endblock %}
+

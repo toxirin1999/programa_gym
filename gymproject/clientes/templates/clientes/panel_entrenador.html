@@ -1,65 +1,82 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}Panel del Entrenador – Nueva Gym{% endblock %}
 
 {% block content %}
+<div class="w-full flex justify-center">
+    <div class="main-wrapper">
+        <div class="header-halo">
 
+            <header class="header-section">
+                <h1 class="text-4xl font-semibold">Panel del Entrenador</h1>
 
+            </header>
 
-<div class="p-6 space-y-6 bg-[#121212] rounded-xl shadow-inner text-white">
+            <div class="quote-box">
+                <h2>Estado actual</h2>
+                <p>Este es el panel principal del entrenador. Aquí ves métricas clave y el estado de tus clientes.</p>
+            </div>
 
-  <h1 class="text-2xl font-bold text-white">Panel del Entrenador</h1>
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <h2>{{ total_clientes }}</h2>
+                    <p>Clientes activos</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ total_revisiones }}</h2>
+                    <p>Revisiones totales</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ entrenos_hoy }}</h2>
+                    <p>Entrenos hoy</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ entrenos_semana }}</h2>
+                    <p>Entrenos semana</p>
+                </div>
+            </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-    <div class="bg-[#1c1c1c] p-4 rounded-2xl shadow text-green-400">
-      <p class="text-sm text-gray-400">Clientes activos</p>
-      <p class="text-3xl font-bold">{{ total_clientes }}</p>
-    </div>
-    <div class="bg-[#1c1c1c] p-4 rounded-2xl shadow text-blue-400">
-      <p class="text-sm text-gray-400">Revisiones totales</p>
-      <p class="text-3xl font-bold">{{ total_revisiones }}</p>
-    </div>
-    <div class="bg-[#1c1c1c] p-4 rounded-2xl shadow text-fuchsia-400">
-      <p class="text-sm text-gray-400">Entrenos hoy</p>
-      <p class="text-3xl font-bold">{{ entrenos_hoy }}</p>
-    </div>
-    <div class="bg-[#1c1c1c] p-4 rounded-2xl shadow text-orange-400">
-      <p class="text-sm text-gray-400">Entrenos esta semana</p>
-      <p class="text-3xl font-bold">{{ entrenos_semana }}</p>
-    </div>
-  </div>
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h3>🚨 Alertas activas</h3>
+                </div>
+                {% if alertas %}
+                <ul class="timeline-list">
+                    {% for cliente, lista in alertas %}
+                    <li class="timeline-item">
+                        <span class="timeline-number yellow">⚠️</span>
+                        <span class="timeline-content">{{ cliente.nombre }}</span>
+                        <span class="timeline-date text-red-400">{{ lista|join:", " }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-green-400">Todo en orden. Sin alertas críticas.</p>
+                {% endif %}
+            </div>
 
-  <div>
-    <h2 class="text-xl font-semibold mt-6 mb-2 text-white">🚨 Alertas activas</h2>
-    {% if alertas %}
-      <ul class="space-y-2">
-        {% for cliente, lista in alertas %}
-          <li class="bg-red-900/40 p-4 rounded text-sm">
-            <span class="font-bold text-red-400">{{ cliente.nombre }}</span> → {{ lista|join:", " }}
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="text-green-400">Todo en orden. Sin alertas críticas.</p>
-    {% endif %}
-  </div>
+            <div class="timeline-section mt-6">
+                <div class="timeline-header">
+                    <h3>👥 Lista de clientes</h3>
+                </div>
+                <ul class="timeline-list">
+                    {% for cliente in clientes %}
+                    <li class="timeline-item">
+                        <span class="timeline-number green">{{ forloop.counter }}</span>
+                        <span class="timeline-content">{{ cliente.nombre }}</span>
+                        <span class="timeline-date">{{ cliente.email }}</span>
+                        <span class="timeline-type">
+                <a href="{% url 'detalle_cliente' cliente.id %}" class="text-blue-400 hover:underline">Ver</a> ·
+                <a href="{% url 'editar_cliente' cliente.id %}" class="text-yellow-400 hover:underline">Editar</a>
+              </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
 
-  <div>
-    <h2 class="text-xl font-semibold mt-6 mb-2 text-white">👥 Lista de clientes</h2>
-    <div class="grid md:grid-cols-2 gap-4">
-      {% for cliente in clientes %}
-        <div class="bg-[#1a1a1a] p-4 rounded-xl shadow hover:bg-[#222] transition">
-          <p class="font-bold text-[#32FF00]">{{ cliente.nombre }}</p>
-          <p class="text-sm text-gray-400">{{ cliente.email }}</p>
-          <div class="mt-2 flex gap-3 text-sm">
-            <a href="{% url 'detalle_cliente' cliente.id %}" class="text-blue-400 hover:underline">Ver</a>
-            <a href="{% url 'editar_cliente' cliente.id %}" class="text-yellow-400 hover:underline">Editar</a>
-          </div>
         </div>
-      {% endfor %}
     </div>
-  </div>
-
 </div>
-{% include "partials/joi_flotante.html" %}
+
 
 {% endblock %}
