@@ -1,627 +1,1068 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Resumen de Entrenamiento</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-          background-color: #0f0f0f;
-          color: white;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          padding: 20px;
-          margin: 0;
-        }
-
-        .container {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        h1 {
-          font-size: 28px;
-          font-weight: bold;
-          margin-bottom: 20px;
-          color: white;
-        }
-
-        .grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
-        .card {
-          background-color: #1a1a1a;
-          border-radius: 12px;
-          padding: 16px;
-          border: 1px solid #333;
-        }
-
-        .card-title {
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 10px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .green-text {
-          color: #32FF00;
-        }
-
-        .red-text {
-          color: #ff4d4d;
-        }
-
-        .yellow-text {
-          color: #FFD700;
-        }
-
-        .cyan-text {
-          color: #00FFFF;
-        }
-
-        .pink-text {
-          color: #FF69B4;
-        }
-
-        .full-width {
-          grid-column: span 2;
-        }
-
-        .checkmark {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          background-color: #32FF00;
-          border-radius: 50%;
-        }
-
-        .circle-empty {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          background-color: #333;
-          border-radius: 50%;
-        }
-
-        .consistency-circles {
-          display: flex;
-          gap: 4px;
-          margin: 10px 0;
-        }
-
-        .btn {
-          background-color: #0066ff;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          padding: 12px;
-          font-weight: 600;
-          width: 100%;
-          margin-top: 10px;
-          cursor: pointer;
-        }
-
-        .progress-chart {
-          width: 100%;
-          height: 150px;
-        }
-
-        .progress-img {
-          max-width: 60px;
-          border-radius: 5px;
-          float: right;
-        }
-
-        .arrow-up {
-          color: #32FF00;
-        }
-
-        .arrow-down {
-          color: #ff4d4d;
-        }
-		/* Añadir al CSS */
-.notificaciones-opciones {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-  margin-right: 10px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #333;
-  transition: .4s;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  transition: .4s;
-}
-
-input:checked + .slider {
-  background-color: #32FF00;
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
-.slider.round {
-  border-radius: 20px;
-}
-/* Añadir al CSS */
-.tabs {
-  display: flex;
-  margin-bottom: 15px;
-}
-
-.tab-btn {
-  background-color: #333;
-  border: none;
-  color: white;
-  padding: 8px 15px;
-  cursor: pointer;
-  border-radius: 5px;
-  margin-right: 5px;
-  transition: background-color 0.3s;
-}
-
-.tab-btn.active {
-  background-color: #4287f5;
-}
-
-.tab-btn:hover {
-  background-color: #444;
-}
-
-.tab-content {
-  position: relative;
-  height: 200px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-        .arrow-right {
-          color: #32FF00;
-        }
-        /* Añadir al CSS existente */
-@media (max-width: 768px) 
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .full-width {
-    grid-column: span 1;
-  }
-
-  .card {
-    padding: 12px;
-  }
-}
-
-/* Asegurar que la base sea responsive */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 12px;
-}
-/* Añadir al CSS */
-.ejercicio-progreso {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.ejercicio-nombre {
-  flex: 1;
-}
-
-.ejercicio-barra {
-  width: 100px;
-  height: 8px;
-  background-color: #333;
-  border-radius: 4px;
-  margin: 0 10px;
-  overflow: hidden;
-}
-
-.barra-progreso {
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.ejercicio-valor {
-  width: 50px;
-  text-align: right;
-}
-/* Añadir al CSS */
-.logros-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.logro {
-  text-align: center;
-  padding: 8px;
-  border-radius: 8px;
-  transition: transform 0.2s;
-}
-
-.logro-activo {
-  background-color: rgba(50, 255, 0, 0.2);
-  border: 1px solid #32FF00;
-}
-
-.logro-inactivo {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid #333;
-  opacity: 0.6;
-}
-
-.logro:hover {
-  transform: scale(1.05);
-}
-
-.logro-icono {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-.logro-nombre {
-  font-size: 12px;
-}
-
-/* Estilo para el botón de procesar logros */
-.fitness-button {
-  display: inline-block;
-  background-color: #1a1a1a;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 12px 16px;
-  text-decoration: none;
-  font-weight: 600;
-  margin-top: 10px;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.fitness-button.primary {
-  background-color: #0066ff;
-  border-color: #0066ff;
-}
-
-.fitness-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Resumen de Entrenamiento</h1>
-
-    <div class="grid">
-        <!-- Añadir sección de logros -->
-        <div class="card full-width">
-            <div class="card-title green-text">🏆 Logros Desbloqueados</div>
-            <div class="logros-grid">
-                {% for logro in logros_desbloqueados %}
-                <div class="logro {% if logro.desbloqueado %}logro-activo{% else %}logro-inactivo{% endif %}"
-                     title="{{ logro.descripcion }}">
-                    <div class="logro-icono">{{ logro.icono }}</div>
-                    <div class="logro-nombre">{{ logro.nombre }}</div>
-                </div>
-                {% empty %}
-                <div class="logro-mensaje">¡Completa más entrenamientos para desbloquear logros!</div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Logros de Hoy -->
-        <div class="card full-width">
-            <div class="card-title green-text">1 Logros de Hoy</div>
-            <div class="green-text">➡ Lograste aumentar el peso en <span class="red-text">2 ejercicios hoy</span></div>
-        </div>
-
-        <!-- Nivel de Consistencia -->
-        <div class="card">
-            <div class="card-title green-text">⚪ Nivel de Consistencia</div>
-            <div>{{ consistencia.semanas_consecutivas }} semanas completadas</div>
-            <div class="consistency-circles">
-                {% for dia in consistencia.historial %}
-                <div class="{% if dia %}checkmark{% else %}circle-empty{% endif %}"></div>
-                {% endfor %}
-            </div>
-
-
-        </div>
-        <!-- Añadir nueva sección -->
-        <div class="card full-width">
-            <div class="card-title blue-text">📊 Tendencias a Largo Plazo</div>
-            <div class="tabs">
-                <button class="tab-btn active" data-periodo="3m">3 meses</button>
-                <button class="tab-btn" data-periodo="6m">6 meses</button>
-                <button class="tab-btn" data-periodo="1y">1 año</button>
-            </div>
-            <div class="tab-content">
-                <canvas id="graficoTendencias" height="200"></canvas>
-            </div>
-        </div>
-
-
-        <!-- Carga Total -->
-        <div class="card">
-            <div class="card-title green-text">↗ Carga Total</div>
-            <div>Hoy fue <span class="green-text">{% if carga.diferencia >= 0 %}+{% endif %}{{ carga.diferencia }} kg </span></div>
-            <div>sobre tu media semanal</div>
-            {% if carga.diferencia > 2000 %}
-            <div class="red-text" style="margin-top: 10px;">Te recomendamos descanso activo mañana 🧘</div>
-            {% endif %}
-        </div>
-
-        <!-- Sugerencias Inteligentes -->
-
-        <div class="card">
-            <div class="card-title yellow-text">🔍 Sugerencias Inteligentes</div>
-            {% for recomendacion in recomendaciones_personalizadas %}
-            <div class="recomendacion">
-                <span class="recomendacion-icono">{{ recomendacion.icono }}</span>
-                <span class="red-text">{{ recomendacion.mensaje }}</span>
-            </div>
-            {% empty %}
-            <div>¡Excelente trabajo! Sigue con tu rutina actual.</div>
-            {% endfor %}
-        </div>
-
-
-        <!-- Mejora por Ejercicio -->
-        <div class="card">
-            <div class="card-title green-text">📊 Mejora por Ejercicio</div>
-            <div style="display: flex; justify-content: space-between;">
-                <div>Prensa</div>
-                <div class="arrow-up">↑ 10%</div>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <div>Peso muerto</div>
-                <div class="arrow-down">↓ -5%</div>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <div>Elevaciones laterales</div>
-                <div class="arrow-right">↗ →</div>
-            </div>
-
-        </div>
-        <!-- Añadir en la sección de Próximo Entreno -->
-        <div class="card">
-            <div class="card-title green-text">↻ Próximo Entreno Recomendado</div>
-            <div>{{ proximo_entreno.rutina }} - {{ proximo_entreno.fecha|date:"l" }} a las {{ proximo_entreno.hora }}</div>
-            <button class="btn">Agendar entreno</button>
-            <div class="notificaciones-opciones">
-                <label class="switch">
-                    <input type="checkbox" id="notificaciones-toggle" {% if notificaciones_activas %}checked{% endif %}>
-                    <span class="slider round"></span>
-                </label>
-                <span>Recordatorio 1h antes</span>
-            </div>
-            {% if entreno and entreno.id %}
-    {% if not entreno.procesado_gamificacion %}
-    <a href="{% url 'logros:procesar_entreno' entreno.id %}" class="fitness-button primary">
-        <i class="bi bi-star"></i> Procesar para Logros
-    </a>
-    {% endif %}
-{% else %}
-    <!-- Opcional: Mostrar un mensaje o botón deshabilitado -->
-    <button class="fitness-button" disabled>Procesar para Logros (No disponible)</button>
-{% endif %}
-        </div>
-
-        <!-- Botón de procesar para logros con validación -->
-        {% if entreno and entreno.id and not entreno.procesado_gamificacion %}
-        <a href="{% url 'logros:procesar_entreno' entreno.id %}" class="fitness-button primary">
-            <i class="bi bi-star"></i> Procesar para Logros
-        </a>
-        {% endif %}
-
-        <!-- Estado Emocional -->
-        <div class="card">
-            <div class="card-title yellow-text">😊 Estado Emocional</div>
-            <div>Progreso emojano el semana:</div>
-            <div>😊 (positivo)</div>
-        </div>
-
-
-        <!-- Próximo Entreno -->
-        <div class="card">
-            <div class="card-title green-text">Opciones</div>
-            <div></div>
-            <button class="btn">Volver a Menu</button>
-        </div>
-
-
-    </div>
-</div>
-
-<script>
-    // Verificar si existe el elemento antes de crear el gráfico
-    if (document.getElementById('graficoProgreso')) {
-        const ctx = document.getElementById('graficoProgreso').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['04 May', '11 May', '18 May'],
-            datasets: [{
-              label: 'Volumen total',
-              data: [3400, 3900, 4700],
-              borderColor: '#32FF00',
-              tension: 0.3,
-              fill: false
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                grid: {
-                  color: '#333'
-                },
-                ticks: {
-                  color: '#999'
-                }
-              },
-              x: {
-                grid: {
-                  color: '#333'
-                },
-                ticks: {
-                  color: '#999'
-                }
-              }
-            }
-          }
-        });
+{% extends 'base.html' %}
+
+{% block title %}Resumen de Entrenamiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Efectos Atmosféricos Blade Runner - Versión Independiente Ultra-Visible */
+
+    /* Animaciones para humo - MUY VISIBLES */
+    @keyframes smokeFloat1 {
+        0% { transform: translateX(0) translateY(0) rotate(0deg) scale(1); opacity: 0; }
+        10% { opacity: 0.8; }
+        50% { transform: translateX(-50px) translateY(-200px) rotate(180deg) scale(1.5); opacity: 0.6; }
+        100% { transform: translateX(-100px) translateY(-400px) rotate(360deg) scale(0.8); opacity: 0; }
     }
 
-	// Añadir al JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si existe el elemento antes de crear el gráfico
-    if (document.getElementById('graficoTendencias')) {
-        // Configurar gráfico de tendencias
-        const ctxTendencias = document.getElementById('graficoTendencias').getContext('2d');
-        let graficoTendencias = new Chart(ctxTendencias, {
-            type: 'line',
-            data: {
-                labels: [], // Se llenará con fechas
-                datasets: [{
-                    label: 'Volumen total',
-                    data: [], // Se llenará con datos
-                    borderColor: '#4287f5',
-                    tension: 0.3,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: '#333' },
-                        ticks: { color: '#999' }
-                    },
-                    x: {
-                        grid: { color: '#333' },
-                        ticks: { color: '#999' }
-                    }
+    @keyframes smokeFloat2 {
+        0% { transform: translateX(0) translateY(0) rotate(0deg) scale(1); opacity: 0; }
+        15% { opacity: 0.7; }
+        50% { transform: translateX(30px) translateY(-180px) rotate(-180deg) scale(1.3); opacity: 0.5; }
+        100% { transform: translateX(60px) translateY(-360px) rotate(-360deg) scale(0.9); opacity: 0; }
+    }
+
+    @keyframes smokeFloat3 {
+        0% { transform: translateX(0) translateY(0) rotate(0deg) scale(1); opacity: 0; }
+        20% { opacity: 0.6; }
+        50% { transform: translateX(-20px) translateY(-220px) rotate(90deg) scale(1.4); opacity: 0.4; }
+        100% { transform: translateX(-40px) translateY(-440px) rotate(180deg) scale(0.7); opacity: 0; }
+    }
+
+    @keyframes smokeFloat4 {
+        0% { transform: translateX(0) translateY(0) rotate(0deg) scale(1); opacity: 0; }
+        25% { opacity: 0.5; }
+        50% { transform: translateX(40px) translateY(-160px) rotate(-90deg) scale(1.2); opacity: 0.3; }
+        100% { transform: translateX(80px) translateY(-320px) rotate(-180deg) scale(1); opacity: 0; }
+    }
+
+    /* Animaciones para luces volumétricas - MUY BRILLANTES */
+    @keyframes lightPulse1 {
+        0%, 100% { opacity: 0.3; transform: scaleY(1) scaleX(1); }
+        50% { opacity: 0.8; transform: scaleY(1.2) scaleX(0.9); }
+    }
+
+    @keyframes lightPulse2 {
+        0%, 100% { opacity: 0.2; transform: scaleY(1) scaleX(1); }
+        50% { opacity: 0.7; transform: scaleY(1.3) scaleX(0.8); }
+    }
+
+    @keyframes lightPulse3 {
+        0%, 100% { opacity: 0.25; transform: scaleY(1) scaleX(1); }
+        50% { opacity: 0.6; transform: scaleY(1.1) scaleX(0.95); }
+    }
+
+    /* Animación para niebla de fondo - MUY VISIBLE */
+    @keyframes fogMove {
+        0%, 100% { transform: translateX(0) translateY(0) scale(1); opacity: 0.4; }
+        25% { transform: translateX(-50px) translateY(-25px) scale(1.1); opacity: 0.6; }
+        50% { transform: translateX(30px) translateY(-50px) scale(0.9); opacity: 0.5; }
+        75% { transform: translateX(-20px) translateY(25px) scale(1.05); opacity: 0.7; }
+    }
+
+    /* Contenedor principal de efectos */
+    .blade-runner-atmosphere {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        overflow: hidden;
+    }
+
+    /* NIEBLA DE FONDO - ULTRA VISIBLE */
+    .background-fog {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(ellipse at 20% 70%, rgba(0, 255, 255, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 30%, rgba(255, 0, 128, 0.12) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 90%, rgba(255, 255, 0, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at 10% 10%, rgba(128, 255, 0, 0.08) 0%, transparent 40%);
+        animation: fogMove 60s ease-in-out infinite;
+        z-index: 1;
+    }
+
+    /* RESPLANDOR AMBIENTAL - ULTRA VISIBLE */
+    .ambient-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(circle at 15% 25%, rgba(0, 255, 255, 0.12) 0%, transparent 35%),
+            radial-gradient(circle at 85% 75%, rgba(255, 0, 128, 0.1) 0%, transparent 35%),
+            radial-gradient(circle at 50% 50%, rgba(255, 255, 0, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 30% 80%, rgba(128, 255, 0, 0.09) 0%, transparent 30%);
+        animation: fogMove 45s ease-in-out infinite reverse;
+        z-index: 2;
+    }
+
+    /* CAPAS DE HUMO - ULTRA VISIBLES */
+    .smoke-layer {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(4px);
+        will-change: transform, opacity;
+        z-index: 3;
+    }
+
+    .smoke-layer-1 {
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(ellipse at center,
+            rgba(200, 200, 220, 0.4) 0%,
+            rgba(150, 150, 170, 0.3) 25%,
+            rgba(100, 100, 120, 0.2) 50%,
+            rgba(80, 80, 100, 0.1) 75%,
+            transparent 100%);
+        animation: smokeFloat1 30s linear infinite;
+        top: 10%;
+        left: 0%;
+    }
+
+    .smoke-layer-2 {
+        width: 450px;
+        height: 450px;
+        background: radial-gradient(ellipse at center,
+            rgba(220, 150, 200, 0.35) 0%,
+            rgba(180, 120, 160, 0.25) 25%,
+            rgba(140, 90, 120, 0.15) 50%,
+            rgba(100, 70, 90, 0.08) 75%,
+            transparent 100%);
+        animation: smokeFloat2 35s linear infinite;
+        animation-delay: -10s;
+        top: 40%;
+        right: 10%;
+    }
+
+    .smoke-layer-3 {
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(ellipse at center,
+            rgba(150, 200, 220, 0.3) 0%,
+            rgba(120, 160, 180, 0.2) 25%,
+            rgba(90, 120, 140, 0.12) 50%,
+            rgba(70, 90, 110, 0.06) 75%,
+            transparent 100%);
+        animation: smokeFloat3 40s linear infinite;
+        animation-delay: -20s;
+        bottom: 0%;
+        left: 20%;
+    }
+
+    .smoke-layer-4 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(ellipse at center,
+            rgba(200, 180, 150, 0.32) 0%,
+            rgba(160, 140, 120, 0.22) 25%,
+            rgba(120, 100, 90, 0.14) 50%,
+            rgba(90, 80, 70, 0.08) 75%,
+            transparent 100%);
+        animation: smokeFloat4 32s linear infinite;
+        animation-delay: -25s;
+        top: 60%;
+        right: 0%;
+    }
+
+    /* LUCES VOLUMÉTRICAS - ULTRA BRILLANTES */
+    .volumetric-light {
+        position: absolute;
+        filter: blur(3px);
+        will-change: transform, opacity;
+        z-index: 4;
+    }
+
+    .volumetric-light-1 {
+        top: -20%;
+        left: 5%;
+        width: 150px;
+        height: 140%;
+        background: linear-gradient(to bottom,
+            rgba(0, 255, 255, 0.4) 0%,
+            rgba(0, 255, 255, 0.6) 10%,
+            rgba(0, 255, 255, 0.5) 25%,
+            rgba(0, 255, 255, 0.3) 50%,
+            rgba(0, 255, 255, 0.15) 75%,
+            rgba(0, 255, 255, 0.05) 90%,
+            transparent 100%);
+        transform: rotate(-10deg);
+        animation: lightPulse1 4s ease-in-out infinite;
+    }
+
+    .volumetric-light-2 {
+        top: -20%;
+        right: 15%;
+        width: 130px;
+        height: 140%;
+        background: linear-gradient(to bottom,
+            rgba(255, 0, 128, 0.35) 0%,
+            rgba(255, 0, 128, 0.5) 15%,
+            rgba(255, 0, 128, 0.4) 30%,
+            rgba(255, 0, 128, 0.25) 55%,
+            rgba(255, 0, 128, 0.12) 80%,
+            transparent 100%);
+        transform: rotate(12deg);
+        animation: lightPulse2 5s ease-in-out infinite;
+        animation-delay: -1.5s;
+    }
+
+    .volumetric-light-3 {
+        top: -20%;
+        left: 50%;
+        width: 110px;
+        height: 140%;
+        background: linear-gradient(to bottom,
+            rgba(255, 255, 0, 0.3) 0%,
+            rgba(255, 255, 0, 0.45) 20%,
+            rgba(255, 255, 0, 0.35) 40%,
+            rgba(255, 255, 0, 0.2) 65%,
+            rgba(255, 255, 0, 0.1) 85%,
+            transparent 100%);
+        transform: rotate(2deg);
+        animation: lightPulse3 6s ease-in-out infinite;
+        animation-delay: -3s;
+    }
+
+    /* Contenido principal */
+    .contenedor-principal {
+        position: relative;
+        z-index: 10;
+        max-width: 840px;
+        margin: 0 auto;
+    }
+
+    /* Mejoras visuales para elementos existentes */
+    .demo-panel {
+        backdrop-filter: blur(20px);
+        background: linear-gradient(135deg, rgba(18, 18, 18, 0.9), rgba(18, 18, 18, 0.8)) !important;
+        border: 2px solid rgba(50, 255, 0, 0.6) !important;
+        box-shadow: 0 0 30px rgba(50, 255, 0, 0.4) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .demo-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, rgba(50, 255, 0, 1), transparent);
+        animation: scanLine 2s linear infinite;
+    }
+
+    @keyframes scanLine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .demo-panel h2 {
+        background: linear-gradient(90deg, #32FF00, #00FFFF, #FF0080);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 15px rgba(50, 255, 0, 0.8);
+    }
+
+    .interactive-glow {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(15px);
+    }
+
+    .interactive-glow:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(50, 255, 0, 0.5);
+    }
+
+    /* Controles de efectos atmosféricos */
+    .atmosphere-controls {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.95);
+        border: 3px solid #00ffff;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    .atmosphere-btn {
+        background: linear-gradient(135deg, #00ffff 0%, #0080ff 100%);
+        border: none;
+        border-radius: 8px;
+        color: #000000;
+        padding: 10px 15px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .atmosphere-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px rgba(0, 255, 255, 0.6);
+    }
+
+    .status-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.95);
+        border: 3px solid #00ffff;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 0.9rem;
+        z-index: 1000;
+        color: #00ff00;
+        backdrop-filter: blur(15px);
+        font-weight: 700;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    /* Estadísticas circulares */
+    .stat-circle {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(30, 30, 30, 0.8));
+        border: 4px solid rgba(50, 255, 0, 0.5);
+        box-shadow: 0 0 25px rgba(50, 255, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-circle::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(
+            transparent,
+            rgba(50, 255, 0, 0.5),
+            transparent 30%
+        );
+        animation: rotate 6s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .stat-circle .value {
+        font-size: 3rem;
+        font-weight: 900;
+        color: #32FF00;
+        text-shadow: 0 0 20px rgba(50, 255, 0, 0.8);
+        z-index: 1;
+    }
+
+    .stat-circle .label {
+        font-size: 1rem;
+        color: #ffffff;
+        z-index: 1;
+        font-weight: 600;
+    }
+
+    /* Barras de progreso */
+    .progress-bar {
+        height: 12px;
+        background: rgba(30, 30, 30, 0.9);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        border: 2px solid rgba(50, 255, 0, 0.4);
+    }
+
+    .progress-bar .fill {
+        height: 100%;
+        background: linear-gradient(90deg, #32FF00, #00FFFF);
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        transition: width 3s ease-out;
+    }
+
+    .progress-bar .fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        animation: progressGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes progressGlow {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+
+    /* Optimizaciones para móviles */
+    @media (max-width: 768px) {
+        .smoke-layer {
+            animation-duration: 40s !important;
+            filter: blur(2px);
+        }
+
+        .volumetric-light {
+            width: 80px !important;
+        }
+
+        .atmosphere-controls {
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+        }
+
+        .atmosphere-btn {
+            padding: 8px 10px;
+            font-size: 10px;
+        }
+
+        .stat-circle {
+            width: 110px;
+            height: 110px;
+        }
+
+        .stat-circle .value {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sistema de Partículas Blade Runner - Versión Ultra-Interactiva
+    document.addEventListener('DOMContentLoaded', function() {
+        class BladeRunnerParticles {
+            constructor() {
+                this.particles = [];
+                this.maxParticles = 80;
+                this.isActive = true;
+                this.mouseX = window.innerWidth / 2;
+                this.mouseY = window.innerHeight / 2;
+                this.mouseInfluence = 100; // Radio de influencia aumentado
+
+                this.init();
+                this.animate();
+                this.setupEventListeners();
+            }
+
+            init() {
+                this.particleContainer = document.createElement('div');
+                this.particleContainer.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                    z-index: 5;
+                    overflow: hidden;
+                `;
+
+                document.body.appendChild(this.particleContainer);
+
+                for (let i = 0; i < this.maxParticles; i++) {
+                    this.createParticle();
                 }
             }
-        });
 
-        // Cargar datos iniciales (3 meses)
-        cargarDatosTendencia('3m');
+            createParticle() {
+                const particle = document.createElement('div');
 
-        // Configurar cambio de pestañas
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                cargarDatosTendencia(this.dataset.periodo);
+                const size = Math.random() * 6 + 3; // Partículas más grandes
+                const opacity = Math.random() * 0.9 + 0.4; // Más opacas
+                const speed = Math.random() * 1.2 + 0.3;
+                const drift = Math.random() * 0.6 - 0.3;
+                const rotationSpeed = Math.random() * 3 - 1.5;
+
+                const x = Math.random() * window.innerWidth;
+                const y = window.innerHeight + 150;
+
+                particle.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: radial-gradient(circle,
+                        rgba(255,255,255,${opacity}) 0%,
+                        rgba(200,255,255,${opacity * 0.8}) 30%,
+                        rgba(150,200,255,${opacity * 0.6}) 60%,
+                        transparent 90%);
+                    border-radius: 50%;
+                    left: ${x}px;
+                    top: ${y}px;
+                    pointer-events: none;
+                    will-change: transform;
+                    box-shadow: 0 0 ${size * 3}px rgba(255,255,255,${opacity * 0.7});
+                `;
+
+                particle.dataset.speed = speed;
+                particle.dataset.drift = drift;
+                particle.dataset.x = x;
+                particle.dataset.y = y;
+                particle.dataset.rotation = 0;
+                particle.dataset.rotationSpeed = rotationSpeed;
+                particle.dataset.originalSpeed = speed;
+
+                this.particleContainer.appendChild(particle);
+                this.particles.push(particle);
+
+                return particle;
+            }
+
+            updateParticles() {
+                this.particles.forEach((particle, index) => {
+                    let speed = parseFloat(particle.dataset.speed);
+                    const drift = parseFloat(particle.dataset.drift);
+                    const rotationSpeed = parseFloat(particle.dataset.rotationSpeed);
+                    const originalSpeed = parseFloat(particle.dataset.originalSpeed);
+                    let x = parseFloat(particle.dataset.x);
+                    let y = parseFloat(particle.dataset.y);
+                    let rotation = parseFloat(particle.dataset.rotation);
+
+                    // Movimiento base
+                    y -= speed;
+                    x += drift;
+                    rotation += rotationSpeed;
+
+                    // Turbulencia natural
+                    const time = Date.now() * 0.001;
+                    x += Math.sin(time + index * 0.2) * 0.5;
+                    y += Math.cos(time * 0.8 + index * 0.25) * 0.3;
+
+                    // INTERACCIÓN CON EL MOUSE - MUY VISIBLE
+                    const distanceToMouse = Math.sqrt(
+                        Math.pow(x - this.mouseX, 2) + Math.pow(y - this.mouseY, 2)
+                    );
+
+                    if (distanceToMouse < this.mouseInfluence) {
+                        const force = (this.mouseInfluence - distanceToMouse) / this.mouseInfluence;
+                        const angle = Math.atan2(y - this.mouseY, x - this.mouseX);
+
+                        // Empujar partículas con fuerza aumentada
+                        const pushForce = force * 5; // Fuerza aumentada
+                        x += Math.cos(angle) * pushForce;
+                        y += Math.sin(angle) * pushForce;
+
+                        // Efectos visuales al interactuar
+                        rotation += force * 10;
+                        speed = originalSpeed * (1 + force * 2);
+
+                        // Cambiar color al interactuar
+                        const interactionOpacity = 0.9 + force * 0.1;
+                        particle.style.background = `radial-gradient(circle,
+                            rgba(0,255,255,${interactionOpacity}) 0%,
+                            rgba(255,0,128,${interactionOpacity * 0.8}) 30%,
+                            rgba(255,255,0,${interactionOpacity * 0.6}) 60%,
+                            transparent 90%)`;
+                        particle.style.boxShadow = `0 0 ${15 + force * 20}px rgba(0,255,255,${interactionOpacity})`;
+                    } else {
+                        // Restaurar color normal
+                        const normalOpacity = 0.6;
+                        particle.style.background = `radial-gradient(circle,
+                            rgba(255,255,255,${normalOpacity}) 0%,
+                            rgba(200,255,255,${normalOpacity * 0.8}) 30%,
+                            rgba(150,200,255,${normalOpacity * 0.6}) 60%,
+                            transparent 90%)`;
+                        speed = originalSpeed;
+                    }
+
+                    // Resetear partícula si sale de la pantalla
+                    if (y < -150 || x < -150 || x > window.innerWidth + 150) {
+                        y = window.innerHeight + 150;
+                        x = Math.random() * window.innerWidth;
+                        rotation = 0;
+                        speed = originalSpeed;
+                    }
+
+                    // Actualizar posición
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.transform = `rotate(${rotation}deg) scale(${1 + Math.sin(time + index) * 0.1})`;
+                    particle.dataset.x = x;
+                    particle.dataset.y = y;
+                    particle.dataset.rotation = rotation;
+                    particle.dataset.speed = speed;
+                });
+            }
+
+            animate() {
+                if (!this.isActive) return;
+
+                this.updateParticles();
+                requestAnimationFrame(() => this.animate());
+            }
+
+            setupEventListeners() {
+                // Seguimiento del mouse MUY RESPONSIVO
+                document.addEventListener('mousemove', (e) => {
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                });
+
+                // Efectos al hacer clic
+                document.addEventListener('click', (e) => {
+                    this.createExplosion(e.clientX, e.clientY);
+                });
+
+                document.addEventListener('visibilitychange', () => {
+                    this.isActive = !document.hidden;
+                    if (this.isActive) {
+                        this.animate();
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                    this.handleResize();
+                });
+            }
+
+            createExplosion(x, y) {
+                // Crear explosión de partículas al hacer clic
+                for (let i = 0; i < 10; i++) {
+                    const explosionParticle = document.createElement('div');
+                    const size = Math.random() * 8 + 4;
+                    const angle = (Math.PI * 2 * i) / 10;
+                    const velocity = Math.random() * 100 + 50;
+
+                    explosionParticle.style.cssText = `
+                        position: fixed;
+                        width: ${size}px;
+                        height: ${size}px;
+                        background: radial-gradient(circle, rgba(255,255,0,0.9) 0%, transparent 70%);
+                        border-radius: 50%;
+                        left: ${x}px;
+                        top: ${y}px;
+                        pointer-events: none;
+                        z-index: 1000;
+                        box-shadow: 0 0 ${size * 2}px rgba(255,255,0,0.8);
+                    `;
+
+                    document.body.appendChild(explosionParticle);
+
+                    // Animar explosión
+                    let startTime = Date.now();
+                    const animate = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = elapsed / 1000; // 1 segundo
+
+                        if (progress < 1) {
+                            const currentX = x + Math.cos(angle) * velocity * progress;
+                            const currentY = y + Math.sin(angle) * velocity * progress - (progress * progress * 100);
+                            const opacity = 1 - progress;
+
+                            explosionParticle.style.left = currentX + 'px';
+                            explosionParticle.style.top = currentY + 'px';
+                            explosionParticle.style.opacity = opacity;
+
+                            requestAnimationFrame(animate);
+                        } else {
+                            explosionParticle.remove();
+                        }
+                    };
+
+                    animate();
+                }
+            }
+
+            handleResize() {
+                this.particles.forEach(particle => {
+                    const x = parseFloat(particle.dataset.x);
+                    if (x > window.innerWidth) {
+                        particle.dataset.x = Math.random() * window.innerWidth;
+                        particle.style.left = particle.dataset.x + 'px';
+                    }
+                });
+            }
+
+            setIntensity(level) {
+                const intensities = {
+                    low: { particles: 40, opacity: 0.5, influence: 60 },
+                    medium: { particles: 80, opacity: 0.8, influence: 100 },
+                    high: { particles: 120, opacity: 1, influence: 150 }
+                };
+
+                const config = intensities[level] || intensities.medium;
+
+                while (this.particles.length > config.particles) {
+                    const particle = this.particles.pop();
+                    particle.remove();
+                }
+
+                while (this.particles.length < config.particles) {
+                    this.createParticle();
+                }
+
+                this.maxParticles = config.particles;
+                this.mouseInfluence = config.influence;
+                this.particleContainer.style.opacity = config.opacity;
+            }
+
+            pause() {
+                this.isActive = false;
+            }
+
+            resume() {
+                this.isActive = true;
+                this.animate();
+            }
+        }
+
+        // Inicializar sistema
+        const particleSystem = new BladeRunnerParticles();
+        let effectsActive = true;
+        let currentIntensity = 'medium';
+
+        function setAtmosphereIntensity(level) {
+            particleSystem.setIntensity(level);
+            currentIntensity = level;
+            updateStatusIndicator();
+
+            const atmosphere = document.querySelector('.blade-runner-atmosphere');
+            if (atmosphere) {
+                const intensities = {
+                    low: 0.6,
+                    medium: 0.8,
+                    high: 1
+                };
+                atmosphere.style.opacity = intensities[level] || 0.8;
+            }
+        }
+
+        function toggleAtmosphereEffects() {
+            if (effectsActive) {
+                particleSystem.pause();
+                effectsActive = false;
+                const atmosphere = document.querySelector('.blade-runner-atmosphere');
+                if (atmosphere) atmosphere.style.display = 'none';
+            } else {
+                particleSystem.resume();
+                effectsActive = true;
+                const atmosphere = document.querySelector('.blade-runner-atmosphere');
+                if (atmosphere) atmosphere.style.display = 'block';
+            }
+            updateStatusIndicator();
+        }
+
+        function updateStatusIndicator() {
+            const statusIndicator = document.getElementById('atmosphereStatus');
+            if (statusIndicator) {
+                if (!effectsActive) {
+                    statusIndicator.textContent = 'EFECTOS PAUSADOS';
+                    statusIndicator.style.color = '#ffff00';
+                } else if (currentIntensity === 'low') {
+                    statusIndicator.textContent = 'INTENSIDAD BAJA';
+                    statusIndicator.style.color = '#ff8000';
+                } else if (currentIntensity === 'high') {
+                    statusIndicator.textContent = 'INTENSIDAD MÁXIMA';
+                    statusIndicator.style.color = '#ff0080';
+                } else {
+                    statusIndicator.textContent = 'EFECTOS ACTIVOS';
+                    statusIndicator.style.color = '#00ff00';
+                }
+            }
+        }
+
+        // Exponer funciones globalmente
+        window.setAtmosphereIntensity = setAtmosphereIntensity;
+        window.toggleAtmosphereEffects = toggleAtmosphereEffects;
+        window.bladeRunnerEffects = particleSystem;
+
+        // Animaciones para estadísticas
+        const animateStats = () => {
+            const statElements = document.querySelectorAll('.stat-value');
+            statElements.forEach(stat => {
+                const targetValue = parseInt(stat.getAttribute('data-value'));
+                const duration = 2500;
+                const startTime = Date.now();
+                const startValue = 0;
+
+                const updateValue = () => {
+                    const currentTime = Date.now();
+                    const elapsed = currentTime - startTime;
+
+                    if (elapsed < duration) {
+                        const value = Math.floor(easeOutQuad(elapsed, startValue, targetValue, duration));
+                        stat.textContent = value;
+                        requestAnimationFrame(updateValue);
+                    } else {
+                        stat.textContent = targetValue;
+                    }
+                };
+
+                const easeOutQuad = (t, b, c, d) => {
+                    t /= d;
+                    return -c * t * (t - 2) + b;
+                };
+
+                updateValue();
+            });
+        };
+
+        // Observer para animaciones
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateStats();
+                    observer.unobserve(entry.target);
+                }
             });
         });
 
-        // Función para cargar datos según período
-        function cargarDatosTendencia(periodo) {
-            // Datos de ejemplo para evitar errores si la API no está disponible
-            const datosEjemplo = {
-                '3m': {
-                    fechas: ['Mar', 'Abr', 'May'],
-                    valores: [3200, 3800, 4500]
-                },
-                '6m': {
-                    fechas: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                    valores: [2800, 3000, 3200, 3800, 4500, 4700]
-                },
-                '1y': {
-                    fechas: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                    valores: [2500, 2600, 2700, 2800, 2900, 3000, 3200, 3400, 3600, 3800, 4500, 4700]
-                }
-            };
-
-            try {
-                fetch(`/api/tendencias/?periodo=${periodo}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        actualizarGraficoTendencias(data.fechas, data.valores);
-                    })
-                    .catch(error => {
-                        // Si hay error, usar datos de ejemplo
-                        console.log('Error al cargar datos de API, usando datos de ejemplo', error);
-                        actualizarGraficoTendencias(
-                            datosEjemplo[periodo].fechas,
-                            datosEjemplo[periodo].valores
-                        );
-                    });
-            } catch (error) {
-                // Si hay error, usar datos de ejemplo
-                console.log('Error al cargar datos, usando datos de ejemplo', error);
-                actualizarGraficoTendencias(
-                    datosEjemplo[periodo].fechas,
-                    datosEjemplo[periodo].valores
-                );
-            }
+        const statsContainer = document.querySelector('.stats-container');
+        if (statsContainer) {
+            observer.observe(statsContainer);
         }
 
-        // Función para actualizar el gráfico
-        function actualizarGraficoTendencias(fechas, valores) {
-            graficoTendencias.data.labels = fechas;
-            graficoTendencias.data.datasets[0].data = valores;
-            graficoTendencias.update();
-        }
-    }
-});
+        // Animación para barras de progreso
+        const progressBars = document.querySelectorAll('.progress-bar .fill');
+        progressBars.forEach(bar => {
+            const percent = bar.getAttribute('data-percent');
+            setTimeout(() => {
+                bar.style.width = `${percent}%`;
+            }, 800);
+        });
 
+        // Inicializar indicador
+        setTimeout(() => {
+            updateStatusIndicator();
+        }, 1000);
+    });
 </script>
-</body>
-</html>
+{% endblock %}
+
+{% block content %}
+<!-- Efectos atmosféricos Blade Runner - ULTRA VISIBLES -->
+<div class="blade-runner-atmosphere">
+    <!-- Niebla de fondo -->
+    <div class="background-fog"></div>
+
+    <!-- Resplandor ambiental -->
+    <div class="ambient-glow"></div>
+
+    <!-- Capas de humo -->
+    <div class="smoke-layer smoke-layer-1"></div>
+    <div class="smoke-layer smoke-layer-2"></div>
+    <div class="smoke-layer smoke-layer-3"></div>
+    <div class="smoke-layer smoke-layer-4"></div>
+
+    <!-- Luces volumétricas -->
+    <div class="volumetric-light volumetric-light-1"></div>
+    <div class="volumetric-light volumetric-light-2"></div>
+    <div class="volumetric-light volumetric-light-3"></div>
+</div>
+
+<!-- Controles de efectos atmosféricos -->
+<div class="atmosphere-controls">
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('low')">BAJO</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('medium')">MEDIO</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('high')">ALTO</button>
+    <button class="atmosphere-btn" onclick="toggleAtmosphereEffects()">PAUSAR</button>
+</div>
+
+<!-- Indicador de estado -->
+<div class="status-indicator">
+    <span id="atmosphereStatus">EFECTOS ACTIVOS</span>
+</div>
+
+<div class="contenedor-principal py-6 px-4">
+    <!-- Panel principal -->
+    <div class="demo-panel bg-[#121212] rounded-xl p-6 shadow-md border border-[#32FF00] mb-6">
+        <h2 class="text-white text-2xl font-semibold mb-3">📋 Resumen de Entrenamiento</h2>
+        <p class="text-gray-400">Análisis holográfico del rendimiento del cliente.</p>
+
+        <!-- Estadísticas principales -->
+        <div class="stats-container grid grid-cols-3 gap-4 mt-6">
+            <div class="stat-circle">
+                <div class="value stat-value" data-value="85">0</div>
+                <div class="label">Intensidad</div>
+            </div>
+            <div class="stat-circle">
+                <div class="value stat-value" data-value="92">0</div>
+                <div class="label">Técnica</div>
+            </div>
+            <div class="stat-circle">
+                <div class="value stat-value" data-value="78">0</div>
+                <div class="label">Resistencia</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progreso hacia objetivos -->
+    <div class="bg-[#161616] p-6 rounded-xl shadow-md border border-[#31cff4] interactive-glow mb-6">
+        <h4 class="text-white text-lg font-semibold mb-3">🎯 Progreso hacia objetivos</h4>
+
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-sm text-[#31cff4]">Fuerza</span>
+                    <span class="text-sm text-white">75%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="fill" data-percent="75" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-sm text-[#31cff4]">Hipertrofia</span>
+                    <span class="text-sm text-white">60%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="fill" data-percent="60" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-sm text-[#31cff4]">Definición</span>
+                    <span class="text-sm text-white">85%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="fill" data-percent="85" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logros desbloqueados -->
+    <div class="bg-[#161616] p-6 rounded-xl shadow-md border border-amber-400 interactive-glow mb-6">
+        <h4 class="text-white text-lg font-semibold mb-3">🏅 Logros desbloqueados</h4>
+        <div class="grid grid-cols-3 gap-4">
+            {% for logro in logros_desbloqueados %}
+            <div class="bg-[#1e1e1e] p-4 rounded-lg text-center {% if logro.desbloqueado %}border border-[#32FF00]{% else %}opacity-40{% endif %}">
+                <div class="text-2xl mb-2">{{ logro.icono }}</div>
+                <div class="text-xs text-white">{{ logro.nombre }}</div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 col-span-3">Aún no hay logros desbloqueados. ¡Sigue entrenando!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Logros de hoy -->
+    <div class="bg-[#1a1a1a] p-6 rounded-xl shadow-md border border-[#32FF00] interactive-glow mb-6">
+        <h4 class="text-white text-lg font-semibold mb-3">📈 Logros de hoy</h4>
+        <p class="text-lime-400">➡ Aumentaste el peso en <span class="text-red-400">2 ejercicios</span> hoy.</p>
+
+        <div class="mt-4 grid grid-cols-2 gap-4">
+            <div class="bg-[#222] p-3 rounded-lg">
+                <div class="text-xs text-gray-400">Volumen total</div>
+                <div class="text-xl text-[#32FF00]">3,450 kg</div>
+            </div>
+            <div class="bg-[#222] p-3 rounded-lg">
+                <div class="text-xs text-gray-400">Tiempo de entreno</div>
+                <div class="text-xl text-[#31cff4]">65 min</div>
+            </div>
+            <div class="bg-[#222] p-3 rounded-lg">
+                <div class="text-xs text-gray-400">Calorías quemadas</div>
+                <div class="text-xl text-[#a06cfe]">520 kcal</div>
+            </div>
+            <div class="bg-[#222] p-3 rounded-lg">
+                <div class="text-xs text-gray-400">Series completadas</div>
+                <div class="text-xl text-amber-400">24</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparativa con entreno anterior -->
+    <div class="bg-[#161616] p-6 rounded-xl shadow-md border border-[#a06cfe] interactive-glow mb-6">
+        <h4 class="text-white text-lg font-semibold mb-3">🔄 Comparativa con entreno anterior</h4>
+
+        <div class="space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-white">Volumen total</span>
+                <div class="flex items-center">
+                    <span class="text-sm text-[#32FF00] mr-2">+8%</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#32FF00]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-white">Peso máximo</span>
+                <div class="flex items-center">
+                    <span class="text-sm text-[#32FF00] mr-2">+5kg</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#32FF00]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-white">Tiempo de descanso</span>
+                <div class="flex items-center">
+                    <span class="text-sm text-red-400 mr-2">+15s</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-white">Intensidad percibida</span>
+                <div class="flex items-center">
+                    <span class="text-sm text-[#32FF00] mr-2">+1.5</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#32FF00]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendaciones de IA -->
+    <div class="bg-[#1a1a1a] p-6 rounded-xl shadow-md border border-[#31cff4] interactive-glow mb-6">
+        <h4 class="text-white text-lg font-semibold mb-3">🤖 Recomendaciones de Joi</h4>
+
+        <div class="space-y-4">
+            <div class="bg-[#222] p-4 rounded-lg border-l-4 border-[#32FF00]">
+                <p class="text-sm text-white">Aumenta el peso en press de banca en tu próximo entreno. Estás listo para progresar.</p>
+            </div>
+
+            <div class="bg-[#222] p-4 rounded-lg border-l-4 border-amber-400">
+                <p class="text-sm text-white">Considera reducir el tiempo de descanso entre series para aumentar la intensidad.</p>
+            </div>
+
+            <div class="bg-[#222] p-4 rounded-lg border-l-4 border-[#a06cfe]">
+                <p class="text-sm text-white">Tu técnica en sentadillas ha mejorado significativamente. Mantén el foco en la posición de la espalda.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de acción -->
+    {% if entreno and entreno.id and not entreno.procesado_gamificacion %}
+    <a class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition" href="{% url 'logros:procesar_entreno' entreno.id %}">
+        <i class="bi bi-star"></i> Procesar para Logros
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -153,7 +153,9 @@
         {% csrf_token %}
 
         <div class="client-info mb-4">
-
+            <div class="client-avatar">
+                <i class="bi bi-person-circle"></i>
+            </div>
             <div class="client-name">
                 <strong>{{ cliente_inicial.nombre }}</strong>
             </div>
@@ -222,7 +224,13 @@
                     {% endfor %}
                 </div>
 
-
+                <button type="button" class="fitness-button outline small"
+                        onclick="agregarSerie(this, '{{ ejercicio.id }}')"
+                        data-reps="{{ form.initial.repeticiones }}"
+                        data-peso="{{ form.initial.peso_kg }}"
+                        data-original="{{ form.initial.repeticiones }}">
+                    <i class="bi bi-plus-circle"></i> Agregar serie
+                </button>
             </div>
         </div>
         {% endfor %}
@@ -230,7 +238,6 @@
         <button type="submit" id="btn-finalizar-entreno" class="fitness-button primary large w-100 mb-5">
             <i class="bi bi-check-circle"></i> Guardar entrenamiento
         </button>
-        
     </form>
 </div>
 

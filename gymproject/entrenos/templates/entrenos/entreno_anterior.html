@@ -5,6 +5,7 @@
 {% block title %}Entreno anterior – {{ cliente.nombre }}{% endblock %}
 
 {% block content %}
+
 <div class="contenedor-principal py-6 px-4">
     <div class="demo-panel">
         <div class="flex items-center gap-4">
@@ -73,9 +74,70 @@
         <p class="text-white">Este cliente aún no ha realizado esta rutina.</p>
     </div>
     {% endif %}
+    <!-- 📊 Comparativa de progreso -->
+    <div class="bg-[#1f1f1f] p-4 rounded-xl mt-6 shadow-md border border-lime-400 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-2">📊 Comparativa de progreso</h4>
+        <p class="text-lime-300">{{ mensaje_comparativa }}</p>
+        <p class="text-sm text-gray-400">
+            Último entreno: {{ volumen_anterior|floatformat:1 }} kg | Actual: {{ volumen_actual|floatformat:1 }} kg
+        </p>
+    </div>
+
+
+    <!-- 🛑 Estancamiento (si aplica) -->
+    {% if ejercicio_estancado %}
+    <div class="bg-[#181818] p-4 rounded-xl mt-4 shadow-md border border-red-500 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-2">🛑 Ejercicio sin mejora</h4>
+        <p class="text-red-400">⚠️ {{ ejercicio_estancado }} no mostró avance de peso. Revisa técnica o fatiga.</p>
+    </div>
+    {% endif %}
+    <!-- 🧠 Mini-dashboard: Comparativa de ejercicios -->
+
+    {% if mejor_ejercicio %}
+    <div class="bg-[#181818] p-4 rounded-xl mt-4 shadow-md border border-cyan-400 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-2">💪 Ejercicio analizado</h4>
+
+        {% if mejora_kg > 0 %}
+        <p class="text-cyan-300">📈 {{ mejor_ejercicio }}: +{{ mejora_kg|floatformat:1 }} kg respecto al entreno anterior.</p>
+        <p class="text-sm text-gray-400">Peso anterior: {{ peso_anterior_ej|floatformat:1 }} kg | Actual: {{ peso_actual_ej|floatformat:1 }} kg</p>
+        {% else %}
+        <p class="text-gray-300">😐 {{ mejor_ejercicio }} no ha cambiado desde el último entreno.</p>
+        {% endif %}
+
+        {% if ejercicio_estancado and ejercicio_estancado == mejor_ejercicio %}
+        <p class="text-red-400 mt-1">⚠️ {{ mejor_ejercicio }} está estancado. Revisa técnica o fatiga.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+    {% if ejercicio_estancado %}
+    <div class="bg-[#181818] p-4 rounded-xl mt-4 shadow-md border border-red-500 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-2">🛑 Ejercicio sin mejora</h4>
+        <p class="text-red-400">
+            ⚠️ {{ ejercicio_estancado }} no mostró avance desde el entreno anterior.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- 🏅 Logros recientes -->
+    <div class="bg-[#161616] p-4 rounded-xl mt-4 shadow-md border border-amber-400 interactive-glow">
+        <h4 class="text-white text-lg font-semibold mb-2">🏅 Logros recientes</h4>
+        {% if logros_recientes %}
+        <ul class="text-amber-300 text-sm space-y-1">
+            {% for logro in logros_recientes %}
+            <li>✨ <span class="font-medium">{{ logro.nombre }}</span> – {{ logro.descripcion }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-400">🔒 Aún no has desbloqueado logros recientes. ¡Sigue entrenando!</p>
+        {% endif %}
+    </div>
+
 
     <div class="bg-[#1a1a1a] p-4 rounded-xl mt-6 shadow-md border border-cyan-800 interactive-glow">
-        <h4 class="text-white text-lg font-semibold mb-4">📈 Progreso semanal</h4>
+        <h4 class="text-white text-lg font-semibold mb-4">📈 Progreso semanal
+        </h4>
         <canvas id="graficoProgreso" height="150"></canvas>
     </div>
 

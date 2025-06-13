@@ -1325,6 +1325,9 @@ def mostrar_entreno_anterior(request, cliente_id, rutina_id):
     from decimal import Decimal, InvalidOperation
     import logging
     from django.db import connection
+    from django.utils.dateformat import DateFormat
+    from django.db.models import Sum
+    import json
 
     # Configurar logging para depuración
     logger = logging.getLogger(__name__)
@@ -1540,17 +1543,162 @@ def mostrar_entreno_anterior(request, cliente_id, rutina_id):
     estado_emocional = EstadoEmocional.objects.filter(cliente=cliente).order_by('-fecha').first()
 
     # Progreso semanal simulado (reemplazar por datos reales si los tienes)
-    progreso_fechas = ['22 May', '23 May', '24 May', '25 May', '26 May', '27 May', '28 May']
-    progreso_valores = [2600, 2800, 3000, 2900, 3100, 3300, 3500]
-
+    # Obtener últimos 7 días de entrenamientos reales del cliente
+    # ✅ Gráfica real con progreso de volumen total por día
+    try:
+        ultimos_entrenos = (
+            EntrenoRealizado.objects.filter(cliente=cliente)
+            .order_by('-fecha')
+            .values('fecha')
+            .annotate(volumen_total=Sum('series__peso_kg'))
+            [:7][::-1]
+        )
+        progreso_fechas = [DateFormat(e['fecha']).format("d M") for e in ultimos_entrenos]
+        progreso_valores = [float(e['volumen_total'] or 0.0) for e in ultimos_entrenos]
+    except Exception as e:
+        logger.error(f"Error al generar datos de gráfico: {str(e)}")
+        progreso_fechas = []
+        progreso_valores = []
     # Añadir información de depuración al contexto
+    # --- Comparativa de progreso respecto al entreno anterior ---
+    volumen_actual = 0
+    volumen_anterior = 0
+    dias_entre_entrenos = None
+    diferencia_porcentual = 0
+    mensaje_comparativa = ""
+
+    try:
+        entrenos = (
+            EntrenoRealizado.objects
+            .filter(cliente=cliente, rutina=rutina)
+            .annotate(total_series=Count('series'))
+            .filter(total_series__gt=0)
+            .order_by('-id')
+
+        )
+
+        if entrenos.count() >= 2:
+            actual = entrenos[0]
+            anterior = entrenos[1]
+            print("▶️ ENTRENOS DETECTADOS:")
+            print(f"   Actual ID: {actual.id}, Fecha: {actual.fecha}")
+            print(f"   Anterior ID: {anterior.id}, Fecha: {anterior.fecha}")
+            series_actual = SerieRealizada.objects.filter(entreno=actual)
+            series_anterior = SerieRealizada.objects.filter(entreno=anterior)
+
+            print("🔍 SERIES ACTUAL:")
+            for s in series_actual:
+                print(f"{s.ejercicio.nombre} - {s.peso_kg} kg")
+
+            print("🔍 SERIES ANTERIOR:")
+            for s in series_anterior:
+                print(f"{s.ejercicio.nombre} - {s.peso_kg} kg")
+
+            dias_entre_entrenos = (actual.fecha - anterior.fecha).days
+
+            volumen_actual = SerieRealizada.objects.filter(entreno=actual).aggregate(
+                total=Sum('peso_kg'))['total'] or 0
+            volumen_anterior = SerieRealizada.objects.filter(entreno=anterior).aggregate(
+                total=Sum('peso_kg'))['total'] or 0
+
+            if volumen_anterior > 0:
+                diferencia_porcentual = round(((volumen_actual - volumen_anterior) / volumen_anterior) * 100, 1)
+                if diferencia_porcentual > 0:
+                    mensaje_comparativa = f"Subiste el volumen total un {diferencia_porcentual} % 💪"
+                elif diferencia_porcentual < 0:
+                    mensaje_comparativa = f"Bajaste el volumen total un {abs(diferencia_porcentual)} % 💤"
+                else:
+                    mensaje_comparativa = "Mantuviste el mismo volumen que el entreno anterior. 🎯"
+        else:
+            mensaje_comparativa = "Aún no hay suficientes datos para comparar el volumen."
+    except Exception as e:
+        logger.error(f"Error al calcular la comparativa de volumen: {str(e)}")
+        mensaje_comparativa = "No se pudo calcular la comparativa de volumen."
+
+    # --- Comparativa por ejercicio: mejora o estancamiento ---
+    mejor_ejercicio = None
+    mejora_kg = 0
+    ejercicio_estancado = None
+
+    try:
+        if entrenos.count() >= 2:
+            actual = entrenos[0]
+            anterior = entrenos[1]
+
+            max_mejora = -999
+            max_bajada = 0
+            ejercicios_actual = (
+                SerieRealizada.objects
+                .filter(entreno=actual)
+                .values('ejercicio__id', 'ejercicio__nombre')
+                .annotate(peso_prom=Avg('peso_kg'))
+            )
+
+            ejercicios_anterior = {
+                e['ejercicio__id']: e for e in SerieRealizada.objects
+                .filter(entreno=anterior)
+                .values('ejercicio__id', 'ejercicio__nombre')
+                .annotate(peso_prom=Avg('peso_kg'))
+            }
+
+            max_mejora = -999
+            max_bajada = 0
+
+            for e in ejercicios_actual:
+                eid = e['ejercicio__id']
+                nombre = e['ejercicio__nombre']
+                peso_actual = e['peso_prom'] or 0
+                anterior_data = ejercicios_anterior.get(eid)
+                peso_anterior = anterior_data['peso_prom'] if anterior_data else 0
+
+                diferencia = round(peso_actual - peso_anterior, 1)
+
+                if diferencia > max_mejora:
+                    max_mejora = diferencia
+                    mejor_ejercicio = nombre
+                    mejora_kg = diferencia
+                    peso_anterior_ej = peso_anterior
+                    peso_actual_ej = peso_actual
+
+                if diferencia <= 0 and abs(diferencia) > max_bajada:
+                    max_bajada = abs(diferencia)
+                    ejercicio_estancado = nombre
+
+            mejora_kg = round(mejora_kg, 1)
+        else:
+            logger.info(f"✅ Comparación realizada: mejor ejercicio = {mejor_ejercicio}, mejora = {mejora_kg} kg")
+
+
+    except Exception as e:
+        logger.error(f"Error al calcular mejora por ejercicio: {str(e)}")
+
+    # --- Logros recientes del cliente ---
+    logros_recientes = []
+    try:
+        logros_recientes = LogroDesbloqueado.objects.filter(
+            cliente=cliente
+        ).order_by('-fecha')[:3]
+    except Exception as e:
+        logger.error(f"Error al obtener logros recientes: {str(e)}")
+    volumen_actual = round(volumen_actual, 1)
+    volumen_anterior = round(volumen_anterior, 1)
+    mejora_kg = round(mejora_kg, 1)
     context = {
         'cliente': cliente,
         'rutina': rutina,
+        'mejor_ejercicio': mejor_ejercicio,
+        'logros_recientes': logros_recientes,
+        'mejora_kg': mejora_kg,
+        'ejercicio_estancado': ejercicio_estancado,
+        'volumen_actual': volumen_actual,
+        'volumen_anterior': volumen_anterior,
+        'mensaje_comparativa': mensaje_comparativa,
+        'peso_anterior_ej': round(peso_anterior_ej, 1) if 'peso_anterior_ej' in locals() else None,
+        'peso_actual_ej': round(peso_actual_ej, 1) if 'peso_actual_ej' in locals() else None,
         'ultimo_logro': ultimo_logro,
         'estado_emocional': estado_emocional,
-        'progreso_fechas': progreso_fechas,
-        'progreso_valores': progreso_valores,
+        'progreso_fechas': json.dumps(progreso_fechas),
+        'progreso_valores': json.dumps(progreso_valores),
         'entreno': entreno_anterior,
         'series_procesadas': series_procesadas,  # ¡Clave para la plantilla corregida!
         'plan': ejercicios_planificados,

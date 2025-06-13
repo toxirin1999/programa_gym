@@ -13,6 +13,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/dashboard_bladestyle.css' %}">
+    {% block extra_css %}{% endblock %}
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Bootstrap JS (necesario para tooltips, modals, etc.) -->
@@ -60,6 +61,15 @@
     .hamburger-btn.active span:nth-child(3) {
       transform: rotate(-45deg) translate(3px, -3px);
     }
+.ring-success {
+  border: 2px solid #32FF00; /* verde */
+}
+.ring-neutral {
+  border: 2px solid #00C3FF; /* azul */
+}
+.ring-failure {
+  border: 2px solid #FF4444; /* rojo */
+}
 
     .side-menu {
       position: fixed;
