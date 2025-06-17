@@ -83,6 +83,63 @@
         </p>
     </div>
 
+    <!-- Historial de Ejercicios Detallado -->
+    <div class="demo-panel mt-6">
+        <h3 class="text-xl font-bold text-[#32FF00] mb-4">🏋️ Historial de Ejercicios Detallado</h3>
+        <p class="text-gray-300 mb-4">Aquí puedes ver la progresión de tus ejercicios clave a lo largo del tiempo.</p>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-[#1a1a1a] rounded-lg overflow-hidden">
+                <thead class="bg-[#2a2a2a] text-white uppercase text-sm leading-normal">
+                <tr>
+                    <th class="py-3 px-6 text-left">Fecha</th>
+                    <th class="py-3 px-6 text-left">Ejercicio</th>
+                    <th class="py-3 px-6 text-left">Series x Reps</th>
+                    <th class="py-3 px-6 text-left">Peso (kg)</th>
+                    <th class="py-3 px-6 text-left">1RM Estimado (kg)</th>
+                </tr>
+                </thead>
+                <tbody class="text-gray-300 text-sm font-light">
+                <tr class="border-b border-gray-700 hover:bg-[#222222]">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">2025-06-10</td>
+                    <td class="py-3 px-6 text-left">Press de Banca</td>
+                    <td class="py-3 px-6 text-left">3x8</td>
+                    <td class="py-3 px-6 text-left">70</td>
+                    <td class="py-3 px-6 text-left">87.5</td>
+                </tr>
+                <tr class="border-b border-gray-700 hover:bg-[#222222]">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">2025-06-03</td>
+                    <td class="py-3 px-6 text-left">Press de Banca</td>
+                    <td class="py-3 px-6 text-left">3x8</td>
+                    <td class="py-3 px-6 text-left">67.5</td>
+                    <td class="py-3 px-6 text-left">84.375</td>
+                </tr>
+                <tr class="border-b border-gray-700 hover:bg-[#222222]">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">2025-05-27</td>
+                    <td class="py-3 px-6 text-left">Press de Banca</td>
+                    <td class="py-3 px-6 text-left">3x8</td>
+                    <td class="py-3 px-6 text-left">65</td>
+                    <td class="py-3 px-6 text-left">81.25</td>
+                </tr>
+                <tr class="border-b border-gray-700 hover:bg-[#222222]">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">2025-06-08</td>
+                    <td class="py-3 px-6 text-left">Sentadilla</td>
+                    <td class="py-3 px-6 text-left">3x5</td>
+                    <td class="py-3 px-6 text-left">100</td>
+                    <td class="py-3 px-6 text-left">115</td>
+                </tr>
+                <tr class="border-b border-gray-700 hover:bg-[#222222]">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">2025-06-01</td>
+                    <td class="py-3 px-6 text-left">Sentadilla</td>
+                    <td class="py-3 px-6 text-left">3x5</td>
+                    <td class="py-3 px-6 text-left">95</td>
+                    <td class="py-3 px-6 text-left">109.25</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 
     <!-- 🛑 Estancamiento (si aplica) -->
     {% if ejercicio_estancado %}
@@ -149,31 +206,80 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const ctx = document.getElementById('graficoProgreso');
-      if (ctx) {
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: {{ progreso_fechas|safe }},
-            datasets: [{
-              label: 'Volumen total',
-              data: {{ progreso_valores|safe }},
-              borderColor: '#32FF00',
-              tension: 0.3,
-              fill: false
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-              y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+    // Función para calcular el 1RM estimado (Brzycki Formula)
+    function calculate1RM(weight, reps) {
+        if (reps === 0) return 0;
+        if (reps === 1) return weight;
+        return parseFloat((weight * (36 / (37 - reps))).toFixed(2));
+    }
+
+    // Función para encontrar y resaltar PRs
+    function highlightPRs() {
+        const table = document.querySelector('.improvement-table'); // Assuming this is the table for exercise history
+        if (!table) return;
+
+        const rows = table.querySelectorAll('tbody tr');
+        const prs = {}; // Almacena el 1RM máximo para cada ejercicio
+
+        rows.forEach(row => {
+            const exerciseName = row.children[1].textContent; // Columna de Ejercicio
+            const weight = parseFloat(row.children[3].textContent); // Columna de Peso (kg)
+            const repsText = row.children[2].textContent; // Columna de Series x Reps (ej. 3x8)
+
+            // Extraer solo las repeticiones del formato '3x8'
+            const repsMatch = repsText.match(/x(\d+)/);
+            const reps = repsMatch ? parseInt(repsMatch[1]) : 0;
+
+            const estimated1RM = calculate1RM(weight, reps);
+            row.children[4].textContent = estimated1RM.toFixed(2); // Actualizar 1RM Estimado
+
+            if (!prs[exerciseName] || estimated1RM > prs[exerciseName].value) {
+                prs[exerciseName] = { value: estimated1RM, element: row.children[4] };
             }
-          }
         });
-      }
+
+        // Resaltar los PRs
+        for (const exercise in prs) {
+            prs[exercise].element.classList.add('pr-highlight');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Llamar a la función para calcular 1RM y resaltar PRs al cargar la página
+        highlightPRs();
+
+        const ctx = document.getElementById('graficoProgreso');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ progreso_fechas|safe }},
+                    datasets: [{
+                        label: 'Volumen total',
+                        data: {{ progreso_valores|safe }},
+                        borderColor: '#32FF00',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+        }
     });
 </script>
+<style>
+    .pr-highlight {
+        color: #00FFFF; /* Color cian brillante para PRs */
+        font-weight: bold;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+    }
+</style>
 {% endblock %}
+
