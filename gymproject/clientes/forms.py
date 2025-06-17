@@ -10,6 +10,23 @@ from django import forms
 
 from django import forms
 from .models import BitacoraDiaria
+from django import forms
+
+EMOCIONES_CHOICES = [
+    ('', '---------'),  # opción vacía
+    ('feliz', '😊 Feliz'),
+    ('contento', '😄 Contento'),
+    ('alegria', '😁 Alegría'),
+    ('tranquilo', '😌 Tranquilo'),
+    ('neutral', '😐 Neutral'),
+    ('meh', '😑 Meh'),
+    ('estresado', '😣 Estresado'),
+    ('triste', '😢 Triste'),
+    ('agotado', '🥱 Agotado'),
+    ('ansioso', '😰 Ansioso'),
+    ('cansado', '😴 Cansado'),
+    ('solo', '😔 Solo'),
+]
 
 
 class SugerenciaForm(forms.Form):
@@ -20,15 +37,21 @@ class SugerenciaForm(forms.Form):
 
 
 class BitacoraDiariaForm(forms.ModelForm):
+    energia_subjetiva = forms.IntegerField(min_value=0, max_value=10)
+    dolor_articular = forms.IntegerField(min_value=0, max_value=10)
+    autoconciencia = forms.IntegerField(min_value=0, max_value=10)
+    emocion_dia = forms.ChoiceField(choices=EMOCIONES_CHOICES, required=False,
+                                    widget=forms.Select(attrs={'class': 'input'}))
+
     class Meta:
         model = BitacoraDiaria
         fields = [
             'horas_sueno', 'humor', 'rpe', 'peso_kg', 'energia_subjetiva', 'dolor_articular', 'nota_personal',
             'autoconciencia', 'descarga_cognitiva', 'rumiacion_baja',
-            'mindfulness_am', 'mindfulness_pm',
+            'mindfulness_am', 'mindfulness_pm', 'circunferencia_biceps',
             'emocion_dia', 'cosas_positivas', 'aprendizaje',
             'limito_socialmente', 'check_in_energia',
-            'quien_quiero_ser', 'tareas_dia', 'que_puedo_mejorar', 'reflexion_diaria'  # ✅ AÑADIDOS
+            'quien_quiero_ser', 'tareas_dia', 'que_puedo_mejorar', 'reflexion_diaria'
         ]
 
         widgets = {
@@ -36,7 +59,6 @@ class BitacoraDiariaForm(forms.ModelForm):
             'rpe': forms.NumberInput(attrs={'class': 'input', 'min': 1, 'max': 10}),
             'humor': forms.Select(attrs={'class': 'input'}),
             'nota_personal': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
-
             'emocion_dia': forms.TextInput(attrs={'class': 'input'}),
             'cosas_positivas': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
             'aprendizaje': forms.Textarea(attrs={'class': 'input', 'rows': 2}),
@@ -45,16 +67,16 @@ class BitacoraDiariaForm(forms.ModelForm):
             'tareas_dia': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
             'que_puedo_mejorar': forms.Textarea(attrs={'class': 'input', 'rows': 2}),
             'reflexion_diaria': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
-            'energia_subjetiva': forms.NumberInput(attrs={'class': 'input', 'min': 0, 'max': 10}),
-            'dolor_articular': forms.NumberInput(attrs={'class': 'input', 'min': 0, 'max': 10}),
-            'autoconciencia': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
             'descarga_cognitiva': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
             'rumiacion_baja': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'peso_kg': forms.NumberInput(
                 attrs={'class': 'input border-2 border-green-400 rounded-xl px-4 py-2 shadow-sm',
                        'placeholder': 'Ej: 85.0',
-                       'step': '0.1'
-                       }),
+                       'step': '0.1'}),
+            'circunferencia_biceps': forms.NumberInput(
+                attrs={'class': 'input border-2 border-green-400 rounded-xl px-4 py-2 shadow-sm',
+                       'placeholder': 'Ej: 34.5',
+                       'step': '0.1'}),
 
         }
 

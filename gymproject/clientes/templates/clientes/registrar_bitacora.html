@@ -1,41 +1,262 @@
 {% extends 'base.html' %}
-{% block content %}
-<div class="max-w-xl mx-auto mt-10 bg-[#121212] p-8 rounded-2xl shadow-lg text-white space-y-6">
-    <h1 class="text-2xl font-bold text-center text-[#32FF00]">
-        {% if form.instance.pk %}Editar bitácora de hoy{% else %}Bitácora diaria con Joi{% endif %}
-    </h1>
 
-    <div class="chat-bubble">
-        {% if saludo_joi %}
-        <p class="text-center text-cyan-300 italic text-sm mt-2 mb-4 animate-pulse">
-            {{ saludo_joi }}
-        </p>
-        {% endif %}
-    </div>
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
+{% block extra_css %}
+<style>
+    /* Variables CSS personalizadas para la nueva paleta */
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --neutral-50: #f9fafb;
+      --neutral-100: #f3f4f6;
+      --neutral-200: #e5e7eb;
+      --neutral-300: #d1d5db;
+      --neutral-600: #4b5563;
+      --neutral-700: #374151;
+      --neutral-800: #1f2937;
+      --neutral-900: #111827;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
 
-        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🌅 Mañana</h2>
-        {% include "clientes/campo.html" with field=form.quien_quiero_ser %}
-        {% include "clientes/campo.html" with field=form.tareas_dia %}
+    /* Estilos personalizados para mejorar la apariencia */
+    .form-container {
+      background: linear-gradient(135deg, var(--neutral-900) 0%, var(--neutral-800) 100%);
+      border: 1px solid var(--neutral-700);
+    }
 
-        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🧠 Estado del día</h2>
-        {% for field in form.visible_fields %}
-        {% if field.name not in 'quien_quiero_ser tareas_dia que_puedo_mejorar reflexion_diaria' %}
-        {% include "clientes/campo.html" with field=field %}
-        {% endif %}
-        {% endfor %}
+    .section-header {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
-        <h2 class="text-lg text-[#32FF00] font-semibold mt-6">🌙 Noche</h2>
-        {% include "clientes/campo.html" with field=form.que_puedo_mejorar %}
-        {% include "clientes/campo.html" with field=form.reflexion_diaria %}
+    .form-field {
+      transition: all 0.2s ease-in-out;
+    }
 
+    .form-field:focus-within {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
 
-        <button type="submit"
-                class="w-full bg-[#32FF00] text-black font-bold py-2 rounded-xl hover:scale-105 transition">
-            {% if form.instance.pk %}Actualizar bitácora{% else %}Guardar bitácora{% endif %}
-        </button>
-    </form>
-</div>
+    .submit-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+
+    .icon-container {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    }
+
+    /* Animaciones sutiles */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Estados de validación */
+    .field-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .field-success {
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
 {% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 py-8 px-4">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header mejorado -->
+        <div class="text-center mb-8 animate-fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary-dark rounded-2xl mb-4 shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+                {% if form.instance.pk %}Editar bitácora de hoy{% else %}Bitácora diaria con Joi{% endif %}
+            </h1>
+            <p class="text-neutral-400 text-lg">Reflexiona sobre tu día y planifica tu crecimiento</p>
+        </div>
+
+        <!-- Formulario mejorado -->
+        <div class="form-container rounded-3xl shadow-2xl p-8 animate-fade-in">
+            <form method="post" class="space-y-8" id="bitacora-form">
+                {% csrf_token %}
+
+                <!-- Manejo de errores mejorado -->
+                {% if form.non_field_errors %}
+                <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="text-red-300">
+                            {{ form.non_field_errors }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Sección Mañana -->
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="icon-container w-10 h-10 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="section-header text-2xl font-bold">Mañana</h2>
+                    </div>
+
+                    <div class="grid gap-6">
+                        {% include "clientes/campo_mejorado.html" with field=form.quien_quiero_ser icon="user" %}
+                        {% include "clientes/campo_mejorado.html" with field=form.tareas_dia icon="list" %}
+                    </div>
+                </div>
+
+                <!-- Sección Estado del día -->
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="icon-container w-10 h-10 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="section-header text-2xl font-bold">Estado del día</h2>
+                    </div>
+
+                    <div class="grid gap-6">
+                        {% for field in form.visible_fields %}
+                        {% if field.name not in 'quien_quiero_ser,tareas_dia,que_puedo_mejorar,reflexion_diaria' %}
+                        {% include "clientes/campo_mejorado.html" with field=field icon="activity" %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Sección Noche -->
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="icon-container w-10 h-10 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="section-header text-2xl font-bold">Noche</h2>
+                    </div>
+
+                    <div class="grid gap-6">
+                        {% include "clientes/campo_mejorado.html" with field=form.que_puedo_mejorar icon="trending-up" %}
+                        {% include "clientes/campo_mejorado.html" with field=form.reflexion_diaria icon="message-circle" %}
+                    </div>
+                </div>
+
+                <!-- Botón de envío mejorado -->
+                <div class="pt-6">
+                    <button type="submit" class="submit-btn w-full text-white font-semibold py-4 px-6 rounded-2xl text-lg shadow-lg">
+            <span class="flex items-center justify-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span>{% if form.instance.pk %}Actualizar bitácora{% else %}Guardar bitácora{% endif %}</span>
+            </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Indicador de progreso -->
+        <div class="mt-6 text-center">
+            <div class="inline-flex items-center space-x-2 text-neutral-400 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Tus datos se guardan de forma segura</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JavaScript para mejorar la experiencia de usuario
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('bitacora-form');
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      // Validación en tiempo real
+      const fields = form.querySelectorAll('input, textarea, select');
+      fields.forEach(field => {
+        field.addEventListener('blur', function() {
+          validateField(this);
+        });
+
+        field.addEventListener('input', function() {
+          if (this.classList.contains('field-error')) {
+            validateField(this);
+          }
+        });
+      });
+
+      function validateField(field) {
+        const isValid = field.checkValidity();
+        field.classList.remove('field-error', 'field-success');
+
+        if (field.value.trim() !== '') {
+          field.classList.add(isValid ? 'field-success' : 'field-error');
+        }
+      }
+
+      // Mejorar el estado de envío
+      form.addEventListener('submit', function(e) {
+        submitBtn.innerHTML = `
+          <span class="flex items-center justify-center space-x-2">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Guardando...</span>
+          </span>
+        `;
+        submitBtn.disabled = true;
+      });
+
+      // Autoguardado (opcional)
+      let autoSaveTimeout;
+      fields.forEach(field => {
+        field.addEventListener('input', function() {
+          clearTimeout(autoSaveTimeout);
+          autoSaveTimeout = setTimeout(() => {
+            // Aquí se podría implementar autoguardado
+            console.log('Autoguardado activado');
+          }, 3000);
+        });
+      });
+    });
+</script>
+{% endblock %}
+

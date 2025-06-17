@@ -74,6 +74,7 @@ class BitacoraDiaria(models.Model):
     autoconciencia = models.TextField(null=True, blank=True, help_text="¿Qué emoción domina (0-10)?")
     descarga_cognitiva = models.TextField(null=True, blank=True, help_text="Escribe 5’ “lo que me preocupa AHORA”")
     rumiacion_baja = models.BooleanField(null=True, blank=True, help_text="¿La rumiación bajó después de escribir?")
+    circunferencia_biceps = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     emocion_dia = models.CharField(max_length=100, blank=True)
     cosas_positivas = models.TextField(blank=True, help_text="Escribe 3 cosas que funcionaron hoy.")

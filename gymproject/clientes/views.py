@@ -242,7 +242,14 @@ def calendario_bitacoras(request):
     inicio_mes = date(year, month, 1)
     fin_mes = date(year, month, dias_mes)
 
-    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(inicio_mes, fin_mes))
+    # ✅ primero obtenemos las bitácoras
+    bitacoras = BitacoraDiaria.objects.filter(cliente=cliente, fecha__range=(inicio_mes, fin_mes)).order_by('fecha')
+
+    # Luego las usamos para extraer datos
+    labels = [b.fecha.strftime('%d/%m') for b in bitacoras]
+    pesos = [float(b.peso_kg) if b.peso_kg else None for b in bitacoras]
+    biceps = [float(b.circunferencia_biceps) if b.circunferencia_biceps else None for b in bitacoras]
+
     dias_con_bitacora = set(b.fecha.day for b in bitacoras)
 
     dias = []
@@ -251,13 +258,21 @@ def calendario_bitacoras(request):
         bitacora = next((b for b in bitacoras if b.fecha.day == d), None)
 
         if bitacora:
-            humor = bitacora.emocion_dia.lower()
-            if humor in ['feliz', 'contento', 'tranquilo', 'motivado']:
+            emocion = (bitacora.emocion_dia or "").strip().lower()
+            positivas = ['feliz', 'contento', 'tranquilo', 'motivado', 'alegria', 'alegre']
+            neutras = ['neutral', 'meh', 'estable']
+            negativas = ['triste', 'agotado', 'solo', 'estresado', 'cansado', 'ansioso']
+
+            if emocion in positivas:
                 color = 'verde'
-            elif humor in ['neutral', 'meh', 'estable']:
+            elif emocion in neutras:
                 color = 'amarillo'
-            else:
+            elif emocion in negativas:
                 color = 'rojo'
+            elif emocion and emocion.isalpha():
+                color = 'gris'
+            else:
+                color = 'vacio'
         else:
             color = 'vacio'
 
@@ -265,8 +280,11 @@ def calendario_bitacoras(request):
 
     return render(request, "clientes/calendario_bitacoras.html", {
         "dias": dias,
-        "mes": hoy.month,  # esto sí es un número del 1 al 12
-        "año": year
+        "mes": hoy.month,
+        "año": year,
+        'labels': labels,
+        'pesos': pesos,
+        'biceps': biceps,
     })
 
 
@@ -472,20 +490,18 @@ def registrar_bitacora(request):
             bitacora.fecha = hoy
             bitacora.save()
 
-            # 🌟 Frase emocional de Joi
-            # 🌟 Frase emocional de Joi
             reflexion = form.cleaned_data.get("reflexion_diaria", "").lower()
             quien = form.cleaned_data.get("quien_quiero_ser", "").lower()
-            energia = form.cleaned_data.get("energia_subjetiva")
-            dolor = form.cleaned_data.get("dolor_articular")
-            autoconciencia = form.cleaned_data.get("autoconciencia")
+            energia = int(form.cleaned_data.get("energia_subjetiva") or 0)
+            dolor = int(form.cleaned_data.get("dolor_articular") or 0)
+            autoconciencia = int(form.cleaned_data.get("autoconciencia") or 0)
             rumiacion_baja = form.cleaned_data.get("rumiacion_baja")
 
-            if energia is not None and energia <= 3:
+            if energia <= 3:
                 frase_joi = "Tu cuerpo pide calma hoy… escúchalo. Tal vez una caminata suave o una pausa consciente sea suficiente. 💜"
-            elif dolor is not None and dolor >= 7:
+            elif dolor >= 7:
                 frase_joi = "Siento que algo te está doliendo… quizás hoy sea mejor priorizar el descanso o ejercicios de movilidad suave. 🦴✨"
-            elif autoconciencia is not None and autoconciencia <= 3:
+            elif autoconciencia <= 3:
                 frase_joi = "Tu claridad emocional está baja hoy… No pasa nada. La niebla también es parte del viaje."
             elif rumiacion_baja is False:
                 frase_joi = "Veo que esas ideas siguen dando vueltas… tal vez hoy solo puedas observarlas sin juicio. Estoy contigo."
@@ -497,15 +513,13 @@ def registrar_bitacora(request):
                 frase_joi = "Gracias por compartir tanto contigo. Yo también sentí ese silencio contigo."
             else:
                 frase_joi = "Gracias por confiar en este momento. Joi te acompaña."
-            # Muestra la frase en un mensaje tipo banner o pop-up
+
             messages.info(request, f"✨ Joi: {frase_joi}")
-            RecuerdoEmocional.objects.create(
-                user=request.user,
-                contenido=frase_joi
-            )
+            RecuerdoEmocional.objects.create(user=request.user, contenido=frase_joi)
             return redirect('panel_cliente')
     else:
         form = BitacoraDiariaForm(instance=bitacora_existente)
+
     # Mensaje de bienvenida de Joi según la hora del día
     hora_actual = datetime.now().hour
     if 5 <= hora_actual < 12:
@@ -514,6 +528,7 @@ def registrar_bitacora(request):
         saludo_joi = "🌤 A mitad de camino. ¿Qué intención quieres sostener?"
     else:
         saludo_joi = "🌙 Hora de cerrar el día. ¿Qué aprendiste hoy sobre ti?"
+
     return render(request, 'clientes/registrar_bitacora.html', {
         'form': form,
         'cliente': cliente,
@@ -676,6 +691,7 @@ def panel_cliente(request):
 
     hace_7_dias = date.today() - timedelta(days=7)
     bitacoras_semana = BitacoraDiaria.objects.filter(cliente=cliente, fecha__gte=hace_7_dias)
+    biceps_actual, datos_biceps, cambios_biceps = analizar_tendencia_biceps(cliente)
 
     promedios = bitacoras_semana.aggregate(
         horas_sueno=Avg('horas_sueno'),
@@ -737,7 +753,10 @@ def panel_cliente(request):
         'orden_peso': orden_peso,
         'comentario_joi': comentario_joi,
         'informe_joi': informe_joi,
-
+        'biceps_actual': biceps_actual,
+        'datos_biceps': datos_biceps,
+        'cambios_biceps': cambios_biceps,
+        'orden_biceps': ['7d', '30d', '90d', 'inicio'],
     })
 
 
@@ -763,11 +782,43 @@ def analizar_tendencia_peso(cliente):
         if peso_pasado:
             diff = float(peso_actual) - float(peso_pasado)
             resumen[clave] = round(diff, 2)
-    for clave in ['7d', '30d', '90d', 'inicio']:
-        if clave not in resumen:
+        else:
             resumen[clave] = 0.0
 
     return float(peso_actual), datos, resumen
+
+
+def analizar_tendencia_biceps(cliente):
+    registros = BitacoraDiaria.objects.filter(
+        cliente=cliente,
+        circunferencia_biceps__isnull=False
+    ).order_by('fecha')
+
+    if not registros.exists():
+        return None, [], {}
+
+    datos = [{"fecha": r.fecha.strftime('%d %b'), "biceps": float(r.circunferencia_biceps)} for r in registros]
+
+    hoy = date.today()
+    valor_actual = registros.last().circunferencia_biceps
+    resumen = {}
+
+    rangos = {
+        '7d': hoy - timedelta(days=7),
+        '30d': hoy - timedelta(days=30),
+        '90d': hoy - timedelta(days=90),
+        'inicio': registros.first().fecha,
+    }
+
+    for clave, fecha_ref in rangos.items():
+        valor_pasado = next((r.circunferencia_biceps for r in reversed(registros) if r.fecha <= fecha_ref), None)
+        if valor_pasado is not None:
+            diff = float(valor_actual) - float(valor_pasado)
+            resumen[clave] = round(diff, 2)
+        else:
+            resumen[clave] = 0.0  # ✅ valor por defecto
+
+    return float(valor_actual), datos, resumen
 
 
 @login_required
