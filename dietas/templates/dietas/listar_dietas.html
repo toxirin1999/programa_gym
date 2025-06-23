@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{% if messages %}
+<div class="container mt-3">
+    {% for message in messages %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+    <!-- Selector de cliente activo -->
+    <form method="get" class="mb-3">
+        <label>Selecciona cliente para ver asignaciones:</label>
+        <select name="cliente_id" class="form-select w-auto d-inline" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id }}" {% if cliente.id|stringformat:"s" == cliente_activo_id|stringformat:"s" %}selected{% endif %}>
+
+                {{ cliente.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="{% url 'agregar_dieta' %}" class="btn btn-outline-secondary btn-sm">➕ Agregar Nueva Dieta</a>
+
+
+
+
+ {% for dieta in dietas %}
+<div class="list-group-item mb-3 {% if dieta.id in asignadas_dict %}bg-success text-white{% endif %}">
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ dieta.nombre }}</h5>
+        <span class="badge bg-secondary">{{ dieta.calorias_totales }} kcal</span>
+    </div>
+
+    <ul>
+        {% for comida in dieta.comidas.all %}
+        <li>{{ comida.nombre }} - {{ comida.hora_aproximada }} → {{ comida.descripcion }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Botones -->
+    <div class="d-flex justify-content-end gap-2 mt-2">
+        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#asignarModal{{ dieta.id }}">
+            Asignar
+        </button>
+        <a href="{% url 'ver_dieta' dieta.id %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i> Ver
+        </a>
+        <a href="{% url 'exportar_dieta_pdf' dieta.id %}" class="btn btn-outline-secondary btn-sm">📄 Exportar</a>
+    </div>
+
+    <!-- Clientes asignados -->
+    <p class="mt-3 mb-1"><strong>Asignada a:</strong></p>
+    <ul class="ps-3">
+        {% for cd in cliente_dietas %}
+            {% if cd.dieta.id == dieta.id %}
+            <li class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{% url 'detalle_cliente' cd.cliente.id %}">
+                        {{ cd.cliente.nombre }}
+                    </a>
+                    <small class="text-muted">desde {{ cd.fecha_inicio }}</small>
+                </div>
+                <form action="{% url 'quitar_dieta' cd.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">Quitar</button>
+                </form>
+            </li>
+            {% endif %}
+        {% empty %}
+        <li class="text-muted">No asignada a ningún cliente</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Modal asignación -->
+    <div class="modal fade" id="asignarModal{{ dieta.id }}" tabindex="-1" aria-labelledby="asignarModalLabel{{ dieta.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" class="ajax-assign-form">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="asignarModalLabel{{ dieta.id }}">Asignar {{ dieta.nombre }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="dieta_id" value="{{ dieta.id }}">
+                        <div class="mb-3">
+                            <label for="cliente_id{{ dieta.id }}" class="form-label">Seleccionar Cliente</label>
+                            <select name="cliente_id" id="cliente_id{{ dieta.id }}" class="form-select" required>
+                                <option value="">Seleccione un cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Asignar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+</div>
+
+<script>
+    document.querySelectorAll('.ajax-assign-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const dietaId = this.querySelector('input[name="dieta_id"]').value;
+            const clienteId = this.querySelector('select[name="cliente_id"]').value;
+            const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            fetch("{% url 'asignar_dieta_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: new URLSearchParams({
+                    'dieta_id': dietaId,
+                    'cliente_id': clienteId,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            });
+        });
+    });
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,567 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Detalle del Entrenamiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos generales del contenedor */
+    .detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(15, 23, 41, 0.8));
+        border-radius: 20px;
+        border: 2px solid rgba(0, 255, 255, 0.3);
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+        backdrop-filter: blur(15px);
+        color: #ffffff;
+    }
+
+    /* Encabezado de la página */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+    }
+
+    .page-title {
+        font-size: 2.8rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00ffff, #ff00ff, #00ff00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    }
+
+    .page-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.2rem;
+    }
+
+    /* Secciones de información */
+    .info-section {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(255, 0, 255, 0.02));
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        backdrop-filter: blur(5px);
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #00ffff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+    }
+
+    .section-icon {
+        margin-right: 15px;
+        font-size: 2rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .info-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        color: #ffffff;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .info-value.highlight {
+        color: #00ffff;
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+
+    /* Badges de fuente */
+    .source-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .badge-liftin {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: #ffffff;
+        border: 1px solid rgba(0, 123, 255, 0.5);
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .badge-manual {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        color: #ffffff;
+        border: 1px solid rgba(40, 167, 69, 0.5);
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Sección de ejercicios */
+    .exercises-section {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(15, 23, 41, 0.6));
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        backdrop-filter: blur(10px);
+    }
+
+    .exercise-card {
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .exercise-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 255, 255, 0.4);
+    }
+
+    .exercise-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    }
+
+    .exercise-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .exercise-status {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-completado {
+        background-color: #00ff00;
+        color: #000000;
+    }
+
+    .status-no_completado {
+        background-color: #ff0000;
+        color: #ffffff;
+    }
+
+    .status-nuevo {
+        background-color: #ffcc00;
+        color: #000000;
+    }
+
+    .status-parcial {
+        background-color: #00aaff;
+        color: #ffffff;
+    }
+
+    .exercise-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .detail-item {
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .detail-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+        margin-bottom: 3px;
+    }
+
+    .detail-value {
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .series-list {
+        margin-top: 20px;
+        border-top: 1px solid rgba(0, 255, 255, 0.1);
+        padding-top: 15px;
+    }
+
+    .series-list-title {
+        font-size: 1.2rem;
+        color: #00ff00;
+        margin-bottom: 10px;
+    }
+
+    .series-item {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(0, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .series-info {
+        color: #ffffff;
+        font-size: 0.95rem;
+    }
+
+    .series-info span {
+        font-weight: 600;
+        color: #00ffff;
+    }
+
+    /* Botones de acción */
+    .action-buttons {
+        margin-top: 30px;
+        text-align: center;
+    }
+
+    .btn-back, .btn-edit-workout {
+        background: linear-gradient(135deg, #00ffff, #0080ff);
+        border: none;
+        border-radius: 12px;
+        color: #000000;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 10px;
+    }
+
+    .btn-back:hover, .btn-edit-workout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 255, 255, 0.4);
+        background: linear-gradient(135deg, #00ffff, #00ccff);
+    }
+
+    .btn-edit-workout {
+        background: linear-gradient(135deg, #ff00ff, #cc00cc);
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+    }
+
+    .btn-edit-workout:hover {
+        box-shadow: 0 10px 25px rgba(255, 0, 255, 0.4);
+        background: linear-gradient(135deg, #ff00ff, #ff33ff);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .detail-container {
+            padding: 15px;
+            margin: 10px;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .exercise-title {
+            font-size: 1.3rem;
+        }
+
+        .exercise-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-back, .btn-edit-workout {
+            width: 100%;
+            margin: 10px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">Detalle del Entrenamiento</h1>
+        <p class="page-subtitle">
+            Información completa del entrenamiento de
+            <span class="highlight">{{ entrenamiento.cliente.nombre }}</span>
+            realizado el <span class="highlight">{{ entrenamiento.fecha|date:"d/m/Y" }}</span>
+        </p>
+    </div>
+
+    <!-- Sección de Información General -->
+    <div class="info-section">
+        <h3 class="section-title">
+            <span class="section-icon">📋</span>
+            Información General
+        </h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Cliente</div>
+                <div class="info-value highlight">{{ entrenamiento.cliente.nombre }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Rutina</div>
+                <div class="info-value">{{ entrenamiento.rutina.nombre }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Fecha</div>
+                <div class="info-value">{{ entrenamiento.fecha|date:"d/m/Y" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Fuente de Datos</div>
+                <div class="info-value">
+                    {% if entrenamiento.fuente_datos == 'liftin' %}
+                    <span class="source-badge badge-liftin">📱 Liftin</span>
+                    {% else %}
+                    <span class="source-badge badge-manual">✏️ Manual</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if entrenamiento.nombre_entrenamiento %}
+            <div class="info-item">
+                <div class="info-label">Nombre del Entrenamiento</div>
+                <div class="info-value">{{ entrenamiento.nombre_entrenamiento }}</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.hora_inicio and entrenamiento.hora_fin %}
+            <div class="info-item">
+                <div class="info-label">Horario</div>
+                <div class="info-value">{{ entrenamiento.hora_inicio|time:"H:i" }} - {{ entrenamiento.hora_fin|time:"H:i" }}</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.tiempo_total %}
+            <div class="info-item">
+                <div class="info-label">Tiempo Total</div>
+                <div class="info-value highlight">{{ entrenamiento.duracion_formateada }}</div>
+            </div>
+            {% elif entrenamiento.duracion_minutos %}
+            <div class="info-item">
+                <div class="info-label">Duración (minutos)</div>
+                <div class="info-value">{{ entrenamiento.duracion_minutos }} min</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.numero_ejercicios %}
+            <div class="info-item">
+                <div class="info-label">Número de Ejercicios</div>
+                <div class="info-value">{{ entrenamiento.numero_ejercicios }}</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.volumen_total_kg %}
+            <div class="info-item">
+                <div class="info-label">Volumen Total</div>
+                <div class="info-value highlight">{{ entrenamiento.volumen_formateado }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sección de Datos de Salud (si existen) -->
+    {% if entrenamiento.calorias_quemadas or entrenamiento.frecuencia_cardiaca_promedio or entrenamiento.frecuencia_cardiaca_maxima %}
+    <div class="info-section">
+        <h3 class="section-title">
+            <span class="section-icon">❤️</span>
+            Datos de Salud
+        </h3>
+        <div class="info-grid">
+            {% if entrenamiento.calorias_quemadas %}
+            <div class="info-item">
+                <div class="info-label">Calorías Quemadas</div>
+                <div class="info-value">{{ entrenamiento.calorias_quemadas }} kcal</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.frecuencia_cardiaca_promedio %}
+            <div class="info-item">
+                <div class="info-label">FC Promedio</div>
+                <div class="info-value">{{ entrenamiento.frecuencia_cardiaca_promedio }} BPM</div>
+            </div>
+            {% endif %}
+            {% if entrenamiento.frecuencia_cardiaca_maxima %}
+            <div class="info-item">
+                <div class="info-label">FC Máxima</div>
+                <div class="info-value">{{ entrenamiento.frecuencia_cardiaca_maxima }} BPM</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sección de Notas (si existen) -->
+    {% if entrenamiento.notas_liftin %}
+    <div class="info-section">
+        <h3 class="section-title">
+            <span class="section-icon">📝</span>
+            Notas del Entrenamiento
+        </h3>
+        <div class="info-item" style="width: 100%;">
+            <div class="info-value">{{ entrenamiento.notas_liftin|linebreaksbr }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sección de Ejercicios Realizados -->
+    {% if entrenamiento.detalles.all %}
+    <div class="exercises-section">
+        <h3 class="section-title">
+            <span class="section-icon">💪</span>
+            Ejercicios Realizados
+        </h3>
+        {% for detalle in entrenamiento.detalles.all %}
+        <div class="exercise-card">
+            <div class="exercise-header">
+                <h4 class="exercise-title">{{ forloop.counter }}. {{ detalle.nombre_ejercicio|default:detalle.ejercicio.nombre }}</h4>
+                <span class="exercise-status status-{{ detalle.estado_ejercicio }}">
+                    {% if detalle.estado_ejercicio == 'completado' %}✓ Completado
+                    {% elif detalle.estado_ejercicio == 'no_completado' %}✗ No Completado
+                    {% elif detalle.estado_ejercicio == 'nuevo' %}N Nuevo
+                    {% elif detalle.estado_ejercicio == 'parcial' %}~ Parcial
+                    {% endif %}
+                </span>
+            </div>
+            <div class="exercise-details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Peso</div>
+                    <div class="detail-value">{{ detalle.peso_formateado }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Series x Reps</div>
+                    <div class="detail-value">{{ detalle.series_formateadas }}</div>
+                </div>
+                {% if detalle.series_realizadas %}
+                <div class="detail-item">
+                    <div class="detail-label">Series Realizadas</div>
+                    <div class="detail-value">{{ detalle.series_realizadas }}</div>
+                </div>
+                {% endif %}
+                {% if detalle.repeticiones_minimas and detalle.repeticiones_maximas %}
+                <div class="detail-item">
+                    <div class="detail-label">Rango Reps</div>
+                    <div class="detail-value">{{ detalle.repeticiones_minimas }}-{{ detalle.repeticiones_maximas }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if detalle.series_individuales.all %}
+            <div class="series-list">
+                <h5 class="series-list-title">Series Individuales:</h5>
+                {% for serie in detalle.series_individuales.all %}
+                <div class="series-item">
+                    <div class="series-info">
+                        Serie <span>{{ serie.serie_numero }}</span>:
+                        <span>{{ serie.repeticiones_realizadas }}</span> reps
+                        {% if serie.peso_usado_kg %}@ <span>{{ serie.peso_usado_kg }}</span> kg{% endif %}
+                    </div>
+                    {% if serie.tiempo_descanso_segundos %}
+                    <div class="series-info">
+                        Descanso: <span>{{ serie.tiempo_descanso_segundos }}</span>s
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="info-section">
+        <h3 class="section-title">
+            <span class="section-icon">💪</span>
+            Ejercicios Realizados
+        </h3>
+        <div class="info-item" style="width: 100%;">
+            <div class="info-value">No hay ejercicios detallados para este entrenamiento.</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botones de Acción -->
+    <div class="action-buttons">
+        <a href="/entrenos/lista/" class="btn-back">
+            ↩️ Volver a la Lista
+        </a>
+        {% if entrenamiento.fuente_datos == 'manual' %}
+        <a href="#" class="btn-edit-workout">
+            ✏️ Editar Entrenamiento
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // JavaScript para cualquier interactividad futura o efectos
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ejemplo: Animación de entrada para las secciones
+        const sections = document.querySelectorAll('.info-section, .exercises-section');
+        sections.forEach((section, index) => {
+            section.style.opacity = 0;
+            section.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                section.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                section.style.opacity = 1;
+                section.style.transform = 'translateY(0)';
+            }, index * 100); // Retraso para cada sección
+        });
+    });
+</script>
+{% endblock %}
+

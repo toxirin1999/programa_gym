@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Misiones Disponibles{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/common_styles.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Imagen de fondo -->
+    <div class="background-image">
+        <img src="/static/images/joi.png" alt="" style="width: 100%; height: 100%; object-fit: contain; object-position: right top;">
+    </div>
+
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-section">
+        <div class="header-text">
+            <h2>Misiones Disponibles</h2>
+            <div class="subtitle">Completa misiones para ganar puntos y mejorar tu entrenamiento</div>
+        </div>
+    </div>
+
+    <!-- Navegación por categorías -->
+    <div class="fitness-card">
+        <div class="fitness-card-body">
+            <ul class="nav nav-pills nav-fill quest-categories mb-3" id="questCategories" role="tablist">
+                {% for categoria, misiones in categorias.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}"
+                            id="cat-{{ categoria|slugify }}-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#cat-{{ categoria|slugify }}"
+                            type="button" role="tab"
+                            aria-controls="cat-{{ categoria|slugify }}"
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {{ categoria }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="questCategoriesContent">
+                {% for categoria, misiones in categorias.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                     id="cat-{{ categoria|slugify }}"
+                     role="tabpanel"
+                     aria-labelledby="cat-{{ categoria|slugify }}-tab">
+
+                    <div class="quests-list">
+                        {% for mision in misiones %}
+                        <div class="quest-card" onclick="location.href='{% url 'logros:detalle_mision' mision.id %}'">
+                            <div class="row g-0">
+                                <div class="col-2 col-md-1 quest-icon-container">
+                                    {% if mision.icono %}
+                                    <img src="{{ mision.icono.url }}" alt="{{ mision.nombre }}" class="quest-icon">
+                                    {% else %}
+                                    <div class="quest-icon-placeholder">
+                                        <i class="bi bi-flag"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-10 col-md-11">
+                                    <div class="quest-card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="quest-title">{{ mision.nombre }}</h5>
+                                                <p class="quest-description">{{ mision.descripcion }}</p>
+
+                                                <!-- Información adicional según tipo de misión -->
+                                                {% if mision.tipo.periodo != 'permanente' and mision.tipo.periodo != 'progresiva' %}
+                                                <div class="quest-duration">
+                                                    <i class="bi bi-clock"></i>
+                                                    {% if mision.tipo.periodo == 'diaria' %}
+                                                    Misión diaria
+                                                    {% elif mision.tipo.periodo == 'semanal' %}
+                                                    Duración: 7 días
+                                                    {% elif mision.tipo.periodo == 'mensual' %}
+                                                    Duración: 30 días
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+
+                                                {% if mision.ejercicio %}
+                                                <div class="quest-exercise">
+                                                    <i class="bi bi-activity"></i>
+                                                    Ejercicio: {{ mision.ejercicio.nombre }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="fitness-badge primary">+{{ mision.puntos_recompensa }} XP</div>
+                                        </div>
+
+                                        <!-- Meta -->
+                                        <div class="quest-goal mt-2">
+                                            <span class="small">Meta: {{ mision.meta_valor }}
+                                            {% if "serie" in mision.nombre|lower %}series{% endif %}
+                                            {% if "entreno" in mision.nombre|lower or "entrenamiento" in mision.nombre|lower %}entrenamientos{% endif %}
+                                            {% if "kg" in mision.nombre|lower %}kg{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Volver al perfil -->
+    <a href="{% url 'logros:perfil_gamificacion' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver al perfil
+    </a>
+</div>
+
+<!-- Menú hamburguesa -->
+<div class="hamburger-btn" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- Menú lateral -->
+<div id="sideMenu" class="side-menu">
+    <a href="/mi-panel/">🏠 Inicio</a>
+    <a href="/clientes/">👥 Clientes</a>
+    <a href="/rutinas/">📋 Rutinas</a>
+    <a href="/dietas/">🥗 Dietas</a>
+    <a href="/entrenos/">🏋️‍♂️ Entrenos</a>
+    <a href="/logros/">⭐ Logros</a>
+    <a href="/anuncios/">📢 Anuncios</a>
+    <a href="/joi/">🌌 Joi</a>
+    <a href="/panel/">📊 Panel entrenador</a>
+    <a href="/logout/">🚪 Cerrar sesión</a>
+</div>
+
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById('sideMenu');
+        menu.classList.toggle('open');
+    }
+</script>
+{% endblock %}
+

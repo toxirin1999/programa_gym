@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Logros Disponibles{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/common_styles.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Imagen de fondo -->
+    <div class="background-image">
+        <img src="/static/images/joi.png" alt="" style="width: 100%; height: 100%; object-fit: contain; object-position: right top;">
+    </div>
+
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-section">
+        <div class="header-text">
+            <h2>Logros Disponibles</h2>
+            <div class="subtitle">Desbloquea logros para ganar puntos y subir de nivel</div>
+        </div>
+    </div>
+
+    <!-- Navegación por categorías -->
+    <div class="fitness-card">
+        <div class="fitness-card-body">
+            <ul class="nav nav-pills nav-fill achievement-categories mb-3" id="achievementCategories" role="tablist">
+                {% for categoria, logros in categorias.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}"
+                            id="cat-{{ categoria|slugify }}-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#cat-{{ categoria|slugify }}"
+                            type="button" role="tab"
+                            aria-controls="cat-{{ categoria|slugify }}"
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {{ categoria }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="achievementCategoriesContent">
+                {% for categoria, logros in categorias.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                     id="cat-{{ categoria|slugify }}"
+                     role="tabpanel"
+                     aria-labelledby="cat-{{ categoria|slugify }}-tab">
+
+                    <div class="row achievements-grid">
+                        {% for logro in logros %}
+                        <div class="col-6 col-md-4 col-lg-3 mb-4">
+                            <div class="achievement-card" onclick="location.href='{% url 'logros:detalle_logro' logro.id %}'">
+                                <div class="achievement-card-header">
+                                    {% if logro.icono %}
+                                    <img src="{{ logro.icono.url }}" alt="{{ logro.nombre }}" class="achievement-icon">
+                                    {% else %}
+                                    <div class="achievement-icon-placeholder">
+                                        <i class="bi bi-trophy"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="achievement-card-body">
+                                    <h6 class="achievement-title">{{ logro.nombre }}</h6>
+                                    <p class="achievement-description">{{ logro.descripcion }}</p>
+                                    <div class="achievement-reward">
+                                        <i class="bi bi-star-fill"></i> +{{ logro.puntos_recompensa }} XP
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Volver al perfil -->
+    <a href="{% url 'logros:perfil_gamificacion' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver al perfil
+    </a>
+</div>
+
+<!-- Menú hamburguesa -->
+<div class="hamburger-btn" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- Menú lateral -->
+<div id="sideMenu" class="side-menu">
+    <a href="/mi-panel/">🏠 Inicio</a>
+    <a href="/clientes/">👥 Clientes</a>
+    <a href="/rutinas/">📋 Rutinas</a>
+    <a href="/dietas/">🥗 Dietas</a>
+    <a href="/entrenos/">🏋️‍♂️ Entrenos</a>
+    <a href="/logros/">⭐ Logros</a>
+    <a href="/anuncios/">📢 Anuncios</a>
+    <a href="/joi/">🌌 Joi</a>
+    <a href="/panel/">📊 Panel entrenador</a>
+    <a href="/logout/">🚪 Cerrar sesión</a>
+</div>
+
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById('sideMenu');
+        menu.classList.toggle('open');
+    }
+
+    // Inicializar tooltips de Bootstrap si existen
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    });
+</script>
+{% endblock %}
+

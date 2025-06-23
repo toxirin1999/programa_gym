@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Detalle de Misión{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/common_styles.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Imagen de fondo -->
+    <div class="background-image">
+        <img src="/static/images/joi.png" alt="" style="width: 100%; height: 100%; object-fit: contain; object-position: right top;">
+    </div>
+
+    <!-- Cabecera con efecto de cristal -->
+    <div class="header-section">
+        <div class="header-text">
+            <h2>{{ quest.nombre }}</h2>
+            <div class="subtitle">Misión {{ quest.tipo.get_periodo_display }}</div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de detalle de la misión -->
+    <div class="fitness-card">
+        <div class="fitness-card-body">
+            <div class="row">
+                <div class="col-md-3 text-center mb-4 mb-md-0">
+                    {% if quest.icono %}
+                    <img src="{{ quest.icono.url }}" alt="{{ quest.nombre }}" class="quest-detail-icon">
+                    {% else %}
+                    <div class="quest-detail-icon-placeholder">
+                        <i class="bi bi-flag"></i>
+                    </div>
+                    {% endif %}
+                    <div class="quest-reward mt-3">
+                        <span class="fitness-badge primary large">+{{ quest.puntos_recompensa }} XP</span>
+                    </div>
+
+                    {% if quest.tipo.periodo != 'permanente' and quest.tipo.periodo != 'progresiva' %}
+                    <div class="quest-duration mt-3">
+                        <span class="fitness-badge warning">
+                            <i class="bi bi-clock"></i>
+                            {% if quest.tipo.periodo == 'diaria' %}
+                                Misión diaria
+                            {% elif quest.tipo.periodo == 'semanal' %}
+                                Duración: 7 días
+                            {% elif quest.tipo.periodo == 'mensual' %}
+                                Duración: 30 días
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if quest.ejercicio %}
+                    <div class="quest-exercise mt-3">
+                        <span class="fitness-badge success">
+                            <i class="bi bi-activity"></i>
+                            {{ quest.ejercicio.nombre }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h5 class="quest-detail-title">Descripción</h5>
+                    <p class="quest-detail-description">{{ quest.descripcion }}</p>
+
+                    <div class="fitness-divider"></div>
+
+                    <h5 class="quest-detail-title">Objetivo</h5>
+                    <p class="quest-detail-description">
+                        {% if "serie" in quest.nombre|lower %}
+                        Completa {{ quest.meta_valor }} series
+                        {% if quest.ejercicio %}de {{ quest.ejercicio.nombre }}{% endif %}.
+                        {% elif "entreno" in quest.nombre|lower or "entrenamiento" in quest.nombre|lower %}
+                        Completa {{ quest.meta_valor }} entrenamientos
+                        {% if quest.tipo.periodo == 'diaria' %}hoy{% endif %}
+                        {% if quest.tipo.periodo == 'semanal' %}esta semana{% endif %}
+                        {% if quest.tipo.periodo == 'mensual' %}este mes{% endif %}.
+                        {% elif "kg" in quest.nombre|lower %}
+                        Levanta un total de {{ quest.meta_valor }} kg
+                        {% if quest.ejercicio %}en {{ quest.ejercicio.nombre }}{% endif %}.
+                        {% elif "grupo" in quest.nombre|lower and "muscular" in quest.nombre|lower %}
+                        Entrena todos los grupos musculares principales esta semana.
+                        {% elif "variedad" in quest.nombre|lower %}
+                        Realiza {{ quest.meta_valor }} ejercicios diferentes
+                        {% if quest.tipo.periodo == 'semanal' %}esta semana{% endif %}
+                        {% if quest.tipo.periodo == 'mensual' %}este mes{% endif %}.
+                        {% else %}
+                        Alcanza un valor de {{ quest.meta_valor }} en la métrica asociada a esta misión.
+                        {% endif %}
+                    </p>
+
+                    {% if quest.quest_padre %}
+                    <div class="fitness-divider"></div>
+                    <h5 class="quest-detail-title">Parte de una serie</h5>
+                    <p class="quest-detail-description">
+                        Esta misión es parte de una serie progresiva. Completa esta misión para desbloquear la siguiente.
+                    </p>
+                    {% endif %}
+
+                    {% if quest.quests_hijos.exists %}
+                    <div class="fitness-divider"></div>
+                    <h5 class="quest-detail-title">Próximas misiones en la serie</h5>
+                    <ul class="quest-series-list">
+                        {% for hijo in quest.quests_hijos.all %}
+                        <li>{{ hijo.nombre }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usuarios que han completado esta misión -->
+    <div class="fitness-card">
+        <div class="fitness-card-body">
+            <h5 class="fitness-card-title">
+                <i class="bi bi-people"></i> Usuarios que han completado esta misión
+            </h5>
+            <div class="fitness-divider"></div>
+
+            {% if usuarios_quest %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for usuario_quest in usuarios_quest %}
+                    <tr>
+                        <td>{{ usuario_quest.perfil.cliente.nombre }}</td>
+                        <td>{{ usuario_quest.fecha_fin|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-people fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">Nadie ha completado esta misión aún. ¡Sé el primero!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Volver a la lista -->
+    <a href="{% url 'logros:lista_misiones' %}" class="fitness-button outline w-100 mb-4">
+        <i class="bi bi-arrow-left"></i> Volver a la lista de misiones
+    </a>
+</div>
+
+<!-- Menú hamburguesa -->
+<div class="hamburger-btn" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- Menú lateral -->
+<div id="sideMenu" class="side-menu">
+    <a href="/mi-panel/">🏠 Inicio</a>
+    <a href="/clientes/">👥 Clientes</a>
+    <a href="/rutinas/">📋 Rutinas</a>
+    <a href="/dietas/">🥗 Dietas</a>
+    <a href="/entrenos/">🏋️‍♂️ Entrenos</a>
+    <a href="/logros/">⭐ Logros</a>
+    <a href="/anuncios/">📢 Anuncios</a>
+    <a href="/joi/">🌌 Joi</a>
+    <a href="/panel/">📊 Panel entrenador</a>
+    <a href="/logout/">🚪 Cerrar sesión</a>
+</div>
+
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById('sideMenu');
+        menu.classList.toggle('open');
+    }
+</script>
+{% endblock %}
+

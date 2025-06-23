@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Agregar Nueva Dieta</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Guardar Dieta</button>
+        <a href="{% url 'listar_dietas' %}" class="btn btn-secondary">Volver</a>
+    </form>
+</div>
+{% endblock %}

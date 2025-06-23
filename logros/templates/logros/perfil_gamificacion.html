@@ -1,0 +1,796 @@
+{% extends 'base.html' %}
+{% load logros_tags %}
+
+{% block title %}Perfil de Gamificación - {{ cliente.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Variables CSS personalizadas para la nueva paleta */
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --neutral-50: #f9fafb;
+      --neutral-100: #f3f4f6;
+      --neutral-200: #e5e7eb;
+      --neutral-300: #d1d5db;
+      --neutral-600: #4b5563;
+      --neutral-700: #374151;
+      --neutral-800: #1f2937;
+      --neutral-900: #111827;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    /* Contenedor principal mejorado */
+    .gamification-container {
+      background: linear-gradient(135deg, var(--neutral-900) 0%, var(--neutral-800) 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* Header mejorado con gradiente */
+    .header-modern {
+      background: linear-gradient(135deg, var(--neutral-900) 0%, var(--neutral-800) 100%);
+      border: 1px solid var(--neutral-700);
+      border-radius: 2rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-modern::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    }
+
+    .header-title {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .header-subtitle {
+      color: var(--neutral-300);
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    /* Cards modernas */
+    .modern-card {
+      background: linear-gradient(135deg, var(--neutral-900) 0%, var(--neutral-800) 100%);
+      border: 1px solid var(--neutral-700);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modern-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+      border-color: var(--primary);
+    }
+
+    .card-header-modern {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--neutral-700);
+    }
+
+    .card-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+    }
+
+    .card-title {
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    /* Estadísticas mejoradas */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card-modern {
+      background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%);
+      border: 1px solid var(--neutral-600);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card-modern::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+
+    .stat-card-modern:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.2);
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--neutral-300);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Nivel y progreso mejorados */
+    .level-card {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      color: white;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .level-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .level-number {
+      font-size: 3rem;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .level-name {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .xp-badge {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .progress-modern {
+      background: rgba(255,255,255,0.2);
+      border-radius: 1rem;
+      height: 0.75rem;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .progress-bar-modern {
+      background: linear-gradient(90deg, var(--accent) 0%, #fbbf24 100%);
+      height: 100%;
+      border-radius: 1rem;
+      transition: width 0.8s ease;
+      position: relative;
+    }
+
+    .progress-bar-modern::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Misiones mejoradas */
+    .mission-item {
+      background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%);
+      border: 1px solid var(--neutral-600);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .mission-item:hover {
+      transform: translateX(4px);
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+
+    .mission-header {
+      display: flex;
+      justify-content: between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .mission-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .mission-description {
+      color: var(--neutral-300);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .mission-reward {
+      background: linear-gradient(135deg, var(--secondary) 0%, #059669 100%);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .mission-progress {
+      background: var(--neutral-700);
+      border-radius: 0.5rem;
+      height: 0.5rem;
+      overflow: hidden;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .mission-progress-bar {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+      height: 100%;
+      border-radius: 0.5rem;
+      transition: width 0.6s ease;
+    }
+
+    /* Logros mejorados */
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .achievement-modern {
+      background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%);
+      border: 1px solid var(--neutral-600);
+      border-radius: 1rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .achievement-modern:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: var(--accent);
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2);
+    }
+
+    .achievement-icon-modern {
+      width: 3rem;
+      height: 3rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #fbbf24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.75rem;
+      font-size: 1.5rem;
+      color: white;
+    }
+
+    .achievement-date {
+      color: var(--neutral-400);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Tabla moderna */
+    .table-modern {
+      background: transparent;
+      color: var(--neutral-200);
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    .table-modern thead th {
+      background: var(--neutral-800);
+      border: none;
+      color: var(--neutral-300);
+      font-weight: 600;
+      padding: 1rem;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    .table-modern tbody td {
+      border: none;
+      padding: 1rem;
+      border-bottom: 1px solid var(--neutral-700);
+    }
+
+    .table-modern tbody tr:hover {
+      background: var(--neutral-800);
+    }
+
+    .table-modern tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Botones mejorados */
+    .btn-modern {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border: none;
+      border-radius: 0.75rem;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-modern:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+
+    .btn-outline-modern {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline-modern:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Estados vacíos mejorados */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--neutral-400);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    /* Animaciones */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .animate-delay-1 { animation-delay: 0.1s; }
+    .animate-delay-2 { animation-delay: 0.2s; }
+    .animate-delay-3 { animation-delay: 0.3s; }
+    .animate-delay-4 { animation-delay: 0.4s; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .gamification-container {
+        padding: 1rem 0.5rem;
+      }
+
+      .header-title {
+        font-size: 2rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .level-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+      }
+
+      .achievements-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gamification-container">
+    <!-- Header mejorado -->
+    <div class="header-modern animate-fade-in">
+        <h1 class="header-title">Perfil de Gamificación</h1>
+        <p class="header-subtitle">{{ cliente.nombre }}</p>
+    </div>
+
+    <!-- Tarjeta de nivel y puntos mejorada -->
+    <div class="level-card animate-fade-in animate-delay-1">
+        <div class="level-info">
+            <div>
+                <div class="level-number">{{ perfil.nivel_actual.numero }}</div>
+                <div class="level-name">{{ perfil.nivel_actual.nombre }}</div>
+            </div>
+            <div class="xp-badge">
+                {{ perfil.puntos_totales }} XP
+            </div>
+        </div>
+
+        <!-- Barra de progreso hacia el siguiente nivel -->
+        {% if siguiente_nivel %}
+        <div class="progress-container">
+            <div class="d-flex justify-content-between mb-2 text-white">
+                <span class="small opacity-75">Nivel {{ perfil.nivel_actual.numero }}</span>
+                <span class="small opacity-75">Nivel {{ siguiente_nivel.numero }}</span>
+            </div>
+            <div class="progress-modern">
+                <div class="progress-bar-modern" style="width: {{ porcentaje_nivel }}%;"></div>
+            </div>
+            <div class="text-center mt-2">
+                <span class="small opacity-75">{{ puntos_faltantes }} XP para el siguiente nivel</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Estadísticas mejoradas -->
+    <div class="stats-grid animate-fade-in animate-delay-2">
+        <div class="stat-card-modern">
+            <div class="stat-value">{{ estadisticas.total_logros }}</div>
+            <div class="stat-label">Logros</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-value">{{ estadisticas.total_misiones }}</div>
+            <div class="stat-label">Misiones</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-value">{{ perfil.racha_actual }}</div>
+            <div class="stat-label">Racha actual</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-value">{{ perfil.entrenos_totales }}</div>
+            <div class="stat-label">Entrenos</div>
+        </div>
+    </div>
+
+    <!-- Misiones activas mejoradas -->
+    <div class="modern-card animate-fade-in animate-delay-3">
+        <div class="card-header-modern">
+            <div class="card-icon">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                </svg>
+            </div>
+            <h2 class="card-title">Misiones activas</h2>
+        </div>
+
+        {% if misiones_activas %}
+        {% for mision in misiones_activas %}
+        <div class="mission-item">
+            <div class="mission-header">
+                <div class="flex-grow-1">
+                    <h3 class="mission-title">{{ mision.quest.nombre }}</h3>
+                    <p class="mission-description">{{ mision.quest.descripcion }}</p>
+
+                    {% if mision.quest.tipo.periodo != 'permanente' and mision.quest.tipo.periodo != 'progresiva' %}
+                    <div class="d-flex align-items-center mt-2" style="color: var(--accent); font-size: 0.85rem;">
+                        <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {% if mision.quest.tipo.periodo == 'diaria' %}
+                        Expira hoy
+                        {% elif mision.quest.tipo.periodo == 'semanal' %}
+                        Expira en 7 días
+                        {% elif mision.quest.tipo.periodo == 'mensual' %}
+                        Expira en 30 días
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mission-reward">+{{ mision.quest.puntos_recompensa }} XP</div>
+            </div>
+
+            <div class="mission-progress">
+                {% with porcentaje=mision.progreso_actual|porcentaje:mision.quest.meta_valor %}
+                <div class="mission-progress-bar" style="width: {{ porcentaje }}%;"></div>
+                {% endwith %}
+            </div>
+            <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem; color: var(--neutral-300);">
+                <span>Progreso: {{ mision.progreso_actual }}/{{ mision.quest.meta_valor }}</span>
+                {% with porcentaje=mision.progreso_actual|porcentaje:mision.quest.meta_valor %}
+                <span>{{ porcentaje }}%</span>
+                {% endwith %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 4rem; height: 4rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                </svg>
+            </div>
+            <p class="empty-state-text">No hay misiones activas actualmente.</p>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'logros:lista_misiones' %}" class="btn-outline-modern w-100 mt-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+            Ver todas las misiones
+        </a>
+    </div>
+
+    <!-- Logros recientes mejorados -->
+    <div class="modern-card animate-fade-in animate-delay-4">
+        <div class="card-header-modern">
+            <div class="card-icon">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                </svg>
+            </div>
+            <h2 class="card-title">Logros recientes</h2>
+        </div>
+
+        {% if logros_desbloqueados %}
+        <div class="achievements-grid">
+            {% for logro_usuario in logros_desbloqueados|slice:":6" %}
+            <div class="achievement-modern" data-bs-toggle="tooltip" data-bs-placement="top"
+                 title="{{ logro_usuario.logro.nombre }} - {{ logro_usuario.logro.descripcion }}">
+                {% if logro_usuario.logro.icono %}
+                <img src="{{ logro_usuario.logro.icono.url }}" alt="{{ logro_usuario.logro.nombre }}"
+                     style="width: 3rem; height: 3rem; object-fit: contain; margin: 0 auto 0.75rem;">
+                {% else %}
+                <div class="achievement-icon-modern">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                </div>
+                {% endif %}
+                <div class="achievement-date">{{ logro_usuario.fecha_desbloqueo|date:"d/m/Y" }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 4rem; height: 4rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                </svg>
+            </div>
+            <p class="empty-state-text">Aún no has desbloqueado ningún logro.</p>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'logros:lista_logros' %}" class="btn-outline-modern w-100 mt-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            Ver todos los logros
+        </a>
+    </div>
+
+    <!-- Logros en progreso mejorados -->
+    <div class="modern-card animate-fade-in animate-delay-1">
+        <div class="card-header-modern">
+            <div class="card-icon">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h2 class="card-title">Logros en progreso</h2>
+        </div>
+
+        {% if logros_progreso %}
+        {% for logro_usuario in logros_progreso %}
+        <div class="mission-item">
+            <div class="mission-header">
+                <div class="flex-grow-1">
+                    <h3 class="mission-title">{{ logro_usuario.logro.nombre }}</h3>
+                    <p class="mission-description">{{ logro_usuario.logro.descripcion }}</p>
+                </div>
+                <div class="mission-reward">+{{ logro_usuario.logro.puntos_recompensa }} XP</div>
+            </div>
+
+            <div class="mission-progress">
+                {% with porcentaje=logro_usuario.progreso_actual|porcentaje:logro_usuario.logro.meta_valor %}
+                <div class="mission-progress-bar" style="width: {{ porcentaje }}%;"></div>
+                {% endwith %}
+            </div>
+            <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem; color: var(--neutral-300);">
+                <span>Progreso: {{ logro_usuario.progreso_actual }}/{{ logro_usuario.logro.meta_valor }}</span>
+                {% with porcentaje=logro_usuario.progreso_actual|porcentaje:logro_usuario.logro.meta_valor %}
+                <span>{{ porcentaje }}%</span>
+                {% endwith %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 4rem; height: 4rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <p class="empty-state-text">No hay logros en progreso actualmente.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Historial de puntos mejorado -->
+    <div class="modern-card animate-fade-in animate-delay-2">
+        <div class="card-header-modern">
+            <div class="card-icon">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h2 class="card-title">Historial de puntos</h2>
+        </div>
+
+        {% if historial_puntos %}
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th class="text-end">Puntos</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for historial in historial_puntos %}
+                <tr>
+                    <td>{{ historial.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ historial.descripcion }}</td>
+                    <td class="text-end">
+                        <span style="color: var(--secondary); font-weight: 600;">+{{ historial.puntos }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 4rem; height: 4rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <p class="empty-state-text">No hay historial de puntos disponible.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Script para inicializar tooltips y animaciones -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Animar barras de progreso
+        const progressBars = document.querySelectorAll('.progress-bar-modern, .mission-progress-bar');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 500);
+        });
+
+        // Efecto de contador para estadísticas
+        const statValues = document.querySelectorAll('.stat-value');
+        statValues.forEach(stat => {
+            const finalValue = parseInt(stat.textContent);
+            let currentValue = 0;
+            const increment = finalValue / 50;
+            const timer = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    stat.textContent = finalValue;
+                    clearInterval(timer);
+                } else {
+                    stat.textContent = Math.floor(currentValue);
+                }
+            }, 30);
+        });
+    });
+</script>
+{% endblock %}
+

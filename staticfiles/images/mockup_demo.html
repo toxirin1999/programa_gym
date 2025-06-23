@@ -1,0 +1,1028 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+{% load extra_filters %}
+
+
+{% block title %}Inicio – Nueva Gym{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    /* Base Body */
+    body {
+      background: url("{% static 'images/fondo_cyberpunk.png' %}") no-repeat center center fixed !important;
+      background-size: cover !important;
+      background-color: #000000 !important;
+      min-height: 100vh !important;
+      filter: brightness(0.9);
+      overflow-x: hidden;
+    }
+
+    /* Base Animations */
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes fadeSlide {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeSlide {
+      animation: fadeSlide 0.8s ease-out;
+    }
+
+    /* Titles and Header */
+    .title {
+        background: linear-gradient(90deg, #00ffff, #00ff00, #ff00ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        text-shadow: 0 0 30px rgba(0, 255, 255, 0.5) !important; /* Mantenemos !important aquí por el gradiente */
+        animation: titleGlow 4s ease-in-out infinite alternate;
+    }
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 0 0 30px rgba(0, 255, 255, 0.5) !important; }
+        50% { text-shadow: 0 0 60px rgba(0, 255, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.6) !important; }
+    }
+
+    .header-halo {
+        background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, rgba(0, 255, 255, 0) 70%) !important;
+        backdrop-filter: blur(20px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        border: 1px solid rgba(77, 208, 225, 0.6) !important;
+        box-shadow: 0 0 15px rgba(77, 208, 225, 0.4), inset 0 0 8px rgba(77, 208, 225, 0.2) !important;
+    }
+
+
+    /* General Card/Box Styling */
+    .metric-card, .quote-box, .timeline-section, .chat-bubble {
+        background: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(15px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(15px) saturate(180%) !important;
+        border: 1px solid rgba(77, 208, 225, 0.6) !important;
+        box-shadow: 0 0 15px rgba(77, 208, 225, 0.4), inset 0 0 8px rgba(77, 208, 225, 0.2) !important;
+        border-radius: 10px !important;
+    }
+
+    /* Joi Specific */
+    .joi-flotante {
+        filter: drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 10px #ff00ff);
+        transition: filter 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+    .joi-flotante:hover {
+        filter: drop-shadow(0 0 30px #00ffff) drop-shadow(0 0 15px #ff00ff) brightness(1.2);
+        transform: scale(1.05);
+    }
+
+
+    /* Atmosphere Controls */
+    .atmosphere-control-btn {
+        background: linear-gradient(45deg, #00ffff, #ff00ff);
+        color: #000;
+        font-weight: bold;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+    .atmosphere-control-btn.active {
+        background: linear-gradient(45deg, #00ff00, #00ffff);
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+        transform: scale(1.05);
+    }
+    .atmosphere-control-btn:hover {
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.7);
+        transform: scale(1.02);
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: pulse 1.5s infinite alternate;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.2); opacity: 1; }
+    }
+
+
+    /* Chat Bubbles */
+    .chat-bubble.joi {
+        background: rgba(0, 128, 128, 0.4) !important; /* Verde azulado para Joi */
+        border: 1px solid rgba(0, 255, 255, 0.6) !important;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3), inset 0 0 5px rgba(0, 255, 255, 0.1) !important;
+    }
+    .chat-bubble.user {
+        background: rgba(128, 0, 128, 0.4) !important; /* Púrpura para usuario */
+        border: 1px solid rgba(255, 0, 255, 0.6) !important;
+        box-shadow: 0 0 10px rgba(255, 0, 255, 0.3), inset 0 0 5px rgba(255, 0, 255, 0.1) !important;
+    }
+
+    /* Floating Entity */
+    #floating-entity {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        transition: opacity 1s ease-in-out; /* Smooth fade for visibility changes */
+    }
+
+    .entity-image {
+        width: 80px; /* Tamaño del ente */
+        height: 80px;
+        filter: drop-shadow(0 0 15px #00ffff) drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 5px #00ff00);
+        transition: filter 0.5s ease-in-out, transform 0.3s ease-out;
+    }
+    .entity-image:hover {
+        filter: drop-shadow(0 0 25px #00ffff) drop-shadow(0 0 15px #ff00ff) drop-shadow(0 0 8px #00ff00) brightness(1.5) saturate(1.5);
+        transform: scale(1.1);
+    }
+
+    /* --- Mini-Glitch Text Effect (con !important para testear overrides) --- */
+    @keyframes textGlitch1 {
+        0% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0ff, 0 0 0px #f0f !important; }
+        5% { transform: translate(-1px, 0px) !important; text-shadow: 1px 0px 0px #0ff, -1px 0px 0px #f0f !important; }
+        10% { transform: translate(1px, 0px) !important; text-shadow: -1px 0px 0px #0ff, 1px 0px 0px #f0f !important; }
+        15% { transform: translate(-1px, 0px) !important; text-shadow: 1px 0px 0px #0ff, -1px 0px 0px #f0f !important; }
+        20% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0ff, 0 0 0px #f0f !important; }
+        100% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0ff, 0 0 0px #f0f !important; }
+    }
+
+    @keyframes textGlitch2 {
+        0% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0f0, 0 0 0px #f0f !important; }
+        5% { transform: translate(0px, 1px) !important; text-shadow: 0px 1px 0px #0f0, 0px -1px 0px #f0f !important; }
+        10% { transform: translate(0px, -1px) !important; text-shadow: 0px -1px 0px #0f0, 0px 1px 0px #f0f !important; }
+        15% { transform: translate(0px, 1px) !important; text-shadow: 0px 1px 0px #0f0, 0px -1px 0px #f0f !important; }
+        20% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0f0, 0 0 0px #f0f !important; }
+        100% { transform: translate(0px, 0px) !important; text-shadow: 0 0 0px #0f0, 0 0 0px #f0f !important; }
+    }
+
+    .glitch-text-subtle {
+        position: relative;
+        display: inline-block; /* Importante para que el transform y text-shadow funcionen bien */
+        animation: none; /* Se activará con JS */
+    }
+
+    /* --- Mini-Glitch Border Effect (con !important para testear overrides) --- */
+    @keyframes borderGlitch {
+        0% { border-color: rgba(77, 208, 225, 0.6) !important; }
+        5% { border-color: rgba(255, 0, 255, 0.8) !important; } /* Color glitch 1 */
+        10% { border-color: rgba(0, 255, 0, 0.8) !important; } /* Color glitch 2 */
+        15% { border-color: rgba(77, 208, 225, 0.6) !important; }
+        100% { border-color: rgba(77, 208, 225, 0.6) !important; }
+    }
+
+    .glitch-border-subtle {
+        animation: none; /* Se activará con JS */
+    }
+
+    /* --- Joi Thinking Effect --- */
+    @keyframes joiThinkingDots {
+        0%, 20% { content: "."; }
+        40% { content: ".."; }
+        60%, 100% { content: "..."; }
+    }
+
+    @keyframes joiThinkingLines {
+        0% { transform: scaleX(0); opacity: 0; }
+        50% { transform: scaleX(1); opacity: 1; }
+        100% { transform: scaleX(0); opacity: 0; }
+    }
+
+    .joi-thinking-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 30px; /* Ajusta la altura si es necesario */
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .joi-thinking-dots::after {
+        content: ""; /* Se llena con JS */
+        font-family: monospace;
+        font-size: 2em;
+        color: #00ffff; /* Cian */
+        animation: joiThinkingDots 1.5s steps(1, end) infinite;
+    }
+
+    .joi-thinking-lines {
+        width: 60px; /* Ancho de la línea */
+        height: 2px;
+        background: linear-gradient(to right, #00ffff, #ff00ff); /* Cian a magenta */
+        animation: joiThinkingLines 1.2s ease-in-out infinite;
+        transform-origin: left center;
+        opacity: 0;
+    }
+
+    /* Nuevos estilos y animaciones para el ente flotante */
+    .floating-entity {
+        position: fixed; /* O absolute, dependiendo del contenedor */
+        z-index: 100;
+        pointer-events: none; /* Para que no bloquee clics */
+        transition: transform 0.5s ease-out; /* Suavizar el movimiento */
+    }
+
+    .entity-image {
+        width: 80px; /* Ajusta el tamaño según necesites */
+        height: 80px;
+        filter: drop-shadow(0 0 15px #00ffff) drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 5px #00ff00);
+        transition: filter 0.3s ease-in-out;
+    }
+
+    /* Animaciones para las partículas del ente */
+    @keyframes particleFloat {
+        0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(var(--dx), var(--dy)) scale(0);
+        }
+    }
+    .entity-particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 0, 128, 0.8);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: particleFloat 3s ease-out forwards;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="fixed bottom-10 left-10 text-[#32FF00] text-sm italic animate-pulse z-50">
+  ✨ “Hoy es un buen día para avanzar, ¿lo intentamos?”
+</div>
+
+<!-- Efectos atmosféricos Blade Runner -->
+<div class="blade-runner-atmosphere">
+    <!-- Niebla de fondo -->
+    <div class="background-fog"></div>
+
+    <!-- Resplandor ambiental -->
+    <div class="ambient-glow"></div>
+
+    <!-- Luces volumétricas -->
+    <div class="volumetric-light volumetric-light-1"></div>
+    <div class="volumetric-light volumetric-light-2"></div>
+    <div class="volumetric-light volumetric-light-3"></div>
+</div>
+
+<!-- Controles de efectos atmosféricos -->
+<div class="atmosphere-controls">
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('low')">Bajo</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('medium')">Medio</button>
+    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('high')">Alto</button>
+    <button class="atmosphere-btn" onclick="toggleAtmosphereEffects()">Pausar</button>
+</div>
+
+<!-- Indicador de estado -->
+
+
+<div class="w-full flex justify-center">
+    <div class="">
+        <div class="">
+            <!-- Ente flotante cyberpunk -->
+
+
+            <!-- Saludo -->
+            <div class="">
+                <div class="flex flex-col text-center">
+                    <h1 class="text-5xl font-extrabold leading-tight bg-gradient-to-r from-cyan-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg">
+                        Hola,<br>{{ cliente.nombre }}
+                    </h1>
+                    <h2><span class="glitch-text-subtle">Hola, {{ cliente.nombre }}</span></h2>
+                </div>
+  <!--<div class="background-image">
+                    {% if estado_visual_joi == "brillante" %}
+                    <img src="{% static 'images/joi_activa.jpg' %}" alt="Joi feliz" class="joi-flotante w-48 mx-auto animate-pulse"/>
+                    {% elif estado_visual_joi == "apagada" %}
+                    <img src="{% static 'images/joi_glitch.png' %}" alt="Joi glitch" class="joi-flotante w-48 mx-auto opacity-40 blur-sm grayscale"/>
+                    {% elif estado_visual_joi == "neutral" %}
+                    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi neutra" class="joi-flotante w-48 mx-auto"/>
+                    {% else %}
+                    <img src="{% static 'images/joi23.png' %}" alt="Joi" class="joi-flotante w-48 mx-auto"/>
+                    {% endif %}
+                </div>-->
+            </div>
+            </header>
+
+            <!-- Burbuja de chat -->
+            <div class="chat-bubble bg-cyan-400/10 backdrop-blur-md border border-cyan-600 shadow-md rounded-xl p-3 max-w-sm animate-fadeSlide">
+                <div id="" class="">
+                <img src="{% static 'images/4f.png' %}"  class="entity-image "/>
+                <p class="text-lg text-white font-mono glitch-text-subtle">{{ frase_bitacora }}</p>
+                <p>
+                    {{ frase_bitacora|default:"¿Cómo dormiste esta semana?" }}
+                </p>
+                {% if frase_memoria_emocional %}
+                <p class="mt-2 text-red-300 italic">{{ frase_memoria_emocional }}</p>
+                {% endif %}
+
+            </div>
+
+            </div>
+            <p class="text-sm font-mono text-gray-400 mt-1 glitch-text-subtle">Joi OS v5.2.1-beta</p>
+            <!-- Recordatorio -->
+            <div class="quote-box glitch-border-subtle">
+                <h2 >Recuerdo del día</h2>
+                <p>{{ recuerdo.contenido }}</p>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metrics-container">
+                <div class="metric-card interactive-glow">
+                    <h2>{{ entrenos_count }}</h2>
+                    <p>Entrenos</p>
+                </div>
+                <div class="metric-card interactive-glow">
+                    <h2>{{ carga_total|floatformat:0 }} <span class="metric-unit">kg</span></h2>
+                    <p>Carga total</p>
+                </div>
+                <div class="metric-card interactive-glow">
+                    <h2>82</h2>
+                    <p>Consistencia</p>
+                </div>
+            </div>
+
+            <!-- Emojis -->
+            <div class="quote-box">
+                <h3>¿Cómo te sientes hoy?</h3>
+
+                {% if alerta_fatiga %}
+                <div class="bg-[#1f1f1f] border border-red-500 p-4 rounded-xl mt-6 text-white shadow-md">
+                    <h3 class="text-red-400 font-semibold mb-2">🫧 Joi detecta fatiga acumulada</h3>
+                    <p class="text-sm mb-3">Tu sistema parece fatigado esta semana. Quizás sea buen momento para cuidarte con más suavidad.</p>
+                    <a href="{% url 'recomendacion_cuidado' %}" class="block w-full text-center bg-red-500 hover:bg-red-400 text-white font-bold py-2 rounded-xl transition">
+                        ¿Qué puedo hacer hoy para cuidarme?
+                    </a>
+                </div>
+                {% endif %}
+
+                <a href="/clientes/bitacora/registrar/" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                    Registrar bitácora de hoy
+                </a>
+                <a href="{% url 'calendario_bitacoras' %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                    🗓 Ver calendario de bitácoras
+                </a>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h3>Últimos entrenos</h3>
+                    <span>2s senanaa</span>
+                </div>
+                <ul class="timeline-list">
+                    <li class="timeline-item">
+                        <span class="timeline-number green">22</span>
+                        <span class="timeline-content">Cardio</span>
+                        <span class="timeline-date">Apr 21</span>
+                        <span class="timeline-type">Cardio</span>
+                    </li>
+                    <li class="timeline-item">
+                        <span class="timeline-number purple">21</span>
+                        <span class="timeline-content">Pull</span>
+                        <span class="timeline-date">Apr 19</span>
+                        <span class="timeline-type">Pull</span>
+                    </li>
+                    <li class="timeline-item">
+                        <span class="timeline-number yellow">19</span>
+                        <span class="timeline-content">Piernas</span>
+                        <span class="timeline-date">Apr 18</span>
+                        <span class="timeline-type">Piernas</span>
+                    </li>
+                </ul>
+            </div>
+
+
+<div class="timeline-section">
+    <h3 class="text-lg font-semibold mb-4 text-green-400">⚖ Evolución del peso</h3>
+    <canvas id="graficoPeso" height="150"></canvas>
+</div>
+
+<div class="timeline-section">
+                <h3 class="text-lg font-semibold mb-4 text-cyan-400">📊 Rendimiento por semana</h3>
+                <canvas id="graficoRendimiento" height="150"></canvas>
+            </div>
+
+            <div class="timeline-section">
+                <h3 class="text-lg font-semibold mb-4 text-yellow-400">🏆 Logros desbloqueados</h3>
+                {% if logros %}
+    <ul class="space-y-2">
+        {% for logro in logros %}
+            <li class="flex items-center gap-4 bg-[#222] p-3 rounded-lg shadow-sm interactive-glow">
+                <span class="text-2xl">{{ logro.logro.icono|default:"🌟" }}</span>
+                <div>
+                    <p class="font-semibold text-white">{{ logro.logro.nombre }}</p>
+                    <p class="text-sm text-gray-400">{{ logro.fecha|date:"d M Y" }}</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% else %}
+    <p class="text-sm text-gray-400">Aún no hay logros desbloqueados.</p>
+    <p>{{ logros|length }} logros encontrados</p>
+{% endif %}
+            </div>
+
+            <div class="timeline-section">
+
+                <div class="bg-[#1a1a1a] p-6 rounded-xl shadow-md text-white mt-6 space-y-2 interactive-glow">
+                    <h2 class="text-xl font-bold text-[#32FF00]">📓 Resumen semanal con Joi</h2>
+                    <p>📅 Días registrados: <span class="text-cyan-300">{{ resumen_bitacora.dias_registrados }}/7</span></p>
+                    <p>💤 Sueño promedio: <span class="text-purple-300">{{ resumen_bitacora.promedio_sueno }} h</span></p>
+                    <p>🔥 RPE promedio: <span class="text-orange-300">{{ resumen_bitacora.promedio_rpe }}/10</span></p>
+                    <p>😊 Estado emocional dominante:
+                        {% if resumen_bitacora.humor == 'verde' %}
+                        <span class="text-green-400">😊 Bien</span>
+                        {% elif resumen_bitacora.humor == 'amarillo' %}
+                        <span class="text-yellow-400">😐 Neutro</span>
+                        {% else %}
+                        <span class="text-red-400">😞 Bajo</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+
+                {% if estados and estados.0.sugerencia %}
+                <div class="bg-[#1a1a1a] p-4 rounded-xl mt-6 shadow-md border border-cyan-800 interactive-glow">
+                    <h3 class="text-[#31cff4] font-semibold mb-2">🔮 Recomendación inteligente de Joi</h3>
+                    <p class="text-white">{{ estados.0.sugerencia }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+                <h3 class="text-yellow-300 font-semibold mb-2">🎯 Mini-retos de la semana</h3>
+                <ul class="text-white space-y-1 text-sm">
+                    {% for reto in mini_retos %}
+                    <li class="transition-all duration-300 hover:text-yellow-300 hover:transform hover:translateX-2">
+                        {% if reto.cumplido %}
+                        ✅ <s>{{ reto.descripcion }}</s>
+                        {% else %}
+                        ⏳ {{ reto.descripcion }}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if recomendacion_carga %}
+            <div class="bg-[#111827] border border-cyan-700 p-4 rounded-xl mt-6 shadow interactive-glow">
+                <h3 class="text-cyan-300 font-semibold mb-2">📡 Sugerencia de Joi para esta semana</h3>
+                <p class="text-white text-sm">{{ recomendacion_carga }}</p>
+                <a href="{% url 'responder_sugerencia' %}" class="btn-fucsia mt-2 text-sm interactive-glow">
+                    Decidir si aplicar esta sugerencia
+                </a>
+            </div>
+            {% endif %}
+            <div class="mt-6 bg-[#1a1a1a] p-4 rounded-xl shadow-inner border border-cyan-700">
+                <h3 class="text-cyan-300 text-sm font-semibold mb-2">🔋 Mapa de energía (últimos 28 días)</h3>
+                <div class="grid grid-cols-7 gap-1">
+                    {% for dia in energia_dias %}
+                    <div class="h-3 rounded-full"
+                         style="background-color:
+             {% if dia.valor == None %} #2c2c2c
+             {% elif dia.valor >= 0.8 %} #32FF00
+             {% elif dia.valor >= 0.6 %} #90ee90
+             {% elif dia.valor >= 0.4 %} #facc15
+             {% elif dia.valor >= 0.2 %} #f87171
+             {% else %} #dc2626
+             {% endif %};">
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="text-[0.7rem] text-center text-gray-400 mt-2">🟢🟡🔴 energía diaria</p>
+            </div>
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+            {% if cambios_peso %}
+            <div class="mt-6">
+                <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Peso</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    {% for periodo, cambio in cambios_peso.items %}
+                    <div class="rounded-xl p-3 shadow-sm
+                        {% if cambio >= 0 %}
+                            bg-green-100 text-green-600 border border-green-300
+                        {% else %}
+                            bg-red-100 text-red-600 border border-red-300
+                        {% endif %}">
+                        <p class="text-2xl font-bold">
+                            {% if cambio > 0 %}+{% endif %}{{ cambio|floatformat:1 }} kg
+                        </p>
+                        <p class="text-xs text-gray-700 mt-1">
+                        {% if periodo == 'inicio' %}Ganado total
+                        {% else %}{{ periodo|slice:":-1" }} días
+                        {% endif %}
+                        </p>
+                    </div>
+                {% endfor %}
+                </div>
+             </div>
+            {% endif %}
+            </div>
+
+<div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+    <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Bíceps</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+        {% for periodo in orden_biceps %}
+            {% with cambio=cambios_biceps|get_item:periodo %}
+            <div class="rounded-xl p-3 shadow-sm
+                {% if cambio >= 0 %}
+                    bg-green-100 text-green-600 border border-green-300
+                {% else %}
+                    bg-red-100 text-red-600 border border-red-300
+                {% endif %}">
+                <p class="text-2xl font-bold">
+                    {% if cambio > 0 %}+{% endif %}
+                    {{ cambio|default:"—"|floatformat:1 }} cm
+                </p>
+                <p class="text-xs text-gray-700 mt-1">
+                    {% if periodo == 'inicio' %}Ganado total
+                    {% else %}{{ periodo|slice:":-1" }} días
+                    {% endif %}
+                </p>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+
+
+
+
+
+
+
+            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
+              <h3 class="text-yellow-300 font-semibold mb-2">🧠 Mapa emocional semanal</h3>
+
+            <div class="grid grid-cols-7 gap-2 text-xs text-center">
+                {% for dia in dias_emocionales %}
+                <div class="space-y-2 p-2 rounded-xl bg-[#1a1a1a] border border-slate-700 shadow-inner">
+                <div class="font-bold text-cyan-400">{{ dia.fecha }}</div>
+
+                <!-- Autoconciencia -->
+                <div class="rounded-full w-8 h-8 mx-auto flex items-center justify-center text-white font-bold
+                    {% if dia.autoconciencia <= 3 %} bg-red-500
+                    {% elif dia.autoconciencia <= 6 %} bg-yellow-400 text-black
+                    {% else %} bg-green-500
+                    {% endif %}">
+                    {{ dia.autoconciencia }}
+                </div>
+                <div class="text-slate-300">Autoconciencia</div>
+
+                <!-- Humor -->
+                <div class="italic text-sm text-emerald-300">
+                    {{ dia.humor }}
+                </div>
+                <div class="text-slate-300">Humor</div>
+
+                  <!-- Rumiación -->
+                <div class="{% if dia.rumiacion_baja %}text-green-400{% else %}text-red-500{% endif %} font-bold">
+                    {% if dia.rumiacion_baja %}✔{% else %}✖{% endif %}
+                </div>
+                <div class="text-slate-300">Rumiación</div>
+                </div>
+                {% endfor %}
+
+            </div>
+            <div class="mt-4 text-sm text-[#32FF00] italic text-center">
+                ✨ Joi: {{ comentario_joi }}
+                </div>
+            </div>
+
+            </div>
+            <div class="metric-card interactive-glow">
+                 <h2 class="text-lg text-[#32FF00] font-semibold mb-4">Informe emocional de la semana</h2>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+                    <div>
+                    <div class="text-slate-400">Sueño</div>
+                    <div class="text-xl font-bold text-cyan-400">{{ informe_joi.promedios.horas_sueno }} h</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Energía</div>
+                    <div class="text-xl font-bold text-yellow-300">{{ informe_joi.promedios.energia_subjetiva }}</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Dolor</div>
+                    <div class="text-xl font-bold text-red-400">{{ informe_joi.promedios.dolor_articular }}</div>
+                    </div>
+                    <div>
+                    <div class="text-slate-400">Autoconciencia</div>
+                    <div class="text-xl font-bold text-green-400">{{ informe_joi.promedios.autoconciencia }}</div>
+                    </div>
+                </div>
+
+
+
+                  <div class="mt-4 text-sm text-[#32FF00] italic text-center">
+                    ✨ Joi: {{ informe_joi.frase }}
+                </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/blade-runner-particles.js' %}"></script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- CÓDIGO DE CHART.JS ---
+        const pesoCanvas = document.getElementById('graficoPeso');
+        if (pesoCanvas) {
+            const ctxPeso = pesoCanvas.getContext('2d');
+            new Chart(ctxPeso, {
+                type: 'line',
+                data: {
+                    labels: [{% for punto in datos_peso %}"{{ punto.fecha|date:"D" }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Peso Corporal (kg)',
+                        data: [{% for punto in datos_peso %}{{ punto.peso }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        borderColor: '#32FF00',
+                        backgroundColor: 'rgba(50, 255, 0, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+        }
+
+        const rendimientoCanvas = document.getElementById('graficoRendimiento');
+        if (rendimientoCanvas) {
+            const ctxRendimiento = rendimientoCanvas.getContext('2d');
+            new Chart(ctxRendimiento, {
+                type: 'line',
+                data: {
+                    labels: [{% for punto in datos_rendimiento %}"{{ punto.semana }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Rendimiento',
+                        data: [{% for punto in datos_rendimiento %}{{ punto.valor }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        borderColor: '#31CFF4',
+                        backgroundColor: 'rgba(49, 207, 244, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+        }
+
+        // --- Glitch Sutil Aleatorio ---
+        function applySubtleGlitch(element, type = 'text') {
+            const animationClass = type === 'text' ? (Math.random() > 0.5 ? 'textGlitch1' : 'textGlitch2') : 'borderGlitch';
+            const animationName = type === 'text' ? animationClass : 'borderGlitch';
+
+            // Para evitar que se apilen las animaciones si ya está glitcheando
+            if (element.style.animationName === animationName) {
+                return;
+            }
+
+            element.style.animation = `${animationName} 0.2s linear 1`; // 1 iteración
+            setTimeout(() => {
+                element.style.animation = ''; // Limpiar la animación para permitir que se active de nuevo
+            }, 200); // Duración de la animación
+        }
+
+        function initSubtleGlitches() {
+            const glitchableTexts = document.querySelectorAll('.glitch-text-subtle');
+            const glitchableBorders = document.querySelectorAll('.glitch-border-subtle');
+
+            glitchableTexts.forEach(el => {
+                setInterval(() => {
+                    if (Math.random() < 0.02) { // 2% de probabilidad de glitch cada intervalo
+                        applySubtleGlitch(el, 'text');
+                    }
+                }, Math.random() * 5000 + 3000); // Intervalo aleatorio entre 3 y 8 segundos
+            });
+
+            glitchableBorders.forEach(el => {
+                setInterval(() => {
+                    if (Math.random() < 0.01) { // 1% de probabilidad de glitch cada intervalo
+                        applySubtleGlitch(el, 'border');
+                    }
+                }, Math.random() * 8000 + 5000); // Intervalo aleatorio entre 5 y 13 segundos
+            });
+        }
+        initSubtleGlitches(); // Llama a la función de inicialización
+
+        // --- Animación de Conteo para Métricas ---
+        function animateCountUp(element) {
+            const target = parseFloat(element.getAttribute('data-target'));
+            const duration = 1500; // Duración de la animación en ms
+            let start = 0;
+            const increment = target / (duration / 16); // Aproximadamente 60 fps
+
+            function updateCount() {
+                start += increment;
+                if (start < target) {
+                    element.textContent = Math.round(start * 10) / 10; // Redondear a un decimal si es necesario
+                    requestAnimationFrame(updateCount);
+                } else {
+                    element.textContent = target; // Asegurar que el valor final sea exacto
+                }
+            }
+            requestAnimationFrame(updateCount);
+        }
+
+        function initCountUpAnimations() {
+            const countUpElements = document.querySelectorAll('.count-up');
+            countUpElements.forEach(animateCountUp);
+        }
+        initCountUpAnimations(); // Llama a la función de inicialización
+
+        // --- Joi Thinking Animation Control ---
+        function showJoiThinking(duration = 2000) {
+            const phraseDisplay = document.getElementById('joi-phrase-display');
+            const thinkingAnimation = document.getElementById('joi-thinking-animation');
+
+            if (!phraseDisplay || !thinkingAnimation) return;
+
+            // Ocultar la frase actual y mostrar la animación
+            phraseDisplay.classList.add('hidden');
+            thinkingAnimation.classList.remove('hidden');
+
+            // Después de la duración, ocultar la animación y mostrar la frase (actualizada si es el caso)
+            setTimeout(() => {
+                thinkingAnimation.classList.add('hidden');
+                phraseDisplay.classList.remove('hidden');
+            }, duration);
+        }
+        showJoiThinking(1500); // Llama a Joi thinking al cargar
+
+        // --- Floating Entity Logic ---
+        const floatingEntity = document.getElementById('floating-entity');
+        if (floatingEntity) { // Asegúrate de que el elemento exista
+            let currentX = window.innerWidth / 2;
+            let currentY = window.innerHeight / 2;
+            let targetX = currentX;
+            let targetY = currentY;
+            let velocityX = 0;
+            let velocityY = 0;
+            const friction = 0.98;
+            const attraction = 0.005;
+            const maxVelocity = 5;
+
+            // Ensure entity is initially hidden until JS is ready
+            floatingEntity.style.opacity = 0;
+            setTimeout(() => {
+                floatingEntity.style.display = 'block'; // Make it visible (but still at 0 opacity)
+                floatingEntity.style.opacity = 1; // Fade in
+            }, 500); // Small delay before fading in
+
+
+            function generateNewTarget() {
+                const padding = 100; // Keep entity away from edges
+                targetX = Math.random() * (window.innerWidth - 2 * padding) + padding;
+                targetY = Math.random() * (window.innerHeight - 2 * padding) + padding;
+            }
+
+            function animateEntity() {
+                const dx = targetX - currentX;
+                const dy = targetY - currentY;
+
+                velocityX += dx * attraction;
+                velocityY += dy * attraction;
+
+                velocityX *= friction;
+                velocityY *= friction;
+
+                // Cap velocity
+                velocityX = Math.max(-maxVelocity, Math.min(maxVelocity, velocityX));
+                velocityY = Math.max(-maxVelocity, Math.min(maxVelocity, velocityY));
+
+                currentX += velocityX;
+                currentY += velocityY;
+
+                // Keep entity within bounds
+                const entityWidth = floatingEntity.offsetWidth;
+                const entityHeight = floatingEntity.offsetHeight;
+                currentX = Math.max(entityWidth / 2, Math.min(window.innerWidth - entityWidth / 2, currentX));
+                currentY = Math.max(entityHeight / 2, Math.min(window.innerHeight - entityHeight / 2, currentY));
+
+                floatingEntity.style.left = `${currentX}px`;
+                floatingEntity.style.top = `${currentY}px`;
+
+                // Generate new target if close enough
+                if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                    generateNewTarget();
+                }
+
+                requestAnimationFrame(animateEntity);
+            }
+
+            // Start initial movement
+            generateNewTarget();
+            animateEntity();
+
+            // Adjust on window resize
+            window.addEventListener('resize', () => {
+                currentX = window.innerWidth / 2;
+                currentY = window.innerHeight / 2;
+                generateNewTarget();
+            });
+        }
+
+        // Atmosphere Controls Logic
+        const atmosphereButtons = document.querySelectorAll('.atmosphere-control-btn');
+        const statusIndicators = {
+            low: document.getElementById('lowStatus'),
+            medium: document.getElementById('mediumStatus'),
+            high: document.getElementById('highStatus'),
+            paused: document.getElementById('pauseStatus')
+        };
+        let currentAtmosphereLevel = 'medium'; // Default
+
+        function updateStatusIndicator(level) {
+            Object.values(statusIndicators).forEach(indicator => {
+                indicator.style.backgroundColor = 'gray'; // Reset all
+            });
+            if (statusIndicators[level]) {
+                statusIndicators[level].style.backgroundColor = level === 'low' ? 'gray' : (level === 'medium' ? 'green' : (level === 'high' ? 'red' : 'blue'));
+            }
+        }
+
+        function setAtmosphereIntensity(intensity) {
+            currentAtmosphereLevel = intensity;
+            updateStatusIndicator(intensity);
+
+            const body = document.body;
+            let filterValue = 'brightness(0.9)';
+            let particleDensity = 1; // Default for medium
+            let particleSpeed = 1; // Default for medium
+
+            switch (intensity) {
+                case 'low':
+                    filterValue = 'brightness(1)';
+                    particleDensity = 0.5;
+                    particleSpeed = 0.5;
+                    break;
+                case 'medium':
+                    filterValue = 'brightness(0.9)';
+                    particleDensity = 1;
+                    particleSpeed = 1;
+                    break;
+                case 'high':
+                    filterValue = 'brightness(0.7)';
+                    particleDensity = 1.5;
+                    particleSpeed = 1.5;
+                    break;
+                case 'paused':
+                    filterValue = 'brightness(1)';
+                    particleDensity = 0; // No particles
+                    particleSpeed = 0; // No particle movement
+                    break;
+            }
+            body.style.filter = filterValue;
+            // Assuming blade-runner-particles.js has functions to adjust its settings
+            if (typeof updateParticleSettings === 'function') {
+                updateParticleSettings(particleDensity, particleSpeed);
+            }
+        }
+
+        atmosphereButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const intensity = button.dataset.intensity;
+                setAtmosphereIntensity(intensity);
+            });
+        });
+
+        // Initialize atmosphere on load
+        setAtmosphereIntensity(currentAtmosphereLevel);
+
+
+        // Particle and Glitch Button Logic
+        const glitchButton = document.getElementById('glitchButton');
+        const particlesButton = document.getElementById('particlesButton');
+        const emojiButton = document.getElementById('emojiButton');
+        const bladeRunnerCanvas = document.getElementById('bladeRunnerCanvas');
+
+        // Ensure these functions exist in blade-runner-particles.js or other included scripts
+        function createGlitchEffect(canvas) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            for (let i = 0; i < 5; i++) { // Apply multiple small shifts
+                const offset = Math.floor(Math.random() * 20) - 10;
+                const row = Math.floor(Math.random() * canvas.height);
+                const length = Math.floor(Math.random() * canvas.width / 5);
+
+                for (let x = 0; x < length; x++) {
+                    const srcIndex = ((row * canvas.width) + x) * 4;
+                    const destIndex = ((row * canvas.width) + x + offset) * 4;
+
+                    if (destIndex >= 0 && destIndex < data.length - 4) {
+                        data[destIndex] = data[srcIndex];     // R
+                        data[destIndex + 1] = data[srcIndex + 1]; // G
+                        data[destIndex + 2] = data[srcIndex + 2]; // B
+                        data[destIndex + 3] = data[srcIndex + 3]; // A
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            setTimeout(() => {
+                // If you have `bladeRunnerEffects.drawParticles()` or similar to redraw, call it here
+                // Otherwise, the glitch will persist until the next frame update of the particles.
+            }, 100);
+        }
+
+        function createClickParticles(event) {
+            const particle = document.createElement('div');
+            particle.textContent = ['✨', '🌟', '💥', '💫'][Math.floor(Math.random() * 4)];
+            particle.style.position = 'fixed';
+            particle.style.left = `${event.clientX}px`;
+            particle.style.top = `${event.clientY}px`;
+            particle.style.pointerEvents = 'none';
+            particle.style.fontSize = '20px';
+            particle.style.opacity = '1';
+            particle.style.transition = 'all 1s ease-out';
+            particle.style.transform = `translate(-50%, -50%) scale(1) rotate(${Math.random() * 360}deg)`;
+            document.body.appendChild(particle);
+
+            requestAnimationFrame(() => {
+                particle.style.opacity = '0';
+                particle.style.transform = `translate(${event.clientX + (Math.random() - 0.5) * 100}px, ${event.clientY + (Math.random() - 0.5) * 100}px) scale(0) rotate(${Math.random() * 360}deg)`;
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            });
+        }
+
+
+        if (glitchButton && bladeRunnerCanvas) {
+            glitchButton.addEventListener('click', () => {
+                createGlitchEffect(bladeRunnerCanvas);
+            });
+        }
+
+        if (particlesButton && typeof addHolographicPulse === 'function') { // Assuming this is from blade-runner-particles.js
+            particlesButton.addEventListener('click', () => {
+                addHolographicPulse(); // Call a function from your particles script
+            });
+        }
+
+        if (emojiButton) {
+            emojiButton.addEventListener('click', (event) => {
+                createClickParticles(event);
+            });
+        }
+
+        // Joi Image Enhancements (example of how to apply filters dynamically)
+        const joiImage = document.querySelector('.joi-flotante');
+        if (joiImage) {
+            joiImage.addEventListener('mouseenter', () => {
+                joiImage.style.filter = 'drop-shadow(0 0 30px #00ffff) drop-shadow(0 0 15px #ff00ff) brightness(1.2) saturate(1.5)';
+                joiImage.style.transform = 'scale(1.05)';
+            });
+            joiImage.addEventListener('mouseleave', () => {
+                joiImage.style.filter = 'drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 10px #ff00ff)';
+                joiImage.style.transform = 'scale(1)';
+            });
+        }
+
+    }); // Cierre del único DOMContentLoaded
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+{% endblock %}

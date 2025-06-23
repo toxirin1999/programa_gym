@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ dieta.nombre }}</h2>
+    <p><strong>Calorías totales:</strong> {{ dieta.calorias_totales }}</p>
+    <p><strong>Descripción:</strong> {{ dieta.descripcion }}</p>
+
+    <h4 class="mt-4">Comidas</h4>
+    <ul>
+        {% for comida in comidas %}
+        <li><strong>{{ comida.hora_aproximada }}</strong> - {{ comida.nombre }}: {{ comida.descripcion }}</li>
+        {% empty %}
+        <li>No hay comidas registradas para esta dieta.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'agregar_comida' dieta.id %}" class="btn btn-outline-secondary btn-sm">➕ Añadir comida</a>
+    <a href="{% url 'editar_dieta' dieta.id %}" class="btn btn-outline-secondary btn-sm">✏️ Editar</a>
+    <a href="{% url 'eliminar_dieta' dieta.id %}" class="btn btn-outline-secondary btn-sm">🗑️ Eliminar</a>
+    <a href="{% url 'listar_dietas' %}" class="btn btn-outline-secondary btn-sm">← Volver al listado</a>
+    <!-- Botón Asignar -->
+    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#asignarModal{{ dieta.id }}">
+        Asignar
+    </button>
+
+    <!-- Modal asignación -->
+    <div class="modal fade" id="asignarModal{{ dieta.id }}" tabindex="-1"
+         aria-labelledby="asignarModalLabel{{ dieta.id }}"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" class="ajax-assign-form">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="asignarModalLabel{{ dieta.id }}">Asignar {{ dieta.nombre }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="dieta_id" value="{{ dieta.id }}">
+                        <div class="mb-3">
+                            <label for="cliente_id{{ dieta.id }}" class="form-label">Seleccionar Cliente</label>
+                            <select name="cliente_id" id="cliente_id{{ dieta.id }}" class="form-select" required>
+                                <option value="">Seleccione un cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Asignar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+<h5 class="mt-4">Clientes asignados a esta dieta:</h5>
+<ul class="list-group">
+    {% for cd in cliente_dietas %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>{{ cd.cliente.nombre }}</strong><br>
+            <small>Desde {{ cd.fecha_inicio }}{% if cd.fecha_fin %} hasta {{ cd.fecha_fin }}{% endif %}</small>
+        </div>
+        <form action="{% url 'quitar_dieta' cd.id %}" method="post">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">Quitar</button>
+        </form>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted">No hay clientes asignados a esta dieta.</li>
+    {% endfor %}
+</ul>
+
+
+<script>
+    document.querySelectorAll('.ajax-assign-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const dietaId = this.querySelector('input[name="dieta_id"]').value;
+            const clienteId = this.querySelector('select[name="cliente_id"]').value;
+            const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            fetch("{% url 'asignar_dieta_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: new URLSearchParams({
+                    'dieta_id': dietaId,
+                    'cliente_id': clienteId,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

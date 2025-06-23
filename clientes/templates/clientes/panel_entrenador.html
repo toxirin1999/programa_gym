@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Panel del Entrenador – Nueva Gym{% endblock %}
+
+{% block content %}
+<div class="w-full flex justify-center">
+    <div class="main-wrapper">
+        <div class="header-halo">
+
+            <header class="header-section">
+                <h1 class="text-4xl font-semibold">Panel del Entrenador</h1>
+
+            </header>
+
+            <div class="quote-box">
+                <h2>Estado actual</h2>
+                <p>Este es el panel principal del entrenador. Aquí ves métricas clave y el estado de tus clientes.</p>
+            </div>
+
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <h2>{{ total_clientes }}</h2>
+                    <p>Clientes activos</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ total_revisiones }}</h2>
+                    <p>Revisiones totales</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ entrenos_hoy }}</h2>
+                    <p>Entrenos hoy</p>
+                </div>
+                <div class="metric-card">
+                    <h2>{{ entrenos_semana }}</h2>
+                    <p>Entrenos semana</p>
+                </div>
+            </div>
+
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h3>🚨 Alertas activas</h3>
+                </div>
+                {% if alertas %}
+                <ul class="timeline-list">
+                    {% for cliente, lista in alertas %}
+                    <li class="timeline-item">
+                        <span class="timeline-number yellow">⚠️</span>
+                        <span class="timeline-content">{{ cliente.nombre }}</span>
+                        <span class="timeline-date text-red-400">{{ lista|join:", " }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-green-400">Todo en orden. Sin alertas críticas.</p>
+                {% endif %}
+            </div>
+
+            <div class="timeline-section mt-6">
+                <div class="timeline-header">
+                    <h3>👥 Lista de clientes</h3>
+                </div>
+                <ul class="timeline-list">
+                    {% for cliente in clientes %}
+                    <li class="timeline-item">
+                        <span class="timeline-number green">{{ forloop.counter }}</span>
+                        <span class="timeline-content">{{ cliente.nombre }}</span>
+                        <span class="timeline-date">{{ cliente.email }}</span>
+                        <span class="timeline-type">
+                <a href="{% url 'detalle_cliente' cliente.id %}" class="text-blue-400 hover:underline">Ver</a> ·
+                <a href="{% url 'editar_cliente' cliente.id %}" class="text-yellow-400 hover:underline">Editar</a>
+              </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
