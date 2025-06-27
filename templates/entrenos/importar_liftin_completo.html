@@ -76,509 +76,290 @@
     </style>
 </head>
 <body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="{% url 'entrenos:dashboard_liftin' %}">
-            <i class="fas fa-dumbbell"></i> Gym Project
-        </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="{% url 'entrenos:dashboard_liftin' %}">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            <a class="nav-link" href="{% url 'entrenos:lista_entrenamientos' %}">
-                <i class="fas fa-list"></i> Entrenamientos
-            </a>
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-mobile-alt liftin-icon me-3"></i>
-                <div>
-                    <h1 class="h2 mb-1">Importar Entrenamiento Completo de Liftin</h1>
-                    <p class="text-muted mb-0">Ingresa TODOS los datos detallados de tu entrenamiento desde Liftin</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Vista previa estilo Liftin -->
-    <div class="row mb-4">
-        <div class="col-lg-4">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-eye"></i> Vista Previa (Estilo Liftin)
-                    </h6>
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-dumbbell"></i>
+                        Importar Entrenamiento de Liftin
+                    </h4>
                 </div>
+                
                 <div class="card-body">
-                    <div class="liftin-preview">
-                        <div class="liftin-title" id="preview-title">Día 6 - Full Body</div>
-                        <div class="liftin-time" id="preview-time">09:43 - 10:46</div>
+                    <!-- Mensajes de Debug -->
+                    <div id="debug-messages" class="alert alert-info" style="display: none;">
+                        <strong>Debug:</strong> <span id="debug-text"></span>
+                    </div>
 
-                        <div class="liftin-stats">
-                            <div class="liftin-stat">
-                                <div class="liftin-stat-label">Tiempo total</div>
-                                <div class="liftin-stat-value" id="preview-duration">1:02:23</div>
+                    <!-- Formulario Principal -->
+                    <form method="post" action="{% url 'entrenos:importar_liftin_completo' %}" id="importar-liftin-form">
+                        {% csrf_token %}
+                        
+                        <!-- Datos Básicos del Entrenamiento -->
+                        <div class="form-section">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle"></i>
+                                Datos Básicos del Entrenamiento
+                            </h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="cliente" class="form-label">Cliente: *</label>
+                                    <select name="cliente" id="cliente" class="form-control" required>
+                                        <option value="">Seleccionar cliente</option>
+                                        {% for cliente in clientes %}
+                                        <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="rutina" class="form-label">Rutina:</label>
+                                    <select name="rutina" id="rutina" class="form-control">
+                                        <option value="">Seleccionar rutina (opcional)</option>
+                                        {% for rutina in rutinas %}
+                                        <option value="{{ rutina.id }}">{{ rutina.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
-                            <div class="liftin-stat">
-                                <div class="liftin-stat-label">Ejercicios</div>
-                                <div class="liftin-stat-value" id="preview-ejercicios">8</div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="fecha" class="form-label">Fecha: *</label>
+                                    <input type="date" name="fecha" id="fecha" class="form-control" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="hora_inicio" class="form-label">Hora Inicio:</label>
+                                    <input type="time" name="hora_inicio" id="hora_inicio" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="duracion_minutos" class="form-label">Duración (min):</label>
+                                    <input type="number" name="duracion_minutos" id="duracion_minutos" class="form-control" placeholder="90">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="calorias_quemadas" class="form-label">Calorías:</label>
+                                    <input type="number" name="calorias_quemadas" id="calorias_quemadas" class="form-control" placeholder="450">
+                                </div>
                             </div>
-                            <div class="liftin-stat">
-                                <div class="liftin-stat-label">Volumen</div>
-                                <div class="liftin-stat-value" id="preview-volumen">19K KG</div>
-                            </div>
-                            <div class="liftin-stat">
-                                <div class="liftin-stat-label">Calorías</div>
-                                <div class="liftin-stat-value" id="preview-calorias">--</div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="volumen_total_kg" class="form-label">Volumen Total (kg):</label>
+                                    <input type="number" name="volumen_total_kg" id="volumen_total_kg" class="form-control" step="0.1" placeholder="12500.5">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fuente_datos" class="form-label">Fuente:</label>
+                                    <select name="fuente_datos" id="fuente_datos" class="form-control">
+                                        <option value="liftin" selected>Liftin</option>
+                                        <option value="manual">Manual</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Instrucciones -->
-        <div class="col-lg-8">
-            <div class="alert alert-info">
-                <h5 class="alert-heading">
-                    <i class="fas fa-info-circle"></i> ¿Cómo usar este formulario?
-                </h5>
-                <ol class="mb-0">
-                    <li><strong>Abre Liftin</strong> en tu iPhone y ve al entrenamiento completado</li>
-                    <li><strong>Copia los datos principales</strong> (tiempo, ejercicios, volumen) en la primera sección</li>
-                    <li><strong>Agrega cada ejercicio</strong> con sus pesos y repeticiones específicas</li>
-                    <li><strong>Revisa la vista previa</strong> para asegurarte de que todo esté correcto</li>
-                    <li><strong>Guarda</strong> para importar todo a tu base de datos</li>
-                </ol>
+                        <!-- Sección de Ejercicios -->
+                        <div class="form-section">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-list"></i>
+                                Ejercicios Detallados
+                            </h5>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Tip:</strong> Agrega cada ejercicio con sus datos específicos como aparecen en Liftin.
+                            </div>
+
+                            <!-- Ejercicios (8 por defecto) -->
+                            {% for i in "12345678" %}
+                            <div class="ejercicio-card">
+                                <div class="ejercicio-header">
+                                    <i class="fas fa-dumbbell"></i>
+                                    Ejercicio {{ i }}
+                                </div>
+                                
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nombre del Ejercicio</label>
+                                        <input type="text" 
+                                               name="ejercicio_{{ i }}_nombre" 
+                                               class="form-control" 
+                                               placeholder="Ej: Prensa, Curl Femoral Tumbado">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estado</label>
+                                        <select name="ejercicio_{{ i }}_estado" class="form-control">
+                                            <option value="">Seleccionar estado</option>
+                                            <option value="completado">✓ Completado</option>
+                                            <option value="fallado">✗ Fallado</option>
+                                            <option value="nuevo">N Nuevo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Peso</label>
+                                        <input type="text" 
+                                               name="ejercicio_{{ i }}_peso" 
+                                               class="form-control" 
+                                               placeholder="Ej: 268.5 kg, PC, 90-100 kg">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Series x Repeticiones</label>
+                                        <input type="text" 
+                                               name="ejercicio_{{ i }}_series" 
+                                               class="form-control" 
+                                               placeholder="Ej: 3x5-10, 3x10-12">
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label class="form-label">Notas</label>
+                                        <textarea name="ejercicio_{{ i }}_notas" 
+                                                  class="form-control" 
+                                                  rows="2" 
+                                                  placeholder="Notas adicionales del ejercicio"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Notas Generales -->
+                        <div class="form-section">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-sticky-note"></i>
+                                Notas Generales
+                            </h5>
+                            <textarea name="notas" id="notas" class="form-control" rows="4" placeholder="Notas del entrenamiento..."></textarea>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg me-3" id="btn-importar">
+                                <i class="fas fa-save"></i>
+                                Importar Entrenamiento
+                            </button>
+                            <a href="{% url 'entrenos:dashboard_liftin' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Formulario -->
-    <form method="post" id="liftin-form">
-        {% csrf_token %}
-
-        <div class="row">
-            <div class="col-lg-8">
-                <!-- Información básica -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-user"></i> Información Básica
-                    </h5>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.cliente.id_for_label }}" class="form-label">
-                                    Cliente *
-                                </label>
-                                {{ form.cliente }}
-                                {% if form.cliente.errors %}
-                                <div class="text-danger">{{ form.cliente.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.fecha_entrenamiento.id_for_label }}" class="form-label">
-                                    Fecha del Entrenamiento *
-                                </label>
-                                {{ form.fecha_entrenamiento }}
-                                {% if form.fecha_entrenamiento.errors %}
-                                <div class="text-danger">{{ form.fecha_entrenamiento.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.nombre_rutina_liftin.id_for_label }}" class="form-label">
-                            Nombre de la Rutina en Liftin *
-                        </label>
-                        {{ form.nombre_rutina_liftin }}
-                        <div class="help-text">Como aparece en la parte superior de Liftin (ej: "Día 6 - Full Body")</div>
-                        {% if form.nombre_rutina_liftin.errors %}
-                        <div class="text-danger">{{ form.nombre_rutina_liftin.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Datos de tiempo -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-clock"></i> Horarios y Duración
-                    </h5>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.hora_inicio_str.id_for_label }}" class="form-label">
-                                    Hora de Inicio
-                                </label>
-                                {{ form.hora_inicio_str }}
-                                <div class="help-text">Formato: HH:MM (ej: 09:43)</div>
-                                {% if form.hora_inicio_str.errors %}
-                                <div class="text-danger">{{ form.hora_inicio_str.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.hora_fin_str.id_for_label }}" class="form-label">
-                                    Hora de Fin
-                                </label>
-                                {{ form.hora_fin_str }}
-                                <div class="help-text">Formato: HH:MM (ej: 10:46)</div>
-                                {% if form.hora_fin_str.errors %}
-                                <div class="text-danger">{{ form.hora_fin_str.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.tiempo_total_formateado.id_for_label }}" class="form-label">
-                                    Tiempo Total
-                                </label>
-                                {{ form.tiempo_total_formateado }}
-                                <div class="help-text">Como aparece en Liftin (ej: 1:02:23)</div>
-                                {% if form.tiempo_total_formateado.errors %}
-                                <div class="text-danger">{{ form.tiempo_total_formateado.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Datos de volumen y ejercicios -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-chart-bar"></i> Volumen y Ejercicios
-                    </h5>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.numero_ejercicios.id_for_label }}" class="form-label">
-                                    Número de Ejercicios *
-                                </label>
-                                {{ form.numero_ejercicios }}
-                                <div class="help-text">Total de ejercicios realizados</div>
-                                {% if form.numero_ejercicios.errors %}
-                                <div class="text-danger">{{ form.numero_ejercicios.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="mb-3">
-                                <label for="{{ form.volumen_total_str.id_for_label }}" class="form-label">
-                                    Volumen Total
-                                </label>
-                                {{ form.volumen_total_str }}
-                                <div class="help-text">Como aparece en Liftin (ej: "19K KG", "1500 KG")</div>
-                                {% if form.volumen_total_str.errors %}
-                                <div class="text-danger">{{ form.volumen_total_str.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Datos de salud -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-heartbeat"></i> Datos de Salud
-                    </h5>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.calorias_quemadas.id_for_label }}" class="form-label">
-                                    Calorías Quemadas
-                                </label>
-                                <div class="input-group">
-                                    {{ form.calorias_quemadas }}
-                                    <span class="input-group-text">kcal</span>
-                                </div>
-                                {% if form.calorias_quemadas.errors %}
-                                <div class="text-danger">{{ form.calorias_quemadas.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.frecuencia_cardiaca_promedio.id_for_label }}" class="form-label">
-                                    FC Promedio
-                                </label>
-                                <div class="input-group">
-                                    {{ form.frecuencia_cardiaca_promedio }}
-                                    <span class="input-group-text">BPM</span>
-                                </div>
-                                {% if form.frecuencia_cardiaca_promedio.errors %}
-                                <div class="text-danger">{{ form.frecuencia_cardiaca_promedio.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="{{ form.frecuencia_cardiaca_maxima.id_for_label }}" class="form-label">
-                                    FC Máxima
-                                </label>
-                                <div class="input-group">
-                                    {{ form.frecuencia_cardiaca_maxima }}
-                                    <span class="input-group-text">BPM</span>
-                                </div>
-                                {% if form.frecuencia_cardiaca_maxima.errors %}
-                                <div class="text-danger">{{ form.frecuencia_cardiaca_maxima.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ejercicios detallados -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-list"></i> Ejercicios Detallados
-                    </h5>
-
-                    <div class="alert alert-warning">
-                        <i class="fas fa-lightbulb"></i>
-                        <strong>Tip:</strong> Agrega cada ejercicio con sus datos específicos como aparecen en Liftin.
-                        Puedes usar formatos como "268.5 kg", "PC" (peso corporal), "90-100 kg" para rangos.
-                    </div>
-
-                    <div id="ejercicios-container">
-                        {{ formset.management_form }}
-                        {% for form_ejercicio in formset %}
-                        <div class="ejercicio-card" data-form-index="{{ forloop.counter0 }}">
-                            <div class="ejercicio-header">
-                                <i class="fas fa-dumbbell"></i> Ejercicio {{ forloop.counter }}
-                                <button type="button" class="btn btn-sm btn-outline-danger float-end remove-ejercicio">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Nombre del Ejercicio</label>
-                                        {{ form_ejercicio.nombre_ejercicio }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Orden</label>
-                                        {{ form_ejercicio.orden_ejercicio }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Peso</label>
-                                        {{ form_ejercicio.peso_formateado_input }}
-                                        <div class="help-text">Ej: 268.5 kg, PC, 90-100 kg</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Series x Repeticiones</label>
-                                        {{ form_ejercicio.repeticiones_input }}
-                                        <div class="help-text">Ej: 3x5-10, 3x12</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Estado</label>
-                                        {{ form_ejercicio.estado_liftin }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Notas</label>
-                                        {{ form_ejercicio.notas_ejercicio }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{ form_ejercicio.DELETE }}
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <button type="button" class="btn btn-outline-primary" id="add-ejercicio">
-                        <i class="fas fa-plus"></i> Agregar Ejercicio
-                    </button>
-                </div>
-
-                <!-- Notas adicionales -->
-                <div class="form-section">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-sticky-note"></i> Notas Adicionales
-                    </h5>
-
-                    <div class="mb-3">
-                        <label for="{{ form.notas_liftin.id_for_label }}" class="form-label">
-                            Notas del Entrenamiento
-                        </label>
-                        {{ form.notas_liftin }}
-                        {% if form.notas_liftin.errors %}
-                        <div class="text-danger">{{ form.notas_liftin.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Errores generales del formulario -->
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
-
-                <!-- Botones -->
-                <div class="d-flex justify-content-between">
-                    <a href="{% url 'entrenos:dashboard_liftin' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-save"></i> Importar Entrenamiento Completo
-                    </button>
-                </div>
-            </div>
-
-            <!-- Panel de ayuda fijo -->
-            <div class="col-lg-4">
-                <div class="position-sticky" style="top: 2rem;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-question-circle"></i> Guía Rápida
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <h6>Datos principales:</h6>
-                            <ul class="small">
-                                <li><strong>Rutina:</strong> Nombre que aparece arriba</li>
-                                <li><strong>Horario:</strong> Hora inicio - fin</li>
-                                <li><strong>Tiempo total:</strong> Duración completa</li>
-                                <li><strong>Ejercicios:</strong> Número total</li>
-                                <li><strong>Volumen:</strong> Como aparece (19K KG)</li>
-                            </ul>
-
-                            <h6>Para cada ejercicio:</h6>
-                            <ul class="small">
-                                <li><strong>Nombre:</strong> Tal como aparece</li>
-                                <li><strong>Peso:</strong> 268.5 kg, PC, 90-100 kg</li>
-                                <li><strong>Series/Reps:</strong> 3x5-10, 3x12</li>
-                                <li><strong>Estado:</strong> ✓, ✗, N según el icono</li>
-                            </ul>
-
-                            <div class="alert alert-info">
-                                <small>
-                                    <i class="fas fa-lightbulb"></i>
-                                    La vista previa se actualiza automáticamente mientras escribes.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- JavaScript Simplificado -->
 <script>
-    // Actualizar vista previa en tiempo real
-    document.addEventListener('DOMContentLoaded', function() {
-        // Elementos de vista previa
-        const previewTitle = document.getElementById('preview-title');
-        const previewTime = document.getElementById('preview-time');
-        const previewDuration = document.getElementById('preview-duration');
-        const previewEjercicios = document.getElementById('preview-ejercicios');
-        const previewVolumen = document.getElementById('preview-volumen');
-        const previewCalorias = document.getElementById('preview-calorias');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Template cargado correctamente');
+    
+    // Establecer fecha actual por defecto
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput && !fechaInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        fechaInput.value = today;
+        console.log('Fecha establecida:', today);
+    }
 
-        // Campos del formulario
-        const nombreRutina = document.getElementById('id_nombre_rutina_liftin');
-        const horaInicio = document.getElementById('id_hora_inicio_str');
-        const horaFin = document.getElementById('id_hora_fin_str');
-        const tiempoTotal = document.getElementById('id_tiempo_total_formateado');
-        const numeroEjercicios = document.getElementById('id_numero_ejercicios');
-        const volumenTotal = document.getElementById('id_volumen_total_str');
-        const calorias = document.getElementById('id_calorias_quemadas');
-
-        // Función para actualizar vista previa
-        function updatePreview() {
-            if (nombreRutina.value) previewTitle.textContent = nombreRutina.value;
-
-            if (horaInicio.value && horaFin.value) {
-                previewTime.textContent = `${horaInicio.value} - ${horaFin.value}`;
+    // Debug del formulario
+    const form = document.getElementById('importar-liftin-form');
+    const btnImportar = document.getElementById('btn-importar');
+    
+    if (form) {
+        console.log('Formulario encontrado');
+        
+        // Evento de envío del formulario
+        form.addEventListener('submit', function(e) {
+            console.log('Formulario enviándose...');
+            
+            // Mostrar mensaje de debug
+            const debugDiv = document.getElementById('debug-messages');
+            const debugText = document.getElementById('debug-text');
+            debugText.textContent = 'Enviando formulario...';
+            debugDiv.style.display = 'block';
+            
+            // Validación básica
+            const cliente = document.getElementById('cliente').value;
+            const fecha = document.getElementById('fecha').value;
+            
+            if (!cliente) {
+                e.preventDefault();
+                alert('Por favor, selecciona un cliente');
+                debugText.textContent = 'Error: Cliente no seleccionado';
+                return false;
             }
-
-            if (tiempoTotal.value) previewDuration.textContent = tiempoTotal.value;
-            if (numeroEjercicios.value) previewEjercicios.textContent = numeroEjercicios.value;
-            if (volumenTotal.value) previewVolumen.textContent = volumenTotal.value;
-            if (calorias.value) {
-                previewCalorias.textContent = calorias.value + ' kcal';
-            } else {
-                previewCalorias.textContent = '--';
+            
+            if (!fecha) {
+                e.preventDefault();
+                alert('Por favor, selecciona una fecha');
+                debugText.textContent = 'Error: Fecha no seleccionada';
+                return false;
             }
-        }
-
-        // Agregar listeners
-        [nombreRutina, horaInicio, horaFin, tiempoTotal, numeroEjercicios, volumenTotal, calorias].forEach(field => {
-            if (field) field.addEventListener('input', updatePreview);
+            
+            // Deshabilitar botón para evitar doble envío
+            btnImportar.disabled = true;
+            btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
+            
+            console.log('Validación pasada, enviando formulario');
+            debugText.textContent = 'Validación pasada, enviando...';
+            
+            // Permitir envío normal del formulario
+            return true;
         });
-
-        // Gestión de ejercicios dinámicos
-        let ejercicioIndex = {{ formset.total_form_count }};
-
-        document.getElementById('add-ejercicio').addEventListener('click', function() {
-            // Aquí iría la lógica para agregar ejercicios dinámicamente
-            // Por simplicidad, mostrar alerta por ahora
-            alert('Funcionalidad de agregar ejercicios dinámicamente - implementar con JavaScript avanzado');
-        });
-
-        // Remover ejercicios
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-ejercicio')) {
-                const ejercicioCard = e.target.closest('.ejercicio-card');
-                ejercicioCard.style.display = 'none';
-                // Marcar para eliminación
-                const deleteCheckbox = ejercicioCard.querySelector('input[name$="-DELETE"]');
-                if (deleteCheckbox) deleteCheckbox.checked = true;
-            }
-        });
-
-        // Validación en tiempo real
-        const fcPromedio = document.getElementById('id_frecuencia_cardiaca_promedio');
-        const fcMaxima = document.getElementById('id_frecuencia_cardiaca_maxima');
-
-        function validarFC() {
-            if (fcPromedio.value && fcMaxima.value) {
-                if (parseInt(fcPromedio.value) >= parseInt(fcMaxima.value)) {
-                    fcMaxima.setCustomValidity('La FC máxima debe ser mayor que la promedio');
-                } else {
-                    fcMaxima.setCustomValidity('');
-                }
-            }
-        }
-
-        if (fcPromedio) fcPromedio.addEventListener('input', validarFC);
-        if (fcMaxima) fcMaxima.addEventListener('input', validarFC);
-    });
+    } else {
+        console.error('Formulario no encontrado');
+    }
+});
 </script>
+
+<!-- Estilos CSS -->
+<style>
+.form-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #007bff;
+}
+
+.ejercicio-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: white;
+}
+
+.ejercicio-header {
+    background: #e9ecef;
+    margin: -1rem -1rem 1rem -1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#debug-messages {
+    border-left: 4px solid #17a2b8;
+}
+</style>
+
 </body>
 </html>
 

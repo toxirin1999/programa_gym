@@ -1,333 +1,1277 @@
-<!-- Archivo: templates/entrenos/dashboard_liftin.html -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Liftin - Gym Project</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .card-liftin {
-            border-left: 4px solid #007bff;
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Liftin{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Variables CSS para el tema cyberpunk */
+    :root {
+        --neon-cyan: #00ffff;
+        --neon-magenta: #ff00ff;
+        --neon-green: #00ff00;
+        --neon-blue: #0080ff;
+        --neon-orange: #ff8000;
+        --dark-bg: #0a0a1a;
+        --card-bg: rgba(15, 23, 41, 0.85);
+        --border-glow: rgba(0, 255, 255, 0.3);
+        --shadow-intensity: 0.4;
+        --glass-bg: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Fondo cyberpunk */
+    body {
+        background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #16213e 100%);
+        background-attachment: fixed;
+        color: #ffffff;
+        font-family: 'Inter', 'Rajdhani', sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.05) 0%, 
+            rgba(255, 0, 255, 0.03) 50%, 
+            rgba(0, 255, 0, 0.02) 100%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Contenedor principal */
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Header mejorado */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--card-bg), rgba(0, 255, 255, 0.1));
+        border: 2px solid var(--border-glow);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .dashboard-title {
+        font-size: 3rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-green));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 20px var(--neon-cyan);
+        margin-bottom: 10px;
+        animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+        0% { text-shadow: 0 0 20px var(--neon-cyan); }
+        50% { text-shadow: 0 0 30px var(--neon-magenta); }
+        100% { text-shadow: 0 0 25px var(--neon-green); }
+    }
+
+    .dashboard-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.2rem;
+        margin-bottom: 0;
+    }
+
+    /* Botones de navegación principal cyberpunk */
+    .navigation-buttons {
+        background: var(--glass-bg);
+        border: 2px solid var(--border-glow);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        text-align: center;
+    }
+
+    .nav-title {
+        color: var(--neon-cyan);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px var(--neon-cyan);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-cyber {
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+        border: none;
+        border-radius: 12px;
+        color: #000000;
+        padding: 12px 25px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        margin: 5px 10px;
+    }
+
+    .btn-cyber:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 255, 255, 0.5);
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+        color: #000000;
+    }
+
+    .btn-cyber.btn-secondary {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+        color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-cyber.btn-secondary:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #ffffff;
+    }
+
+    /* Selector de cliente mejorado */
+    .cliente-selector {
+        background: var(--glass-bg);
+        border: 2px solid var(--border-glow);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+    }
+
+    .form-select, .form-control {
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid var(--border-glow);
+        border-radius: 10px;
+        color: #ffffff;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-select:focus, .form-control:focus {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        color: #ffffff;
+    }
+
+    .form-select option {
+        background: rgba(0, 0, 0, 0.9);
+        color: #ffffff;
+    }
+
+    .form-label {
+        color: var(--neon-cyan);
+        font-weight: 600;
+        text-shadow: 0 0 8px var(--neon-cyan);
+    }
+
+    /* Tarjetas de estadísticas mejoradas */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border: 2px solid var(--border-glow);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .stat-card:hover::before {
+        left: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0, 255, 255, 0.4);
+        border-color: var(--neon-cyan);
+    }
+
+    .stat-card.liftin {
+        border-color: rgba(0, 123, 255, 0.5);
+        box-shadow: 0 0 30px rgba(0, 123, 255, 0.2);
+    }
+
+    .stat-card.liftin:hover {
+        box-shadow: 0 15px 40px rgba(0, 123, 255, 0.4);
+        border-color: #007bff;
+    }
+
+    .stat-card.manual {
+        border-color: rgba(40, 167, 69, 0.5);
+        box-shadow: 0 0 30px rgba(40, 167, 69, 0.2);
+    }
+
+    .stat-card.manual:hover {
+        box-shadow: 0 15px 40px rgba(40, 167, 69, 0.4);
+        border-color: #28a745;
+    }
+
+    .stat-card.calories {
+        border-color: rgba(220, 53, 69, 0.5);
+        box-shadow: 0 0 30px rgba(220, 53, 69, 0.2);
+    }
+
+    .stat-card.calories:hover {
+        box-shadow: 0 15px 40px rgba(220, 53, 69, 0.4);
+        border-color: #dc3545;
+    }
+
+    .stat-icon {
+        font-size: 3.5rem;
+        margin-bottom: 15px;
+        display: block;
+        text-shadow: 0 0 15px currentColor;
+        animation: iconPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes iconPulse {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.1); }
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 15px var(--neon-cyan);
+        margin-bottom: 10px;
+        display: block;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    /* Sección de logros mejorada */
+    .logros-section {
+        background: linear-gradient(135deg, 
+            rgba(255, 215, 0, 0.1), 
+            rgba(255, 165, 0, 0.05),
+            rgba(255, 0, 255, 0.03));
+        border: 2px solid rgba(255, 215, 0, 0.4);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .logros-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
+        animation: logrosPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes logrosPulse {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.1) rotate(180deg); }
+    }
+
+    .logros-title {
+        color: #FFD700;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        text-shadow: 0 0 20px #FFD700;
+        position: relative;
+        z-index: 1;
+    }
+
+    .nivel-badge {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: #000;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        animation: badgeGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes badgeGlow {
+        0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+        100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+    }
+
+    .logros-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logro-card {
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        border-radius: 15px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .logro-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 215, 0, 0.6);
+        box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+    }
+
+    .logro-icon {
+        font-size: 2.5rem;
+        text-shadow: 0 0 10px currentColor;
+        min-width: 60px;
+    }
+
+    .logro-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #FFD700;
+        text-shadow: 0 0 10px #FFD700;
+        display: block;
+    }
+
+    .logro-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        margin-top: 2px;
+    }
+
+    /* Barra de progreso cyberpunk */
+    .progress-custom {
+        height: 12px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, #FFD700, #FFA500);
+        border-radius: 6px;
+        transition: width 1s ease;
+        position: relative;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .progress-bar-custom::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    /* Gráficos mejorados */
+    .charts-section {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .chart-container {
+        background: var(--card-bg);
+        border: 2px solid var(--border-glow);
+        border-radius: 20px;
+        padding: 25px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        position: relative;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chart-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--neon-cyan);
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px var(--neon-cyan);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: absolute;
+        top: 20px;
+        left: 25px;
+    }
+
+    /* Tabla de entrenamientos mejorada */
+    .entrenamientos-section {
+        background: var(--card-bg);
+        border: 2px solid var(--border-glow);
+        border-radius: 20px;
+        padding: 25px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border-glow);
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--neon-cyan);
+        margin: 0;
+        text-shadow: 0 0 10px var(--neon-cyan);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .table-cyber {
+        width: 100%;
+        border-collapse: collapse;
+        color: #ffffff;
+        background: transparent;
+    }
+
+    .table-cyber th {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.1));
+        color: var(--neon-cyan);
+        padding: 15px 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-glow);
+        text-shadow: 0 0 8px var(--neon-cyan);
+    }
+
+    .table-cyber td {
+        padding: 15px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .table-cyber tr:hover td {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.05));
+        border-color: var(--border-glow);
+    }
+
+    .badge-cyber {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .badge-liftin {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: #ffffff;
+        border: 1px solid rgba(0, 123, 255, 0.5);
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .badge-manual {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        color: #ffffff;
+        border: 1px solid rgba(40, 167, 69, 0.5);
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Botones de acción cyberpunk */
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+    }
+
+    .btn-sm {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        box-shadow: 0 0 10px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-info:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(23, 162, 184, 0.5);
+        color: white;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: #212529;
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.5);
+        color: #212529;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+        color: white;
+    }
+
+    /* Estados vacíos */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 15px var(--neon-cyan);
+    }
+
+    .empty-state h4 {
+        color: var(--neon-cyan);
+        margin-bottom: 10px;
+        text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 15px;
         }
-        .card-manual {
-            border-left: 4px solid #28a745;
+
+        .dashboard-title {
+            font-size: 2.2rem;
         }
-        .stat-icon {
-            font-size: 2rem;
-            opacity: 0.7;
+
+        .stats-grid {
+            grid-template-columns: 1fr;
         }
-        .badge-liftin {
-            background-color: #007bff;
+
+        .charts-section {
+            grid-template-columns: 1fr;
         }
-        .badge-manual {
-            background-color: #28a745;
+
+        .logros-grid {
+            grid-template-columns: 1fr;
         }
-    </style>
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <i class="fas fa-dumbbell"></i> Página Principal
+
+        .logros-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .btn-cyber {
+            display: block;
+            margin: 5px 0;
+            text-align: center;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 3px;
+        }
+    }
+
+    /* Animaciones de carga */
+    .fade-in {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .slide-in {
+        animation: slideIn 0.6s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Alerta personalizada */
+    .alert-info {
+        background: linear-gradient(135deg, rgba(23, 162, 184, 0.2), rgba(23, 162, 184, 0.1));
+        border: 2px solid rgba(23, 162, 184, 0.4);
+        border-radius: 10px;
+        color: #ffffff;
+        padding: 12px 15px;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header mejorado -->
+    <div class="dashboard-header fade-in">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="dashboard-title">
+                    <i class="fas fa-dumbbell"></i>
+                    Entrenamientos
+                    {% if cliente_seleccionado %}
+                    <span style="font-size: 0.7em; color: var(--neon-green);">- {{ cliente_seleccionado.nombre }}</span>
+                    {% endif %}
+                </h1>
+               
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de navegación principal -->
+    <div class="navigation-buttons fade-in">
+        <h5 class="nav-title">
+            <i class="fas fa-compass"></i>
+            Navegación Principal
+        </h5>
+        <a href="{% url 'entrenos:importar_liftin_completo' %}" class="btn-cyber">
+            <i class="fas fa-plus"></i> Importar Entrenamiento
         </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="{% url 'entrenos:lista_entrenamientos' %}">
-                <i class="fas fa-list"></i> Entrenamientos
-            </a>
-            <a class="nav-link" href="/liftin/importar-completo/">
-                <i class="fas fa-plus"></i> Importar Liftin
-            </a>
-            <a class="nav-link" href="{% url 'entrenos:estadisticas_liftin' %}">
-                <i class="fas fa-chart-bar"></i> Estadísticas
-            </a>
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h2">
-                <i class="fas fa-mobile-alt text-primary"></i>
-                Dashboard Liftin
-            </h1>
-            <p class="text-muted">Gestión y análisis de entrenamientos importados desde Liftin</p>
-        </div>
-        <div class="col-auto">
-            <a href="/liftin/importar-completo/" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Importar Entrenamiento
-            </a>
-
-        </div>
+        <a href="{% url 'entrenos:estadisticas_liftin' %}" class="btn-cyber btn-secondary">
+            <i class="fas fa-chart-bar"></i> Estadísticas
+        </a>
+        
+        <a href="{% url 'entrenos:exportar_datos_liftin' %}" class="btn-cyber btn-secondary">
+            <i class="fas fa-download"></i> Exportar Datos
+        </a>
+        
     </div>
 
-    <!-- Estadísticas principales -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-check stat-icon text-info"></i>
-                    <h3 class="mt-2">{{ total_entrenamientos }}</h3>
-                    <p class="text-muted mb-0">Total Entrenamientos</p>
-                </div>
-            </div>
+
+
+    <!-- Estadísticas principales mejoradas -->
+    <div class="stats-grid fade-in">
+        <div class="stat-card">
+            <i class="fas fa-calendar-check stat-icon" style="color: var(--neon-cyan);"></i>
+            <span class="stat-number" data-target="{{ total_entrenamientos|default:0 }}">0</span>
+            <p class="stat-label">Total Entrenamientos</p>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100 card-liftin">
-                <div class="card-body text-center">
-                    <i class="fas fa-mobile-alt stat-icon text-primary"></i>
-                    <h3 class="mt-2">{{ entrenamientos_liftin }}</h3>
-                    <p class="text-muted mb-0">De Liftin</p>
-                </div>
-            </div>
+        <div class="stat-card liftin">
+            <i class="fas fa-mobile-alt stat-icon" style="color: #007bff;"></i>
+            <span class="stat-number" data-target="{{ entrenamientos_liftin|default:0 }}">0</span>
+            <p class="stat-label">De Liftin</p>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100 card-manual">
-                <div class="card-body text-center">
-                    <i class="fas fa-edit stat-icon text-success"></i>
-                    <h3 class="mt-2">{{ entrenamientos_manual }}</h3>
-                    <p class="text-muted mb-0">Manuales</p>
-                </div>
-            </div>
+        <div class="stat-card manual">
+            <i class="fas fa-edit stat-icon" style="color: #28a745;"></i>
+            <span class="stat-number" data-target="{{ entrenamientos_manual|default:0 }}">0</span>
+            <p class="stat-label">Manuales</p>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-fire stat-icon text-danger"></i>
-                    <h3 class="mt-2">{{ stats_liftin.total_calorias|default:"0" }}</h3>
-                    <p class="text-muted mb-0">Calorías (Liftin)</p>
-                </div>
-            </div>
+        <div class="stat-card calories">
+            <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
+            <span class="stat-number" data-target="{{ calorias_totales|default:0 }}">0</span>
+            <p class="stat-label">Calorías (Liftin)</p>
         </div>
+        <!-- Volumen Total -->
+<div class="stat-card manual">
+  <i class="fas fa-weight-hanging stat-icon" style="color: #28a745;"></i>
+  <span class="stat-number" data-target="{{ stats_liftin.volumen_total|default:0 }}">0</span>
+  <p class="stat-label">Volumen Total (kg)</p>
+</div>
+
+<!-- Duración Promedio -->
+<div class="stat-card calories">
+  <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
+  <span class="stat-number" data-target="{{ stats_liftin.duracion_promedio|default:0 }}">0</span>
+  <p class="stat-label">Duración Promedio (min)</p>
+</div>
+
+<!-- Ejercicios por Sesión -->
+<div class="stat-card">
+  <i class="fas fa-dumbbell stat-icon" style="color: #17a2b8;"></i>
+  <span class="stat-number" data-target="{{ stats_liftin.ejercicios_promedio|default:0 }}">0</span>
+  <p class="stat-label">Ejercicios por Sesión</p>
+</div>
+
+<!-- FC Promedio -->
+<div class="stat-card">
+  <i class="fas fa-heartbeat stat-icon" style="color: #dc3545;"></i>
+  <span class="stat-number" data-target="{{ stats_liftin.fc_promedio|default:0 }}">0</span>
+  <p class="stat-label">FC Promedio (BPM)</p>
+</div>
+
     </div>
 
-    <!-- Estadísticas de Liftin -->
-    {% if stats_liftin.total_duracion %}
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-clock text-warning"></i>
-                    <h4 class="mt-2">{{ stats_liftin.total_duracion }} min</h4>
-                    <p class="text-muted mb-0">Tiempo Total (Liftin)</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-heartbeat text-danger"></i>
-                    <h4 class="mt-2">{{ stats_liftin.fc_promedio|floatformat:0|default:"--" }} BPM</h4>
-                    <p class="text-muted mb-0">FC Promedio</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-trophy text-warning"></i>
-                    <h4 class="mt-2">{{ entrenamientos_liftin }}</h4>
-                    <p class="text-muted mb-0">Sesiones Completadas</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    <!-- Sección de logros mejorada -->
+    <div class="logros-section fade-in">
+        <h3 class="logros-title">
+            <span>
+                <i class="fas fa-trophy"></i>
+                Sistema de Logros
+            </span>
+            <span class="nivel-badge">
+                Nivel {{ nivel_actual|default:1 }} - {{ nivel_nombre|default:"Principiante" }}
+            </span>
+        </h3>
 
-    <!-- Gráfico de entrenamientos -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
+        <div class="logros-grid">
+            <div class="logro-card">
+                <div class="logro-icon">
+                    <i class="fas fa-trophy" style="color: #f39c12;"></i>
+                </div>
+                <div>
+                    <div class="logro-number" data-target="{{ puntos_totales|default:0 }}">0</div>
+                    <div class="logro-label">Puntos Totales</div>
+                </div>
+            </div>
+            <div class="logro-card">
+                <div class="logro-icon">
+                    <i class="fas fa-medal" style="color: #e74c3c;"></i>
+                </div>
+                <div>
+                    <div class="logro-number" data-target="{{ logros_desbloqueados|default:0 }}">0</div>
+                    <div class="logro-label">Logros Desbloqueados</div>
+                </div>
+            </div>
+            <div class="logro-card">
+                <div class="logro-icon">
+                    <i class="fas fa-fire" style="color: #e67e22;"></i>
+                </div>
+                <div>
+                    <div class="logro-number" data-target="{{ racha_actual|default:0 }}">0</div>
+                    <div class="logro-label">Racha Actual</div>
+                    <div class="logro-label">Máx: {{ racha_maxima|default:0 }} días</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Progreso de Nivel -->
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="color: #FFD700; font-weight: 600;"><strong>Progreso de Nivel:</strong></span>
+                <span style="color: #FFD700;">{{ progreso_nivel|default:0 }}%</span>
+            </div>
+            <div class="progress-custom">
+                <div class="progress-bar-custom" style="width: {{ progreso_nivel|default:0 }}%;"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <small style="color: rgba(255, 255, 255, 0.7);">{{ puntos_nivel_actual|default:0 }} pts</small>
+                <small style="color: rgba(255, 255, 255, 0.7);">{{ puntos_siguiente_nivel|default:1000 }} pts</small>
+            </div>
+        </div>
+
+        <!-- Logros Recientes y Próximos -->
+        <div class="row mt-4">
+            <div class="col-lg-6">
+                <div class="entrenamientos-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-star"></i>
+                        Logros Recientes
+                    </h4>
+                    {% if logros_recientes %}
+                    {% for logro in logros_recientes %}
+                    <div class="logro-card">
+                        <div class="logro-icon">
+                            <i class="fas fa-trophy" style="color: #f39c12;"></i>
+                        </div>
+                        <div>
+                            <div class="logro-number">+{{ logro.puntos }}</div>
+                            <div class="logro-label">{{ logro.nombre }}</div>
+                            <div class="logro-label">{{ logro.fecha_obtenido|date:"d/m/Y" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-trophy"></i>
+                        <p>¡Importa entrenamientos de Liftin para desbloquear logros!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="entrenamientos-section">
+                    <h4 class="section-title">
                         <i class="fas fa-chart-line"></i>
-                        Entrenamientos por Día (Últimos 30 días)
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartEntrenamientos" height="100"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-pie-chart"></i>
-                        Distribución por Fuente
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartDistribucion" height="150"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Entrenamientos recientes -->
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i>
-                        Entrenamientos Recientes
-                    </h5>
-                    <a href="{% url 'entrenos:lista_entrenamientos' %}" class="btn btn-sm btn-outline-primary">
-                        Ver todos
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Rutina</th>
-                                <th>Fecha</th>
-                                <th>Fuente</th>
-                                <th>Duración</th>
-                                <th>Calorías</th>
-                                <th>Acciones</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for entreno in entrenamientos_recientes %}
-                            <tr>
-                                <td>
-                                    <strong>{{ entreno.cliente.nombre }}</strong>
-                                </td>
-                                <td>{{ entreno.rutina.nombre }}</td>
-                                <td>{{ entreno.fecha|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% if entreno.fuente_datos == 'liftin' %}
-                                    <span class="badge badge-liftin">📱 Liftin</span>
-                                    {% else %}
-                                    <span class="badge badge-manual">✏️ Manual</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if entreno.duracion_minutos %}
-                                    {{ entreno.duracion_formateada }}
-                                    {% else %}
-                                    <span class="text-muted">--</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if entreno.calorias_quemadas %}
-                                    {{ entreno.calorias_quemadas }} kcal
-                                    {% else %}
-                                    <span class="text-muted">--</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{% url 'entrenos:detalle_entrenamiento' entreno.id %}"
-                                       class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                    No hay entrenamientos registrados aún.
-                                    <br>
-                                    <a href="/liftin/importar-completo/" class="btn btn-primary btn-sm mt-2">
-                                        Importar primer entrenamiento
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                        Próximos Logros
+                    </h4>
+                    <div class="logro-card">
+                        <div class="logro-icon">
+                            <i class="fas fa-mobile-alt" style="color: #3498db;"></i>
+                        </div>
+                        <div>
+                            <div class="logro-number">{{ entrenamientos_liftin|default:0 }}/5</div>
+                            <div class="logro-label">Liftin Principiante</div>
+                            <div class="logro-label">5 entrenamientos de Liftin</div>
+                        </div>
+                    </div>
+                    <div class="logro-card">
+                        <div class="logro-icon">
+                            <i class="fas fa-fire" style="color: #e74c3c;"></i>
+                        </div>
+                        <div>
+                            <div class="logro-number">{{ calorias_totales|default:0 }}/300</div>
+                            <div class="logro-label">Quemador Principiante</div>
+                            <div class="logro-label">300 calorías quemadas</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Distribución por Fuente -->
+    <div class="charts-section fade-in">
+        <div class="chart-container">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-pie"></i>
+                Distribución por Fuente
+            </h3>
+            <canvas id="fuenteChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-bar"></i>
+                Resumen
+            </h3>
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; gap: 20px;">
+                <div class="logro-card" style="margin: 0; width: 100%;">
+                    <div class="logro-icon">
+                        <i class="fas fa-calendar-week" style="color: var(--neon-cyan);"></i>
+                    </div>
+                    <div>
+                        <div class="logro-number">{{ total_entrenamientos|default:0 }}</div>
+                        <div class="logro-label">Total Entrenamientos</div>
+                    </div>
+                </div>
+                <div class="logro-card" style="margin: 0; width: 100%;">
+                    <div class="logro-icon">
+                        <i class="fas fa-percentage" style="color: #28a745;"></i>
+                    </div>
+                    <div>
+                        <div class="logro-number">
+                            {% if total_entrenamientos > 0 %}
+                            {{ entrenamientos_liftin|default:0|floatformat:0 }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </div>
+                        <div class="logro-label">Desde Liftin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entrenamientos Recientes -->
+    <div class="entrenamientos-section fade-in">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="fas fa-history"></i>
+                Entrenamientos Recientes
+            </h3>
+            <a href="{% url 'entrenos:lista_entrenamientos' %}" class="btn-cyber btn-secondary">
+                Ver todos
+            </a>
+        </div>
+
+        {% if entrenamientos_recientes %}
+        <div class="table-responsive">
+            <table class="table-cyber">
+                <thead>
+                <tr>
+                    <th><i class="fas fa-user"></i> Cliente</th>
+                    <th><i class="fas fa-dumbbell"></i> Rutina</th>
+                    <th><i class="fas fa-calendar"></i> Fecha</th>
+                    <th><i class="fas fa-source"></i> Fuente</th>
+                    <th><i class="fas fa-clock"></i> Duración</th>
+                    <th><i class="fas fa-weight-hanging"></i> Volumen</th>
+                    <th><i class="fas fa-fire"></i> Calorías</th>
+                    <th><i class="fas fa-cogs"></i> Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for entrenamiento in entrenamientos_recientes %}
+                <tr>
+                    <td><strong>{{ entrenamiento.cliente.nombre }}</strong></td>
+                    <td>{{ entrenamiento.rutina.nombre|default:"Sin rutina" }}</td>
+                    <td>{{ entrenamiento.fecha|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if entrenamiento.fuente_datos == 'liftin' %}
+                        <span class="badge-cyber badge-liftin">
+                                    <i class="fas fa-mobile-alt"></i> Liftin
+                                </span>
+                        {% else %}
+                        <span class="badge-cyber badge-manual">
+                                    <i class="fas fa-edit"></i> Manual
+                                </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entrenamiento.duracion_minutos %}
+                        {{ entrenamiento.duracion_minutos }} min
+                        {% else %}
+                        <span style="color: rgba(255, 255, 255, 0.5);">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entrenamiento.volumen_total_kg %}
+                        {{ entrenamiento.volumen_total_kg }} kg
+                        {% else %}
+                        <span style="color: rgba(255, 255, 255, 0.5);">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entrenamiento.calorias_quemadas %}
+                        {{ entrenamiento.calorias_quemadas }} kcal
+                        {% else %}
+                        <span style="color: rgba(255, 255, 255, 0.5);">--</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-buttons">
+                        <a href="{% url 'entrenos:detalle_entrenamiento' entrenamiento.id %}"
+                           class="btn-sm btn-info" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if entrenamiento.fuente_datos == 'liftin' %}
+                        <a href="{% url 'entrenos:editar_entrenamiento_liftin' entrenamiento.id %}"
+                           class="btn-sm btn-warning" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'entrenos:eliminar_entrenamiento_liftin' entrenamiento.id %}"
+                           class="btn-sm btn-danger" title="Eliminar"
+                           onclick="return confirm('¿Estás seguro de eliminar este entrenamiento?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No hay entrenamientos recientes</h4>
+            <p>Los entrenamientos aparecerán aquí una vez que importes datos desde Liftin.</p>
+            <a href="{% url 'entrenos:importar_liftin_completo' %}" class="btn-cyber">
+                <i class="fas fa-plus"></i> Importar Entrenamiento
+            </a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Selector de cliente mejorado -->
+    <div class="cliente-selector slide-in">
+        <form method="get" class="row align-items-center">
+            <div class="col-md-4">
+                <label for="cliente" class="form-label">
+                    <i class="fas fa-filter"></i> Filtrar por Cliente:
+                </label>
+                <select name="cliente" id="cliente" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos los clientes</option>
+                    {% for cliente in clientes_disponibles %}
+                    <option value="{{ cliente.id }}" {% if cliente_seleccionado and cliente.id == cliente_seleccionado.id %}selected{% endif %}>
+                        {{ cliente.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn-cyber">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+            {% if cliente_seleccionado %}
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Mostrando datos de: <strong>{{ cliente_seleccionado.nombre }}</strong>
+                    <a href="{% url 'entrenos:dashboard_liftin' %}" class="btn-cyber btn-secondary ms-2">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Configurar gráficos
     document.addEventListener('DOMContentLoaded', function() {
-        // Gráfico de entrenamientos por día
-        const ctx1 = document.getElementById('chartEntrenamientos').getContext('2d');
+        console.log('Dashboard Liftin Cyberpunk cargado correctamente');
 
-        // Datos de ejemplo (en producción vendrían del backend)
-        const labels = [];
-        const dataLiftin = [];
-        const dataManual = [];
+        // Datos para el gráfico
+        const entrenamientosLiftin = {{ entrenamientos_liftin|default:0 }};
+        const entrenamientosManual = {{ entrenamientos_manual|default:0 }};
 
-        // Generar últimos 30 días
-        for (let i = 29; i >= 0; i--) {
-            const fecha = new Date();
-            fecha.setDate(fecha.getDate() - i);
-            labels.push(fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }));
-            dataLiftin.push(Math.floor(Math.random() * 3));
-            dataManual.push(Math.floor(Math.random() * 2));
-        }
+        console.log('Datos gráfico:', { liftin: entrenamientosLiftin, manual: entrenamientosManual });
 
-        new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Liftin',
-                    data: dataLiftin,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.4
-                }, {
-                    label: 'Manual',
-                    data: dataManual,
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
+        // Gráfico de distribución por fuente
+        const chartElement = document.getElementById('fuenteChart');
+        if (chartElement) {
+            const ctx = chartElement.getContext('2d');
 
-        // Gráfico de distribución
-        const ctx2 = document.getElementById('chartDistribucion').getContext('2d');
-        new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
+            const data = {
                 labels: ['Liftin', 'Manual'],
                 datasets: [{
-                    data: [{{ entrenamientos_liftin }}, {{ entrenamientos_manual }}],
-                    backgroundColor: ['#007bff', '#28a745']
+                    data: [entrenamientosLiftin, entrenamientosManual],
+                    backgroundColor: [
+                        'rgba(0, 123, 255, 0.8)',
+                        'rgba(40, 167, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(0, 123, 255, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 2,
+                    hoverBackgroundColor: [
+                        'rgba(0, 123, 255, 0.9)',
+                        'rgba(40, 167, 69, 0.9)'
+                    ]
                 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+            };
+
+            const config = {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                color: '#ffffff'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                }
+                            },
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#00ffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgba(0, 255, 255, 0.5)',
+                            borderWidth: 2
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000
+                    },
+                    cutout: '60%'
                 }
+            };
+
+            try {
+                new Chart(ctx, config);
+                console.log('Gráfico creado exitosamente');
+            } catch (error) {
+                console.error('Error al crear gráfico:', error);
+            }
+        } else {
+            console.error('Elemento canvas no encontrado');
+        }
+
+        // Animación de números
+        function animateNumber(element, finalNumber, duration = 1500) {
+            const startNumber = 0;
+            const increment = finalNumber / (duration / 16);
+            let currentNumber = startNumber;
+
+            const timer = setInterval(() => {
+                currentNumber += increment;
+                if (currentNumber >= finalNumber) {
+                    currentNumber = finalNumber;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(currentNumber);
+            }, 16);
+        }
+
+        // Animar números de estadísticas
+        document.querySelectorAll('.stat-number').forEach(element => {
+            const target = element.getAttribute('data-target');
+            const finalNumber = parseInt(target);
+            if (!isNaN(finalNumber) && finalNumber > 0) {
+                element.textContent = '0';
+                setTimeout(() => {
+                    animateNumber(element, finalNumber);
+                }, 200);
+            } else {
+                element.textContent = '0';
             }
         });
+
+        // Animar números de logros
+        document.querySelectorAll('.logro-number').forEach(element => {
+            const target = element.getAttribute('data-target');
+            const finalNumber = parseInt(target);
+            if (!isNaN(finalNumber) && finalNumber > 0) {
+                element.textContent = '0';
+                setTimeout(() => {
+                    animateNumber(element, finalNumber, 1000);
+                }, 400);
+            } else if (element.textContent && !element.textContent.includes('/')) {
+                element.textContent = '0';
+            }
+        });
+
+        // Efecto hover en las cards
+        document.querySelectorAll('.stat-card, .logro-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Confirmación para botones de eliminar
+        document.querySelectorAll('.btn-danger').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!confirm('¿Estás seguro de que quieres eliminar este entrenamiento?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        // Loading state para formularios
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const button = this.querySelector('button[type="submit"]');
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+                }
+            });
+        });
+
+        console.log('Todas las funciones JavaScript inicializadas correctamente');
     });
 </script>
-</body>
-</html>
+{% endblock %}
 

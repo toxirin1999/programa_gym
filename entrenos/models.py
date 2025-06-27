@@ -170,11 +170,8 @@ class EjercicioLiftinDetallado(models.Model):
     """
     Modelo para almacenar los ejercicios específicos de Liftin con todos sus detalles
     """
-    entreno = models.ForeignKey(
-        EntrenoRealizado,
-        on_delete=models.CASCADE,
-        related_name='ejercicios_liftin'
-    )
+    entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE,
+                                related_name='ejercicios_liftin_detallados')
 
     # Información del ejercicio
     nombre_ejercicio = models.CharField(
@@ -400,3 +397,155 @@ class EstadoEmocional(models.Model):
     class Meta:
         verbose_name = "Estado Emocional"
         verbose_name_plural = "Estados Emocionales"
+
+
+# 🔧 CAMBIO MÍNIMO 1: AGREGAR AL FINAL DE models.py
+
+# ============================================================================
+# AGREGAR ESTE CÓDIGO AL FINAL DE TU ARCHIVO entrenos/models.py
+# ============================================================================
+
+class EjercicioLiftin(models.Model):
+    """
+    Modelo simple para guardar ejercicios individuales de Liftin
+    """
+    entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='ejercicios_liftin')
+
+    # Información básica del ejercicio
+    nombre = models.CharField(
+        max_length=200,
+        help_text="Nombre del ejercicio (ej: Prensa, Curl Femoral Tumbado)"
+    )
+
+    orden = models.PositiveIntegerField(
+        default=1,
+        help_text="Orden del ejercicio en la rutina"
+    )
+
+    # Peso y repeticiones como aparecen en Liftin
+    peso_texto = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Peso como aparece en Liftin (ej: 268.5 kg, PC, 90-100 kg)"
+    )
+
+    repeticiones_texto = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Repeticiones como aparecen en Liftin (ej: 3x5-10, 3x10-12)"
+    )
+
+    # Estado del ejercicio
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ('completado', '✓ Completado'),
+            ('fallado', '✗ Fallado'),
+            ('nuevo', 'N Nuevo'),
+            ('parcial', '~ Parcial'),
+        ],
+        default='completado'
+    )
+
+    # Metadatos
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre}: {self.peso_texto}, {self.repeticiones_texto}"
+
+    class Meta:
+        ordering = ['entreno', 'orden']
+        verbose_name = "Ejercicio de Liftin"
+        verbose_name_plural = "Ejercicios de Liftin"
+
+
+# ============================================================================
+# TAMBIÉN AGREGAR ESTA FUNCIÓN HELPER AL FINAL
+# ============================================================================
+
+def activar_logros_liftin(entreno):
+    """
+    Función simple para activar logros basados en datos de Liftin
+    """
+    from logros.models import LogroDesbloqueado
+
+    cliente = entreno.cliente
+    logros_nuevos = []
+
+    # Logro: Primera importación de Liftin
+    if not LogroDesbloqueado.objects.filter(
+            cliente=cliente,
+            nombre="Primera Importación Liftin"
+    ).exists():
+        logro = LogroDesbloqueado.objects.create(
+            cliente=cliente,
+            nombre="Primera Importación Liftin",
+            descripcion="¡Has importado tu primer entrenamiento desde Liftin!"
+        )
+        logros_nuevos.append(logro)
+
+    # Logro: Entrenamiento de más de 1 hora
+    if entreno.duracion_minutos and entreno.duracion_minutos >= 60:
+        if not LogroDesbloqueado.objects.filter(
+                cliente=cliente,
+                nombre="Entrenamiento Maratón"
+        ).exists():
+            logro = LogroDesbloqueado.objects.create(
+                cliente=cliente,
+                nombre="Entrenamiento Maratón",
+                descripcion="¡Has completado un entrenamiento de más de 1 hora!"
+            )
+            logros_nuevos.append(logro)
+
+    # Logro: Más de 300 calorías
+    if entreno.calorias_quemadas and entreno.calorias_quemadas >= 300:
+        if not LogroDesbloqueado.objects.filter(
+                cliente=cliente,
+                nombre="Quemador de Calorías"
+        ).exists():
+            logro = LogroDesbloqueado.objects.create(
+                cliente=cliente,
+                nombre="Quemador de Calorías",
+                descripcion="¡Has quemado más de 300 calorías en un entrenamiento!"
+            )
+            logros_nuevos.append(logro)
+
+    # Logro: Volumen alto (más de 10K kg)
+    if entreno.volumen_total_kg and entreno.volumen_total_kg >= 10000:
+        if not LogroDesbloqueado.objects.filter(
+                cliente=cliente,
+                nombre="Levantador Pesado"
+        ).exists():
+            logro = LogroDesbloqueado.objects.create(
+                cliente=cliente,
+                nombre="Levantador Pesado",
+                descripcion="¡Has levantado más de 10,000 kg en un entrenamiento!"
+            )
+            logros_nuevos.append(logro)
+
+    return logros_nuevos
+
+
+# models.py
+
+class RegistroWhoop(models.Model):
+    cliente = models.ForeignKey(User, on_delete=models.CASCADE)  # o Cliente si tienes modelo propio
+    fecha = models.DateField(default=timezone.now)
+    strain = models.DecimalField(max_digits=4, decimal_places=1)
+    recovery = models.PositiveSmallIntegerField(help_text="Porcentaje")
+    horas_sueno = models.DurationField()
+    rhr = models.PositiveIntegerField(null=True, blank=True)  # Frecuencia cardíaca en reposo
+    hrv = models.PositiveIntegerField(null=True, blank=True)  # Variabilidad de FC
+    sueno_necesario = models.DurationField()
+    sleep_performance = models.PositiveSmallIntegerField(help_text="Porcentaje")
+    horas_vs_necesidad = models.FloatField(null=True, blank=True)
+    regularidad_sueno = models.FloatField(null=True, blank=True)
+    eficiencia_sueno = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['cliente', 'fecha']
+
+    def __str__(self):
+        return f"Whoop de {self.cliente} - {self.fecha}"

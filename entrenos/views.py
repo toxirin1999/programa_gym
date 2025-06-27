@@ -67,6 +67,8 @@ from .models import EntrenoRealizado, DatosLiftinDetallados
 # from .forms import ImportarLiftinForm, BuscarEntrenamientosForm, ExportarDatosForm
 from clientes.models import Cliente
 
+from django.db.models import Avg
+
 
 @login_required
 def dashboard_liftin(request):
@@ -2832,8 +2834,290 @@ def preview_importacion(request):
 
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
+
 # --- FIN DE LA VISTA resumen_entreno ---
 
-# (El resto de tus vistas y funciones como entrenos_filtrados, historial_entrenos,
-# crear_entreno, adaptar_plan_personalizado, etc. continúan aquí)
-# ...
+
+from .models import RegistroWhoop
+from .forms import RegistroWhoopForm
+
+from django.shortcuts import redirect
+
+@login_required
+def registrar_whoop(request):
+    if request.method == 'POST':
+        form = RegistroWhoopForm(request.POST)
+        if form.is_valid():
+            fecha_hoy = timezone.now().date()
+            registro, creado = RegistroWhoop.objects.get_or_create(
+                cliente=request.user,
+                fecha=fecha_hoy,
+                defaults=form.cleaned_data
+            )
+
+            if not creado:
+                # Si ya existe, actualiza los valores
+                for campo, valor in form.cleaned_data.items():
+                    setattr(registro, campo, valor)
+
+            # Cálculo automático
+            if registro.horas_sueno and registro.sueno_necesario:
+                durmio = registro.horas_sueno.total_seconds() / 3600
+                necesario = registro.sueno_necesario.total_seconds() / 3600
+                registro.horas_vs_necesidad = round((durmio / necesario) * 100, 1)
+
+            ultimos_7 = RegistroWhoop.objects.filter(
+                cliente=request.user,
+                fecha__gte=timezone.now().date() - timedelta(days=6)
+            )
+            registro.regularidad_sueno = ultimos_7.aggregate(Avg('sleep_performance'))['sleep_performance__avg'] or 0
+            registro.eficiencia_sueno = ultimos_7.aggregate(Avg('recovery'))['recovery__avg'] or 0
+
+            registro.save()
+            return redirect('entrenos:tarjeta_whoop')
+    else:
+        form = RegistroWhoopForm()
+    return render(request, 'entrenos/registro_whoop.html', {'form': form})
+
+
+# views.py
+@login_required
+def editar_whoop(request, pk):
+    registro = get_object_or_404(RegistroWhoop, pk=pk, cliente=request.user)
+    if request.method == 'POST':
+        form = RegistroWhoopForm(request.POST, instance=registro)
+        if form.is_valid():
+            registro = form.save(commit=False)
+            # Cálculo de horas_vs_necesidad
+            if registro.horas_sueno and registro.sueno_necesario:
+                durmio = registro.horas_sueno.total_seconds() / 3600
+                necesario = registro.sueno_necesario.total_seconds() / 3600
+                registro.horas_vs_necesidad = round((durmio / necesario) * 100, 1)
+
+            # Cálculo de regularidad y eficiencia (últimos 7 días hasta la fecha del registro)
+            ultimos_7 = RegistroWhoop.objects.filter(
+                cliente=registro.cliente,
+                fecha__gte=registro.fecha - timedelta(days=6),
+                fecha__lte=registro.fecha
+            )
+            registro.regularidad_sueno = ultimos_7.aggregate(Avg('sleep_performance'))['sleep_performance__avg'] or 0
+            registro.eficiencia_sueno = ultimos_7.aggregate(Avg('recovery'))['recovery__avg'] or 0
+
+            # recalcular aquí los campos automáticos si quieres
+            registro.save()
+            return redirect('entrenos:tarjeta_whoop')
+    else:
+        form = RegistroWhoopForm(instance=registro)
+    return render(request, 'entrenos/registro_whoop.html', {'form': form, 'editar': True})
+
+
+from clientes.models import Cliente
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.utils import timezone
+from django.db.models import Avg
+from datetime import timedelta
+from .models import RegistroWhoop
+from clientes.models import Cliente
+from .utils import analizar_entreno_whoop  # Asegúrate de tener esta función en utils
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.utils import timezone
+from django.db.models import Avg
+from datetime import timedelta
+from .models import RegistroWhoop
+from clientes.models import Cliente
+from .utils import analizar_entreno_whoop  # Asegúrate de tener este archivo creado
+
+
+@login_required
+def tarjeta_whoop(request):
+    # Datos del usuario
+    registro = RegistroWhoop.objects.filter(cliente=request.user).order_by('-fecha').first()
+    cliente = Cliente.objects.filter(user=request.user).first()
+    registros_whoop = RegistroWhoop.objects.filter(cliente=request.user).order_by('-fecha')
+
+    # Consejo diario si hay registro
+    if registro:
+        consejo_entreno, color_entreno = analizar_entreno_whoop(registro)
+    else:
+        consejo_entreno = None
+        color_entreno = None
+
+    # Últimos 7 días
+    desde_fecha = timezone.now().date() - timedelta(days=6)
+    ultimos_dias = registros_whoop.filter(fecha__gte=desde_fecha)
+
+    # Cálculo de promedios
+    strain_medio = ultimos_dias.aggregate(Avg('strain'))['strain__avg'] or 0
+    recovery_medio = ultimos_dias.aggregate(Avg('recovery'))['recovery__avg'] or 0
+    horas_sueno_media = ultimos_dias.aggregate(Avg('horas_sueno'))['horas_sueno__avg'] or 0
+
+    # Análisis inteligente semanal de Joi
+    def analizar_estado_semanal(strain, recovery, sueno_horas):
+        # Strain
+        if strain < 7:
+            strain_info = "🔵 Baja carga <7 → Puedes entrenar más fuerte o añadir volumen."
+        elif 7 <= strain <= 10:
+            strain_info = "🟢 Óptima carga estás entre 7 y 10 → Buen equilibrio esfuerzo-recuperación."
+        else:
+            strain_info = "🔴 Alta carga → Riesgo de fatiga. Cuida el sueño y evita sobreentreno."
+
+        # Recovery
+        if recovery < 60:
+            recovery_info = "🔴 Recuperación pobre → Reduce la intensidad y prioriza el descanso."
+        elif 60 <= recovery <= 80:
+            recovery_info = "🟡 Recuperación aceptable → Controla la intensidad día a día."
+        else:
+            recovery_info = "🟢 Excelente recuperación → Ideal para progresar con fuerza/hipertrofia."
+
+        # Sueño
+        if sueno_horas < 6:
+            sueno_info = "🔴 Sueño insuficiente → Aumenta el riesgo de fatiga hormonal."
+        elif 6 <= sueno_horas < 7:
+            sueno_info = "🟡 Sueño aceptable si compensas con siestas o descansos."
+        elif 7 <= sueno_horas <= 8:
+            sueno_info = "🟢 Sueño óptimo → Buen soporte para progresar."
+        else:
+            sueno_info = "💚 Sueño ideal → Perfecto para fases de volumen o alta intensidad."
+
+        # Conclusión combinada
+        if strain > 10 and recovery < 60:
+            resumen = "⚠️ Posible sobreentreno. Reduce intensidad y prioriza descanso y sueño profundo."
+        elif strain < 7 and recovery > 80:
+            resumen = "💪 Estás listo para un ciclo fuerte. Momento ideal para subir peso o volumen."
+        elif 7 <= strain <= 10 and 60 <= recovery <= 80 and sueno_horas >= 7:
+            resumen = "📈 Equilibrio sólido. Puedes seguir progresando con control."
+        elif recovery > 80 and sueno_horas > 7:
+            resumen = "🌟 Ventana de oro → Aprovecha para progresar en fuerza o hipertrofia."
+        else:
+            resumen = "🌀 Escucha tu cuerpo y ajusta según sensaciones. No hay señales de alarma."
+
+        return strain_info, recovery_info, sueno_info, resumen
+
+    # Ejecutar análisis
+    if hasattr(horas_sueno_media, 'total_seconds'):
+        sueno_horas_float = horas_sueno_media.total_seconds() / 3600
+    else:
+        sueno_horas_float = float(horas_sueno_media) / 3600
+
+    strain_i, recovery_i, sueno_i, resumen_joi = analizar_estado_semanal(
+        strain_medio, recovery_medio, sueno_horas_float
+    )
+    valores = ultimos_dias.aggregate(
+        necesidad=Avg('horas_vs_necesidad'),
+        regularidad=Avg('regularidad_sueno'),
+        eficiencia=Avg('eficiencia_sueno'),
+    )
+
+    def interpretar_metrica(valor, optimo, suficiente, tipo="↑ bueno / ↓ malo"):
+        if valor is None:
+            return "Sin datos"
+
+        if tipo == "↑ bueno / ↓ malo":
+            if valor >= optimo:
+                return "🟢 Óptimo"
+            elif valor >= suficiente:
+                return "🟡 Suficiente"
+            else:
+                return "🔴 Deficiente"
+        elif tipo == "↓ bueno / ↑ malo":
+            if valor < optimo:
+                return "🟢 Óptimo"
+            elif valor < suficiente:
+                return "🟡 Suficiente"
+            else:
+                return "🔴 Deficiente"
+
+    interpretaciones = {
+        'horas_vs_necesidad': interpretar_metrica(valores['necesidad'], 85, 70),
+        'regularidad_sueno': interpretar_metrica(valores['regularidad'], 80, 70),
+        'eficiencia_sueno': interpretar_metrica(valores['eficiencia'], 85, 70),
+    }
+    return render(request, 'entrenos/tarjeta_whoop.html', {
+        'cliente': cliente,
+        'user': request.user,
+        'registro': registro,
+        'registros_whoop': registros_whoop,
+        'consejo_entreno': consejo_entreno,
+        'color_entreno': color_entreno,
+        'strain_medio': strain_medio,
+        'recovery_medio': recovery_medio,
+        'horas_sueno_media': horas_sueno_media,
+        'analisis_strain': strain_i,
+        'analisis_recovery': recovery_i,
+        'analisis_sueno': sueno_i,
+        'conclusion_joi': resumen_joi,
+        'interpretaciones': interpretaciones,
+    })
+
+
+def analizar_entreno_whoop(registro):
+    hrv = registro.hrv
+    rhr = registro.rhr
+    recovery = registro.recovery
+    horas_sueno = registro.horas_sueno.total_seconds() / 3600
+    strain = registro.strain
+
+    # Clasificaciones
+    if hrv >= 90:
+        hrv_estado = "alta"
+    elif hrv >= 70:
+        hrv_estado = "media"
+    else:
+        hrv_estado = "baja"
+
+    if rhr <= 55:
+        rhr_estado = "bajo"
+    elif rhr <= 65:
+        rhr_estado = "estable"
+    else:
+        rhr_estado = "alto"
+
+    # Consejo principal
+    if hrv_estado == "alta" and rhr_estado == "bajo" and recovery >= 66:
+        consejo = "🟢 Entrenamiento intenso recomendado. Tu cuerpo está preparado para darlo todo."
+        color = "green"
+    elif hrv_estado == "media" and rhr_estado == "estable":
+        consejo = "🟡 Entrenamiento moderado. Puedes rendir bien, pero no exijas al máximo."
+        color = "yellow"
+    elif hrv_estado == "baja" and rhr_estado == "alto":
+        consejo = "🔴 Señales de fatiga o estrés. Mejor haz solo movilidad o descansa."
+        color = "red"
+    else:
+        consejo = "⚠️ Revisa cómo te sientes. Hoy podría ser día de recuperación activa."
+        color = "gray"
+
+    # Ajustes adicionales
+    if horas_sueno < 6:
+        consejo += " 💤 Dormiste poco. Ajusta el entreno o enfócate en movilidad."
+    if strain > 15:
+        consejo += " ⚠️ Ayer tuviste un día exigente. Considera reducir intensidad hoy."
+
+    # Análisis explicativo RHR
+    if rhr > 60:
+        explicacion_rhr = "🔴 RHR alto → Puede indicar fatiga, falta de sueño, estrés o enfermedad."
+    else:
+        explicacion_rhr = "🟢 RHR bajo → Buen estado de forma y recuperación."
+
+    # Análisis explicativo HRV
+    if hrv > 69:
+        explicacion_hrv = "🧠 HRV alto → Sistema nervioso relajado y listo."
+    else:
+        explicacion_hrv = "⚠️ HRV bajo → Sistema estresado o exigido."
+
+    # Comparativa cruzada
+    if hrv > 69 and rhr <= 60:
+        mensaje_cruce = "🔵 HRV alto + RHR bajo → Entrenamiento intenso OK"
+    elif 60 < rhr <= 65 and 50 < hrv <= 69:
+        mensaje_cruce = "🟡 HRV medio + RHR estable → Entrenamiento moderado"
+    elif hrv <= 50 and rhr > 65:
+        mensaje_cruce = "🔴 HRV bajo + RHR alto → Mejor descanso o solo movilidad"
+    else:
+        mensaje_cruce = "⚪ Estado mixto → Escucha a tu cuerpo y ajusta según te sientas"
+
+    # Junta todo
+    consejo_detallado = f"{consejo}\n\n{explicacion_rhr}\n{explicacion_hrv}\n{mensaje_cruce}"
+    return consejo_detallado, color
