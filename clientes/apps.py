@@ -1,6 +1,6 @@
-from django.apps import AppConfig  # ✅ IMPORTACIÓN NECESARIA
+from django.apps import AppConfig
 
 class ClientesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'clientes'
-    label = 'clientes_app'  # ✅ Esto evita el conflicto anterior
+    name = 'clientes.apps'         # Ruta completa del módulo
+    label = 'clientes_app'         # Único
