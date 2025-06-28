@@ -1,4 +1,4 @@
-# Archivo: entrenos/admin.py - VERSIÓN ACTUALIZADA
+# Archivo: entrenos/admin.py - VERSIÓN CORREGIDA
 
 from django.contrib import admin
 from django.utils.html import format_html
@@ -65,10 +65,9 @@ class EntrenoRealizadoAdmin(admin.ModelAdmin):
         })
     )
 
-    readonly_fields = ['fecha_importacion']
+    readonly_fields = ['fecha', 'fecha_importacion']  # ✅ corregido aquí
 
     def fuente_datos_badge(self, obj):
-        """Muestra un badge colorido para la fuente de datos"""
         if obj.fuente_datos == 'liftin':
             return format_html(
                 '<span style="background-color: #007bff; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">📱 LIFTIN</span>'
@@ -81,7 +80,6 @@ class EntrenoRealizadoAdmin(admin.ModelAdmin):
     fuente_datos_badge.short_description = 'Fuente'
 
     def duracion_formateada(self, obj):
-        """Muestra la duración en formato legible"""
         return obj.duracion_formateada
 
     duracion_formateada.short_description = 'Duración'
@@ -89,14 +87,12 @@ class EntrenoRealizadoAdmin(admin.ModelAdmin):
     actions = ['marcar_como_liftin', 'marcar_como_manual']
 
     def marcar_como_liftin(self, request, queryset):
-        """Acción para marcar entrenamientos como provenientes de Liftin"""
         updated = queryset.update(fuente_datos='liftin')
         self.message_user(request, f'{updated} entrenamientos marcados como de Liftin.')
 
     marcar_como_liftin.short_description = "Marcar como datos de Liftin"
 
     def marcar_como_manual(self, request, queryset):
-        """Acción para marcar entrenamientos como manuales"""
         updated = queryset.update(fuente_datos='manual')
         self.message_user(request, f'{updated} entrenamientos marcados como manuales.')
 
@@ -113,17 +109,8 @@ class DetalleEjercicioRealizadoAdmin(admin.ModelAdmin):
         'peso_kg',
         'completado'
     ]
-
-    list_filter = [
-        'completado',
-        'ejercicio',
-        'entreno__fuente_datos'
-    ]
-
-    search_fields = [
-        'ejercicio__nombre',
-        'entreno__cliente__nombre'
-    ]
+    list_filter = ['completado', 'ejercicio', 'entreno__fuente_datos']
+    search_fields = ['ejercicio__nombre', 'entreno__cliente__nombre']
 
 
 @admin.register(SerieRealizada)
@@ -136,17 +123,8 @@ class SerieRealizadaAdmin(admin.ModelAdmin):
         'peso_kg',
         'completado'
     ]
-
-    list_filter = [
-        'completado',
-        'ejercicio',
-        'entreno__fuente_datos'
-    ]
-
-    search_fields = [
-        'ejercicio__nombre',
-        'entreno__cliente__nombre'
-    ]
+    list_filter = ['completado', 'ejercicio', 'entreno__fuente_datos']
+    search_fields = ['ejercicio__nombre', 'entreno__cliente__nombre']
 
 
 @admin.register(DatosLiftinDetallados)
@@ -158,19 +136,8 @@ class DatosLiftinDetalladosAdmin(admin.ModelAdmin):
         'sincronizado_health',
         'fecha_creacion'
     ]
-
-    list_filter = [
-        'sincronizado_health',
-        'version_liftin',
-        'dispositivo_origen',
-        'fecha_creacion'
-    ]
-
-    search_fields = [
-        'entreno__cliente__nombre',
-        'health_workout_uuid',
-        'version_liftin'
-    ]
+    list_filter = ['sincronizado_health', 'version_liftin', 'dispositivo_origen', 'fecha_creacion']
+    search_fields = ['entreno__cliente__nombre', 'health_workout_uuid', 'version_liftin']
 
     fieldsets = (
         ('Entrenamiento Asociado', {
@@ -205,23 +172,9 @@ class DatosLiftinDetalladosAdmin(admin.ModelAdmin):
 
 @admin.register(LogroDesbloqueado)
 class LogroDesbloqueadoAdmin(admin.ModelAdmin):
-    list_display = [
-        'cliente',
-        'nombre',
-        'descripcion',
-        'fecha'
-    ]
-
-    list_filter = [
-        'fecha',
-        'cliente'
-    ]
-
-    search_fields = [
-        'cliente__nombre',
-        'nombre',
-        'descripcion'
-    ]
+    list_display = ['cliente', 'nombre', 'descripcion', 'fecha']
+    list_filter = ['fecha', 'cliente']
+    search_fields = ['cliente__nombre', 'nombre', 'descripcion']
 
 
 # Personalización del admin site

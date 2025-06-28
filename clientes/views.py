@@ -3,6 +3,7 @@ from django.db.models import Count, Avg, Max
 
 from .models import Cliente
 from .forms import BitacoraDiariaForm
+from entrenos.models import RegistroWhoop
 
 from .forms import SugerenciaForm
 from joi.models import RecuerdoEmocional
@@ -139,6 +140,8 @@ from .models import BitacoraDiaria
 
 from datetime import timedelta, date
 from clientes.models import BitacoraDiaria
+from logros.utils import obtener_datos_logros  # o como se llame tu función
+from entrenos.views import analizar_entreno_whoop
 
 
 @login_required
@@ -628,10 +631,70 @@ def panel_cliente(request):
 
     # Datos principales
     entrenos = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha')[:3]
+    entrenamientos_recientes = entrenos  # alias para el template
+
     emociones = EstadoEmocional.objects.filter(user=usuario).order_by('-fecha')[:5]
     recuerdo = RecuerdoEmocional.objects.filter(user=usuario).order_by('-fecha').first()
     logros = LogroUsuario.objects.filter(perfil__cliente=cliente, completado=True)
+    registro_whoop = RegistroWhoop.objects.filter(cliente=usuario).order_by('-fecha').first()
+    # Análisis semanal Whoop
+    registros_semanales = RegistroWhoop.objects.filter(
+        cliente=usuario, fecha__gte=timezone.now().date() - timedelta(days=6)
+    )
 
+    strain_medio = registros_semanales.aggregate(Avg('strain'))['strain__avg'] or 0
+    recovery_medio = registros_semanales.aggregate(Avg('recovery'))['recovery__avg'] or 0
+    horas_sueno_media = registros_semanales.aggregate(Avg('horas_sueno'))['horas_sueno__avg'] or 0
+
+    if hasattr(horas_sueno_media, 'total_seconds'):
+        sueno_horas_float = horas_sueno_media.total_seconds() / 3600
+    else:
+        sueno_horas_float = float(horas_sueno_media) / 3600
+
+    def analizar_estado_semanal(strain, recovery, sueno_horas):
+        if strain < 7:
+            strain_info = "🔵 Baja carga → Puedes entrenar más fuerte o añadir volumen."
+        elif 7 <= strain <= 10:
+            strain_info = "🟢 Óptima carga → Buen equilibrio esfuerzo-recuperación."
+        else:
+            strain_info = "🔴 Alta carga → Riesgo de fatiga. Cuida el sueño y evita sobreentreno."
+
+        if recovery < 60:
+            recovery_info = "🔴 Recuperación pobre → Reduce la intensidad y prioriza el descanso."
+        elif 60 <= recovery <= 80:
+            recovery_info = "🟡 Recuperación aceptable → Controla la intensidad día a día."
+        else:
+            recovery_info = "🟢 Excelente recuperación → Ideal para progresar con fuerza/hipertrofia."
+
+        if sueno_horas < 6:
+            sueno_info = "🔴 Sueño insuficiente → Aumenta el riesgo de fatiga hormonal."
+        elif 6 <= sueno_horas < 7:
+            sueno_info = "🟡 Sueño aceptable si compensas con siestas o descansos."
+        elif 7 <= sueno_horas <= 8:
+            sueno_info = "🟢 Sueño óptimo → Buen soporte para progresar."
+        else:
+            sueno_info = "💚 Sueño ideal → Perfecto para fases de volumen o alta intensidad."
+
+        if strain > 10 and recovery < 60:
+            resumen = "⚠️ Posible sobreentreno. Reduce intensidad y prioriza descanso y sueño profundo."
+        elif strain < 7 and recovery > 80:
+            resumen = "💪 Estás listo para un ciclo fuerte. Momento ideal para subir peso o volumen."
+        elif 7 <= strain <= 10 and 60 <= recovery <= 80 and sueno_horas >= 7:
+            resumen = "📈 Equilibrio sólido. Puedes seguir progresando con control."
+        elif recovery > 80 and sueno_horas > 7:
+            resumen = "🌟 Ventana de oro → Aprovecha para progresar en fuerza o hipertrofia."
+        else:
+            resumen = "🌀 Escucha tu cuerpo y ajusta según sensaciones. No hay señales de alarma."
+
+        return resumen
+
+    conclusion_joi = analizar_estado_semanal(strain_medio, recovery_medio, sueno_horas_float)
+
+    datos_logros = obtener_datos_logros(cliente)
+    if registro_whoop:
+        consejo_entreno, color_entreno = analizar_entreno_whoop(registro_whoop)
+    else:
+        consejo_entreno, color_entreno = "Sin datos recientes de Whoop.", "gray"
     # Joi
     estado_joi = obtener_estado_joi(usuario)
     frase_forma_joi = frase_cambio_forma_joi(estado_joi)
@@ -736,6 +799,18 @@ def panel_cliente(request):
     )
     emocion_texto = emocion_frecuente['emocion_dia'] if emocion_frecuente else "—"
 
+    def convertir_a_horas_y_minutos(valor):
+        try:
+            if hasattr(valor, 'total_seconds'):
+                total_minutos = int(valor.total_seconds() // 60)
+            else:
+                total_minutos = int(float(valor) * 60)
+            horas = total_minutos // 60
+            minutos = total_minutos % 60
+            return f"{horas}:{minutos:02d}"
+        except Exception:
+            return "–:–"
+
     informe_joi = {
         'promedios': {k: round(v or 0, 1) for k, v in promedios.items()},
         'reflexion_destacada': reflexion_destacada or "—",
@@ -750,11 +825,15 @@ def panel_cliente(request):
         'emociones_lista': emociones_lista,
         'recuerdo': recuerdo,
         'logros': logros,
+        'conclusion_joi': conclusion_joi,
+        'datos_logros': datos_logros,
         'frase_bitacora': request._messages._queued_messages[0].message if request._messages._queued_messages else None,
         'estado_joi': estado_joi,
         'frase_forma_joi': frase_forma_joi,
         'frase_extra_joi': frase_extra_joi,
+        'registro_whoop': registro_whoop,
         'frase_recaida': frase_recaida,
+        'entrenamientos_recientes': entrenamientos_recientes,
         'dias_emocionales': dias_emocionales,
         'entrenos_count': EntrenoRealizado.objects.filter(cliente=cliente).count(),
         'carga_total': round(carga_total),
@@ -769,8 +848,13 @@ def panel_cliente(request):
         'datos_peso': datos_peso,
         'cambios_peso': cambios_peso,
         'orden_peso': orden_peso,
+        'tiempo_sueno': convertir_a_horas_y_minutos(registro_whoop.horas_sueno) if registro_whoop else None,
+        'tiempo_sueno_necesario': convertir_a_horas_y_minutos(
+            registro_whoop.sueno_necesario) if registro_whoop else None,
         'comentario_joi': comentario_joi,
         'informe_joi': informe_joi,
+        'consejo_entreno': consejo_entreno,
+        'color_entreno': color_entreno,
         'biceps_actual': biceps_actual,
         'datos_biceps': datos_biceps,
         'cambios_biceps': cambios_biceps,
@@ -1624,7 +1708,7 @@ def editar_cliente(request, cliente_id):
                 cliente.user = user
 
             form.save()
-            return redirect('clientes_index')
+            redirect('lista_clientes')
     else:
         form = ClienteForm(instance=cliente)
 

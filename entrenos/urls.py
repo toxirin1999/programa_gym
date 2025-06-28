@@ -1,55 +1,75 @@
-# Archivo: entrenos/urls.py - URLs ACTUALIZADAS CON LIFTIN COMPLETO
-from . import views_liftin
+# ============================================================================
+# URLs CORREGIDAS PARA LIFTIN - entrenos/urls.py
+# ============================================================================
+
+# REEMPLAZAR el contenido de entrenos/urls.py con este código:
+
 from django.urls import path
 from . import views
-from . import views
-from .views_liftin import (
-    importar_liftin_completo,
-    importar_liftin_basico,
-    buscar_entrenamientos_liftin,
-    # ... otras vistas
-)
+from . import views_liftin
 
 app_name = 'entrenos'
 
 urlpatterns = [
-    # URLs originales (mantener compatibilidad)
+    # ============================================================================
+    # URLs ORIGINALES (mantener tal como están)
+    # ============================================================================
     path('', views.entrenos_filtrados, name='entrenos_filtrados'),
     path('resumen/<str:rango>/', views.entrenos_filtrados, name='entrenos_filtrados'),
     path('historial/', views.historial_entrenos, name='historial_entrenos'),
     path('eliminar/<int:pk>/', views.eliminar_entreno, name='eliminar_entreno'),
     path('resumen/<int:entreno_id>/', views.resumen_entreno, name='resumen_entreno'),
-    # path('entreno-anterior/<int:cliente_id>/<int:rutina_id>/', views.entreno_anterior, name='entreno_anterior'),
+    path('whoop/editar/<int:pk>/', views.editar_whoop, name='editar_whoop'),
 
-    # URLs de Liftin - Dashboard y funcionalidad básica
-    path('liftin/', views.dashboard_liftin, name='dashboard_liftin'),
-    path('liftin/importar/', views.importar_liftin, name='importar_liftin'),
-    path('liftin/estadisticas/', views.estadisticas_liftin, name='estadisticas_liftin'),
+    # ============================================================================
+    # URLs DE LIFTIN CORREGIDAS
+    # ============================================================================
 
-    # URLs NUEVAS para Liftin Completo
+    # Dashboard principal de Liftin
+    path('liftin/', views_liftin.dashboard_liftin, name='dashboard_liftin'),
+
+    # Dashboard por cliente específico
+    path('liftin/cliente/<int:cliente_id>/', views_liftin.dashboard_liftin_cliente, name='dashboard_liftin_cliente'),
+
+    # Importación
+    path('liftin/importar/', views_liftin.importar_liftin, name='importar_liftin'),
     path('liftin/importar-completo/', views_liftin.importar_liftin_completo, name='importar_liftin_completo'),
 
-    path('liftin/importar-basico/', views.importar_liftin_basico, name='importar_liftin_basico'),
-    path('liftin/buscar/', views.buscar_entrenamientos_liftin, name='buscar_entrenamientos_liftin'),
-    path('liftin/ejercicios/<int:entrenamiento_id>/', views.detalle_ejercicios_liftin,
-         name='detalle_ejercicios_liftin'),
-    path('entrenos/lista/', views.lista_entrenamientos, name='lista_entrenamientos'),
+    # Estadísticas de Liftin
+    path('liftin/estadisticas/', views_liftin.estadisticas_liftin, name='estadisticas_liftin'),
 
-    # URLs de gestión y listado
+    # ⭐ NUEVA: Exportación (corrige el error de URL)
+    path('liftin/exportar/', views_liftin.exportar_datos_liftin, name='exportar_datos_liftin'),
+
+    # Detalles y gestión
+    path('liftin/ejercicios/<int:entreno_id>/', views_liftin.detalle_ejercicios_liftin,
+         name='detalle_ejercicios_liftin'),
+
+    # ⭐ NUEVAS: Edición y eliminación de entrenamientos
+    path('liftin/editar/<int:entrenamiento_id>/', views_liftin.editar_entrenamiento_liftin,
+         name='editar_entrenamiento_liftin'),
+    path('liftin/eliminar/<int:entrenamiento_id>/', views_liftin.eliminar_entrenamiento_liftin,
+         name='eliminar_entrenamiento_liftin'),
+
+    # Búsqueda y filtros
+    path('liftin/buscar/', views_liftin.buscar_entrenamientos_liftin, name='buscar_entrenamientos_liftin'),
+    path('liftin/comparar/', views_liftin.comparar_liftin_manual, name='comparar_liftin_manual'),
+
+    # ============================================================================
+    # APIs PARA DATOS DINÁMICOS
+    # ============================================================================
+    path('api/liftin/stats/', views_liftin.api_stats_liftin, name='api_stats_liftin'),
+    path('api/liftin/ejercicios/<int:entrenamiento_id>/', views_liftin.api_ejercicios_liftin,
+         name='api_ejercicios_liftin'),
+
+    # ============================================================================
+    # URLs DE GESTIÓN GENERAL
+    # ============================================================================
     path('lista/', views.lista_entrenamientos, name='lista_entrenamientos'),
     path('detalle/<int:entrenamiento_id>/', views.detalle_entrenamiento, name='detalle_entrenamiento'),
 
-    # URLs de exportación y análisis
-    path('exportar/', views.exportar_datos, name='exportar_datos'),
-    path('liftin/exportar/', views.exportar_datos_liftin, name='exportar_datos_liftin'),
-    path('liftin/comparar/', views.comparar_liftin_manual, name='comparar_liftin_manual'),
+    path('whoop/registro/', views.registrar_whoop, name='registrar_whoop'),
+    path('whoop/tarjeta/', views.tarjeta_whoop, name='tarjeta_whoop'),
+    # si haces una vista tipo resumen
 
-    # APIs para datos dinámicos
-    path('api/stats/', views.api_stats_dashboard, name='api_stats_dashboard'),
-    path('api/liftin/stats/', views.api_stats_liftin, name='api_stats_liftin'),
-    path('api/liftin/ejercicios/<int:entrenamiento_id>/', views.api_ejercicios_liftin, name='api_ejercicios_liftin'),
-
-    # URLs de utilidades
-    path('liftin/validar-datos/', views.validar_datos_liftin, name='validar_datos_liftin'),
-    path('liftin/preview/', views.preview_importacion, name='preview_importacion'),
 ]

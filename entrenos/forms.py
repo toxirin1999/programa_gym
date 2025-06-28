@@ -639,3 +639,19 @@ class ExportarDatosForm(forms.Form):
             'class': 'form-control'
         })
     )
+
+
+# forms.py
+
+from django import forms
+from .models import RegistroWhoop
+
+
+class RegistroWhoopForm(forms.ModelForm):
+    class Meta:
+        model = RegistroWhoop
+        fields = ['strain', 'recovery', 'horas_sueno', 'sueno_necesario', 'sleep_performance', 'rhr', 'hrv']
+        widgets = {
+            'horas_sueno': forms.TimeInput(format='%H:%M'),
+            'sueno_necesario': forms.TimeInput(format='%H:%M'),
+        }
