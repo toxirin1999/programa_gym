@@ -5,7 +5,7 @@ from django.db import models
 
 class Asignacion(models.Model):
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
-    programa = models.ForeignKey('rutinas.Programa', on_delete=models.CASCADE)
+    programa = models.ForeignKey('Programa', on_delete=models.CASCADE)
 
 
 from django.db import models

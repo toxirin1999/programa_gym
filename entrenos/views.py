@@ -69,10 +69,6 @@ from clientes.models import Cliente
 
 from django.db.models import Avg
 
-<<<<<<< HEAD
-=======
-# entrenos/views.py
-
 from django.shortcuts import render
 from entrenos.models import DetalleEjercicioRealizado
 
@@ -193,7 +189,6 @@ def ejercicios_realizados_view(request):
         'mayores_por_ejercicio': mayores_list,
     })
 
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
 
 @login_required
 def dashboard_liftin(request):
@@ -2968,10 +2963,7 @@ from .forms import RegistroWhoopForm
 
 from django.shortcuts import redirect
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
 @login_required
 def registrar_whoop(request):
     if request.method == 'POST':

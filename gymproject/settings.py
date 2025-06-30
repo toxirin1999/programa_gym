@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'clientes.apps.ClientesConfig',
     'rutinas',
     'dietas',
-    'anuncios',
     'entrenos',
     'widget_tweaks',
     'joi',

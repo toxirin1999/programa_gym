@@ -28,7 +28,8 @@ from datetime import date
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .models import Programa
+from rutinas.models import Programa  # ✅ Correcto
+
 from collections import defaultdict
 import json
 from joi.utils import frase_motivadora_entrenador

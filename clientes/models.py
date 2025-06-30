@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from rutinas.models import Programa
 from rutinas.models import Rutina
 from dietas.models import Dieta  # asegúrate de tener esto importado
 from django import forms
@@ -176,8 +175,8 @@ class Cliente(models.Model):
     fecha_nacimiento = models.DateField(null=True, blank=True)
     direccion = models.CharField(max_length=255, blank=True)
     genero = models.CharField(max_length=10, choices=[('M', 'Masculino'), ('F', 'Femenino')], blank=True)
-    programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)  # ✅ nuevo campo
-    rutina_actual = models.ForeignKey(Rutina, on_delete=models.SET_NULL, null=True, blank=True)
+    programa = models.ForeignKey('rutinas.Programa', on_delete=models.SET_NULL, null=True, blank=True)  # ✅ nuevo campo
+    rutina_actual = models.ForeignKey('rutinas.Rutina', on_delete=models.SET_NULL, null=True, blank=True)
     fecha_registro = models.DateField(auto_now_add=True)
     membresia_activa = models.BooleanField(default=True)
     fecha_vencimiento_membresia = models.DateField(null=True, blank=True)
