@@ -17,7 +17,16 @@ ENV/
 *.sqlite3
 db.sqlite3
 /media/
+media/
 *.log
+staticfiles/
+*.bak
+
+# Node.js / frontend
+node_modules/
+package-lock.json
+build/
+dist/
 
 # VSCode / PyCharm
 .vscode/
