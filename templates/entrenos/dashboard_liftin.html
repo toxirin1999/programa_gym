@@ -761,6 +761,7 @@
             <span class="stat-number" data-target="{{ total_entrenamientos|default:0 }}">0</span>
             <p class="stat-label">Total Entrenamientos</p>
         </div>
+<<<<<<< HEAD
         <div class="stat-card liftin">
             <i class="fas fa-mobile-alt stat-icon" style="color: #007bff;"></i>
             <span class="stat-number" data-target="{{ entrenamientos_liftin|default:0 }}">0</span>
@@ -775,35 +776,86 @@
             <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
             <span class="stat-number" data-target="{{ calorias_totales|default:0 }}">0</span>
             <p class="stat-label">Calorías (Liftin)</p>
+=======
+        
+        <div class="stat-card calories">
+            <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
+            <span class="stat-number" data-target="{{ calorias_totales|default:0 }}">0</span>
+            <p class="stat-label">Calorías (Liftin)</p>
+        </div>
+        
+        <div class="stat-card">
+            <i class="fas fa-calendar-check stat-icon" style="color: var(--neon-cyan);"></i>
+            <span class="stat-number" data-target="{{ duracion_total|default:0 }}">0</span>
+            <p class="stat-label">Duracion Total</p>
+        </div>
+        <div class="stat-card liftin">
+            <i class="fas fa-mobile-alt stat-icon" style="color: #007bff;"></i>
+            <span class="stat-number" data-target="{{ nivel_actual|default:0 }}">0</span>
+            <p class="stat-label">Nivel Actual</p>
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         </div>
         <!-- Volumen Total -->
 <div class="stat-card manual">
   <i class="fas fa-weight-hanging stat-icon" style="color: #28a745;"></i>
+<<<<<<< HEAD
   <span class="stat-number" data-target="{{ stats_liftin.volumen_total|default:0 }}">0</span>
+=======
+  <span class="stat-number" data-target="{{ volumen_total|default:0 }}">0</span>
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
   <p class="stat-label">Volumen Total (kg)</p>
 </div>
 
 <!-- Duración Promedio -->
 <div class="stat-card calories">
   <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
+<<<<<<< HEAD
   <span class="stat-number" data-target="{{ stats_liftin.duracion_promedio|default:0 }}">0</span>
+=======
+  <span class="stat-number" data-target="{{ duracion_promedio|default:0 }}">0</span>
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
   <p class="stat-label">Duración Promedio (min)</p>
 </div>
 
 <!-- Ejercicios por Sesión -->
 <div class="stat-card">
   <i class="fas fa-dumbbell stat-icon" style="color: #17a2b8;"></i>
+<<<<<<< HEAD
   <span class="stat-number" data-target="{{ stats_liftin.ejercicios_promedio|default:0 }}">0</span>
   <p class="stat-label">Ejercicios por Sesión</p>
+=======
+  <span class="stat-number" data-target="{{ ejercicios_total|default:0 }}">0</span>
+  <p class="stat-label">Ejercicios Total</p>
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 </div>
 
 <!-- FC Promedio -->
 <div class="stat-card">
   <i class="fas fa-heartbeat stat-icon" style="color: #dc3545;"></i>
+<<<<<<< HEAD
   <span class="stat-number" data-target="{{ stats_liftin.fc_promedio|default:0 }}">0</span>
   <p class="stat-label">FC Promedio (BPM)</p>
 </div>
 
+=======
+  <span class="stat-number" data-target="{{ fc_promedio|default:0 }}">0</span>
+  <p class="stat-label">FC Promedio (BPM)</p>
+</div>
+
+
+<div class="stat-card calories">
+  <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
+  <span class="stat-number" data-target="{{ puntos_siguiente_nivel|default:0 }}">0</span>
+  <p class="stat-label">Puntos Siguiente Nivel (min)</p>
+</div>
+
+
+
+
+
+
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     </div>
 
     <!-- Sección de logros mejorada -->
@@ -974,9 +1026,16 @@
                 <i class="fas fa-history"></i>
                 Entrenamientos Recientes
             </h3>
+<<<<<<< HEAD
             <a href="{% url 'entrenos:lista_entrenamientos' %}" class="btn-cyber btn-secondary">
                 Ver todos
             </a>
+=======
+            <a href="{% url 'entrenos:tabla_ejercicios' %}" class="btn-cyber btn-secondary">
+    Ver todos
+</a>
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         </div>
 
         {% if entrenamientos_recientes %}
@@ -1261,6 +1320,11 @@
 
         // Loading state para formularios
         document.querySelectorAll('form').forEach(form => {
+<<<<<<< HEAD
+=======
+           if (!form) return;
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             form.addEventListener('submit', function() {
                 const button = this.querySelector('button[type="submit"]');
                 if (button) {

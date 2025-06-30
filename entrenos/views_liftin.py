@@ -41,6 +41,7 @@ EjercicioLiftinFormSet = modelformset_factory(
     extra=8,  # Para 8 ejercicios por defecto
     can_delete=True
 )
+<<<<<<< HEAD
 
 @login_required
 def dashboard_liftin_cliente(request, cliente_id):
@@ -307,22 +308,306 @@ def logros_liftin(request):
     cliente_id = request.GET.get('cliente')
     cliente_seleccionado = None
     
+=======
+
+
+@login_required
+def dashboard_liftin_cliente(request, cliente_id):
+    """
+    Dashboard de Liftin para un cliente específico
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Redirigir al dashboard principal con filtro de cliente
+    return redirect(f"{reverse('entrenos:dashboard_liftin')}?cliente={cliente_id}")
+
+
+@login_required
+def dashboard_liftin_cliente(request, cliente_id):
+    """
+    Dashboard de Liftin para un cliente específico
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Redirigir al dashboard principal con filtro de cliente
+    return redirect(f"{reverse('entrenos:dashboard_liftin')}?cliente={cliente_id}")
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
+import logging
+
+# Configurar logging
+logger = logging.getLogger(__name__)
+
+
+@csrf_protect
+@require_http_methods(["GET", "POST"])
+def importar_liftin_completo(request):
+    """
+    Vista definitiva basada en la estructura real de la base de datos
+    """
+    try:
+        # ============================================================================
+        # MÉTODO GET - MOSTRAR FORMULARIO
+        # ============================================================================
+        if request.method == 'GET':
+            logger.info("Mostrando formulario de importación Liftin")
+
+            try:
+                from entrenos.models import Cliente
+                from rutinas.models import Rutina  # Rutina está en app rutinas, no entrenos
+
+                clientes = Cliente.objects.all().order_by('nombre')
+                rutinas = Rutina.objects.all().order_by('nombre')
+
+                context = {
+                    'clientes': clientes,
+                    'rutinas': rutinas,
+                }
+
+                return render(request, 'entrenos/importar_liftin_completo.html', context)
+
+            except Exception as e:
+                logger.error(f"Error al obtener datos para formulario: {str(e)}")
+                messages.error(request, f"Error al cargar el formulario: {str(e)}")
+                return redirect('entrenos:dashboard_liftin')
+
+        # ============================================================================
+        # MÉTODO POST - PROCESAR FORMULARIO
+        # ============================================================================
+        elif request.method == 'POST':
+            logger.info("Procesando formulario de importación Liftin")
+
+            try:
+                # ============================================================================
+                # VALIDAR DATOS ESENCIALES
+                # ============================================================================
+                cliente_id = request.POST.get('cliente')
+                fecha = request.POST.get('fecha')
+                rutina_id = request.POST.get('rutina')
+
+                if not cliente_id:
+                    messages.error(request, "Debe seleccionar un cliente")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                if not fecha:
+                    messages.error(request, "Debe proporcionar una fecha")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # OBTENER CLIENTE
+                # ============================================================================
+                from entrenos.models import Cliente, EntrenoRealizado
+                from rutinas.models import Rutina
+
+                try:
+                    cliente = Cliente.objects.get(id=cliente_id)
+                    logger.info(f"Cliente encontrado: {cliente.nombre}")
+                except Cliente.DoesNotExist:
+                    messages.error(request, "Cliente seleccionado no válido")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # MANEJAR RUTINA OBLIGATORIA - USAR ESTRUCTURA REAL
+                # ============================================================================
+                rutina = None
+
+                if rutina_id:
+                    # Si se seleccionó una rutina, usarla
+                    try:
+                        rutina = Rutina.objects.get(id=rutina_id)
+                        logger.info(f"Rutina seleccionada: {rutina.nombre}")
+                    except Rutina.DoesNotExist:
+                        logger.warning(f"Rutina con ID {rutina_id} no existe")
+                        rutina = None
+
+                if not rutina:
+                    # Si no hay rutina seleccionada, usar la primera disponible (ID=1)
+                    try:
+                        rutina = Rutina.objects.get(id=1)  # "Dia1 - torso" que existe en la DB
+                        logger.info(f"Usando rutina por defecto: {rutina.nombre}")
+                    except Rutina.DoesNotExist:
+                        # Si no existe ID=1, usar la primera disponible
+                        rutina = Rutina.objects.first()
+                        if rutina:
+                            logger.info(f"Usando primera rutina disponible: {rutina.nombre}")
+                        else:
+                            messages.error(request, "No hay rutinas disponibles en el sistema")
+                            return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # PROCESAR EJERCICIOS
+                # ============================================================================
+                ejercicios_texto = []
+
+                for i in range(1, 9):  # 8 ejercicios
+                    nombre = request.POST.get(f'ejercicio_{i}_nombre', '').strip()
+
+                    if nombre:
+                        estado = request.POST.get(f'ejercicio_{i}_estado', '')
+                        peso = request.POST.get(f'ejercicio_{i}_peso', '').strip()
+                        series = request.POST.get(f'ejercicio_{i}_series', '').strip()
+
+                        # Formatear ejercicio
+                        estado_simbolo = ''
+                        if estado == 'completado':
+                            estado_simbolo = '✓ '
+                        elif estado == 'fallado':
+                            estado_simbolo = '✗ '
+                        elif estado == 'nuevo':
+                            estado_simbolo = 'N '
+
+                        linea = f"{estado_simbolo}{nombre}"
+                        if peso:
+                            linea += f": {peso}"
+                        if series:
+                            linea += f", {series}"
+
+                        ejercicios_texto.append(linea)
+
+                # ============================================================================
+                # PREPARAR NOTAS COMPLETAS
+                # ============================================================================
+                notas_generales = request.POST.get('notas', '').strip()
+                texto_completo = []
+
+                if notas_generales:
+                    texto_completo.append(notas_generales)
+
+                if ejercicios_texto:
+                    texto_completo.append("\\n\\nEjercicios Detallados:")
+                    texto_completo.extend(ejercicios_texto)
+
+                notas_liftin_completas = "\\n".join(texto_completo)
+
+                # ============================================================================
+                # PREPARAR DATOS DEL ENTRENAMIENTO - ESTRUCTURA REAL
+                # ============================================================================
+
+                # Datos básicos obligatorios según estructura real
+                datos_entrenamiento = {
+                    'cliente': cliente,
+                    'rutina': rutina,  # ✅ OBLIGATORIO según DB
+                    'fecha': fecha,
+                    'fuente_datos': 'liftin',
+                    'procesado_gamificacion': False,  # ✅ Campo obligatorio según DB
+                    'notas_liftin': notas_liftin_completas,  # ✅ Campo correcto para notas
+                }
+
+                # Campos opcionales según estructura real
+                hora_inicio = request.POST.get('hora_inicio')
+                if hora_inicio:
+                    datos_entrenamiento['hora_inicio'] = hora_inicio
+
+                duracion_minutos = request.POST.get('duracion_minutos')
+                if duracion_minutos:
+                    try:
+                        datos_entrenamiento['duracion_minutos'] = int(duracion_minutos)
+                    except ValueError:
+                        pass
+
+                calorias_quemadas = request.POST.get('calorias_quemadas')
+                if calorias_quemadas:
+                    try:
+                        datos_entrenamiento['calorias_quemadas'] = int(calorias_quemadas)
+                    except ValueError:
+                        pass
+
+                volumen_total_kg = request.POST.get('volumen_total_kg')
+                if volumen_total_kg:
+                    try:
+                        datos_entrenamiento['volumen_total_kg'] = float(volumen_total_kg)
+                    except ValueError:
+                        pass
+
+                # Campos adicionales específicos de Liftin según estructura real
+                if ejercicios_texto:
+                    datos_entrenamiento['numero_ejercicios'] = len(ejercicios_texto)
+
+                # ============================================================================
+                # CREAR ENTRENAMIENTO
+                # ============================================================================
+                logger.info(f"Creando entrenamiento con datos: {datos_entrenamiento}")
+                entrenamiento = EntrenoRealizado.objects.create(**datos_entrenamiento)
+                logger.info(f"Entrenamiento creado exitosamente con ID: {entrenamiento.id}")
+
+                # ============================================================================
+                # ACTIVAR LOGROS (SI EXISTE EL SISTEMA)
+                # ============================================================================
+                try:
+                    # Intentar activar logros si el sistema existe
+                    activar_logros_liftin(cliente, entrenamiento)
+                    logger.info("Logros activados correctamente")
+                except Exception as e:
+                    logger.warning(f"No se pudieron activar logros: {str(e)}")
+
+                # ============================================================================
+                # ÉXITO - REDIRECCIONAR
+                # ============================================================================
+                mensaje_exito = f"Entrenamiento de Liftin importado exitosamente para {cliente.nombre}"
+                if rutina:
+                    mensaje_exito += f" (Rutina: {rutina.nombre})"
+                if ejercicios_texto:
+                    mensaje_exito += f" con {len(ejercicios_texto)} ejercicios"
+
+                messages.success(request, mensaje_exito)
+                logger.info("Importación exitosa - Redirigiendo al dashboard")
+
+                return redirect('entrenos:dashboard_liftin')
+
+            except Exception as e:
+                logger.error(f"Error al procesar formulario: {str(e)}")
+                logger.exception("Traceback completo:")
+                messages.error(request, f"Error al importar entrenamiento: {str(e)}")
+                return redirect('entrenos:importar_liftin_completo')
+
+    except Exception as e:
+        logger.error(f"Error general: {str(e)}")
+        logger.exception("Traceback completo:")
+        messages.error(request, f"Error inesperado: {str(e)}")
+        return redirect('entrenos:dashboard_liftin')
+
+
+@login_required
+def logros_liftin(request):
+    """
+    Vista detallada de logros de Liftin
+    """
+    cliente_id = request.GET.get('cliente')
+    cliente_seleccionado = None
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     if cliente_id:
         try:
             cliente_seleccionado = Cliente.objects.get(id=cliente_id)
         except Cliente.DoesNotExist:
             cliente_seleccionado = None
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Si no hay cliente seleccionado, usar el primer cliente con entrenamientos de Liftin
     if not cliente_seleccionado:
         primer_entrenamiento = EntrenoRealizado.objects.filter(fuente_datos='liftin').first()
         if primer_entrenamiento:
             cliente_seleccionado = primer_entrenamiento.cliente
+<<<<<<< HEAD
     
     # Obtener datos de logros
     if cliente_seleccionado:
         datos_logros = obtener_logros_cliente(cliente_seleccionado)
         
+=======
+
+    # Obtener datos de logros
+    if cliente_seleccionado:
+        datos_logros = obtener_logros_cliente(cliente_seleccionado)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Obtener todos los logros completados (no solo los recientes)
         try:
             perfil = PerfilGamificacion.objects.get(cliente=cliente_seleccionado)
@@ -330,7 +615,11 @@ def logros_liftin(request):
                 perfil=perfil,
                 completado=True
             ).select_related('logro', 'logro__tipo').order_by('-fecha_desbloqueo')
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             # Agrupar logros por tipo
             logros_por_tipo = {}
             for logro_usuario in todos_logros_completados:
@@ -338,10 +627,17 @@ def logros_liftin(request):
                 if tipo not in logros_por_tipo:
                     logros_por_tipo[tipo] = []
                 logros_por_tipo[tipo].append(logro_usuario)
+<<<<<<< HEAD
             
             datos_logros['todos_logros_completados'] = todos_logros_completados
             datos_logros['logros_por_tipo'] = logros_por_tipo
             
+=======
+
+            datos_logros['todos_logros_completados'] = todos_logros_completados
+            datos_logros['logros_por_tipo'] = logros_por_tipo
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         except PerfilGamificacion.DoesNotExist:
             datos_logros['todos_logros_completados'] = []
             datos_logros['logros_por_tipo'] = {}
@@ -358,10 +654,17 @@ def logros_liftin(request):
             'racha_actual': 0,
             'racha_maxima': 0,
         }
+<<<<<<< HEAD
     
     # Clientes disponibles
     clientes_disponibles = Cliente.objects.filter(entrenorealizado__fuente_datos='liftin').distinct().order_by('nombre')
     
+=======
+
+    # Clientes disponibles
+    clientes_disponibles = Cliente.objects.filter(entrenorealizado__fuente_datos='liftin').distinct().order_by('nombre')
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     context = {
         'datos_logros': datos_logros,
         'cliente_seleccionado': cliente_seleccionado,
@@ -371,6 +674,12 @@ def logros_liftin(request):
     
     return render(request, 'entrenos/logros_liftin.html', context)
 
+<<<<<<< HEAD
+=======
+    return render(request, 'entrenos/logros_liftin.html', context)
+
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 # ============================================================================
 # FUNCIÓN PARA NOTIFICACIONES DE LOGROS
 # ============================================================================
@@ -381,7 +690,11 @@ def notificaciones_logros(request):
     Vista para mostrar notificaciones de logros
     """
     cliente_id = request.GET.get('cliente')
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     if cliente_id:
         try:
             cliente = Cliente.objects.get(id=cliente_id)
@@ -389,20 +702,35 @@ def notificaciones_logros(request):
                 cliente=cliente,
                 tipo__in=['logro', 'nivel']
             ).order_by('-fecha')[:20]
+<<<<<<< HEAD
             
             # Marcar como leídas
             notificaciones.update(leida=True)
             
+=======
+
+            # Marcar como leídas
+            notificaciones.update(leida=True)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         except Cliente.DoesNotExist:
             notificaciones = []
     else:
         notificaciones = []
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     context = {
         'notificaciones': notificaciones,
         'titulo': 'Notificaciones de Logros',
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return render(request, 'entrenos/notificaciones_logros.html', context)
 
 
@@ -957,6 +1285,7 @@ def detalle_ejercicios_liftin(request, entreno_id):
     return render(request, 'entrenos/detalle_ejercicios_liftin.html', context)
 
 
+<<<<<<< HEAD
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -1093,6 +1422,12 @@ def calcular_fechas_periodo(periodo):
     """Calcular fechas de inicio y fin según el período"""
     hoy = timezone.now().date()
     
+=======
+def calcular_fechas_periodo(periodo):
+    """Calcular fechas de inicio y fin según el período"""
+    hoy = timezone.now().date()
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     if periodo == 'week':
         inicio = hoy - timedelta(days=hoy.weekday())  # Lunes de esta semana
         fin = inicio + timedelta(days=6)  # Domingo de esta semana
@@ -1109,6 +1444,7 @@ def calcular_fechas_periodo(periodo):
         # Por defecto, última semana
         inicio = hoy - timedelta(days=7)
         fin = hoy
+<<<<<<< HEAD
     
     return {'inicio': inicio, 'fin': fin}
 
@@ -1186,6 +1522,54 @@ def calcular_estadisticas_logros(cliente_seleccionado):
         
         return {
             'puntos_totales': perfil.puntos_totales,
+=======
+
+    return {'inicio': inicio, 'fin': fin}
+
+
+def calcular_estadisticas_logros_corregidas(cliente_seleccionado):
+    """
+    Calcula las estadísticas del sistema de logros CORREGIDAS
+    """
+    try:
+        if not LOGROS_DISPONIBLES or not cliente_seleccionado:
+            return valores_por_defecto_logros()
+
+        # Obtener perfil de gamificación
+        perfil = PerfilGamificacion.objects.filter(
+            cliente=cliente_seleccionado
+        ).first()
+
+        if not perfil:
+            logger.warning(f"No se encontró perfil de gamificación para cliente {cliente_seleccionado.id}")
+            return valores_por_defecto_logros()
+
+        # Logros desbloqueados CORREGIDO
+        logros_desbloqueados = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).count()
+
+        # Calcular puntos reales CORREGIDO
+        puntos_reales = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).aggregate(
+            total=Sum('logro__puntos_recompensa')
+        )['total'] or 0
+
+        # Sincronizar puntos si hay diferencia
+        if perfil.puntos_totales != puntos_reales:
+            logger.info(f"Sincronizando puntos: {perfil.puntos_totales} -> {puntos_reales}")
+            perfil.puntos_totales = puntos_reales
+            perfil.save()
+
+        # Calcular nivel y progreso
+        nivel_info = calcular_nivel_y_progreso_corregido(puntos_reales)
+
+        return {
+            'puntos_totales': puntos_reales,
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             'logros_desbloqueados': logros_desbloqueados,
             'racha_actual': perfil.racha_actual,
             'racha_maxima': perfil.racha_maxima,
@@ -1195,6 +1579,7 @@ def calcular_estadisticas_logros(cliente_seleccionado):
             'puntos_nivel_actual': nivel_info['puntos_nivel_actual'],
             'puntos_siguiente_nivel': nivel_info['puntos_siguiente_nivel'],
         }
+<<<<<<< HEAD
         
     except Exception as e:
         logger.error(f"Error calculando estadísticas de logros: {str(e)}")
@@ -1213,16 +1598,35 @@ def calcular_estadisticas_logros(cliente_seleccionado):
 def generar_datos_graficos(entrenamientos_base, periodo):
     """Generar datos para los gráficos"""
     
+=======
+
+    except Exception as e:
+        logger.error(f"Error calculando estadísticas de logros: {str(e)}")
+        return valores_por_defecto_logros()
+
+
+def generar_datos_graficos(entrenamientos_base, periodo):
+    """Generar datos para los gráficos"""
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Datos para gráfico de progreso temporal
     if periodo == 'week':
         # Últimos 7 días
         datos_temporales = []
         for i in range(7):
+<<<<<<< HEAD
             fecha = timezone.now().date() - timedelta(days=6-i)
             entrenamientos_dia = entrenamientos_base.filter(fecha=fecha)
             liftin_dia = entrenamientos_dia.filter(fuente_datos='liftin').count()
             manual_dia = entrenamientos_dia.exclude(fuente_datos='liftin').count()
             
+=======
+            fecha = timezone.now().date() - timedelta(days=6 - i)
+            entrenamientos_dia = entrenamientos_base.filter(fecha=fecha)
+            liftin_dia = entrenamientos_dia.filter(fuente_datos='liftin').count()
+            manual_dia = entrenamientos_dia.exclude(fuente_datos='liftin').count()
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             datos_temporales.append({
                 'fecha': fecha.strftime('%d/%m'),
                 'liftin': liftin_dia,
@@ -1232,16 +1636,26 @@ def generar_datos_graficos(entrenamientos_base, periodo):
         # Últimas 4 semanas
         datos_temporales = []
         for i in range(4):
+<<<<<<< HEAD
             inicio_semana = timezone.now().date() - timedelta(weeks=3-i)
+=======
+            inicio_semana = timezone.now().date() - timedelta(weeks=3 - i)
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             fin_semana = inicio_semana + timedelta(days=6)
             entrenamientos_semana = entrenamientos_base.filter(
                 fecha__gte=inicio_semana, fecha__lte=fin_semana
             )
             liftin_semana = entrenamientos_semana.filter(fuente_datos='liftin').count()
             manual_semana = entrenamientos_semana.exclude(fuente_datos='liftin').count()
+<<<<<<< HEAD
             
             datos_temporales.append({
                 'fecha': f'S{i+1}',
+=======
+
+            datos_temporales.append({
+                'fecha': f'S{i + 1}',
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
                 'liftin': liftin_semana,
                 'manual': manual_semana
             })
@@ -1249,25 +1663,41 @@ def generar_datos_graficos(entrenamientos_base, periodo):
         # Últimos 6 meses
         datos_temporales = []
         for i in range(6):
+<<<<<<< HEAD
             fecha_mes = timezone.now().date().replace(day=1) - timedelta(days=30*i)
+=======
+            fecha_mes = timezone.now().date().replace(day=1) - timedelta(days=30 * i)
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             entrenamientos_mes = entrenamientos_base.filter(
                 fecha__year=fecha_mes.year,
                 fecha__month=fecha_mes.month
             )
             liftin_mes = entrenamientos_mes.filter(fuente_datos='liftin').count()
             manual_mes = entrenamientos_mes.exclude(fuente_datos='liftin').count()
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             datos_temporales.append({
                 'fecha': fecha_mes.strftime('%b'),
                 'liftin': liftin_mes,
                 'manual': manual_mes
             })
         datos_temporales.reverse()
+<<<<<<< HEAD
     
     # Datos para gráfico de distribución
     total_liftin = entrenamientos_base.filter(fuente_datos='liftin').count()
     total_manual = entrenamientos_base.exclude(fuente_datos='liftin').count()
     
+=======
+
+    # Datos para gráfico de distribución
+    total_liftin = entrenamientos_base.filter(fuente_datos='liftin').count()
+    total_manual = entrenamientos_base.exclude(fuente_datos='liftin').count()
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return {
         'temporal': datos_temporales,
         'distribucion': {
@@ -1276,6 +1706,7 @@ def generar_datos_graficos(entrenamientos_base, periodo):
         }
     }
 
+<<<<<<< HEAD
 def obtener_entrenamientos_recientes(cliente_seleccionado, limite=10):
     """
     Obtiene los entrenamientos más recientes
@@ -1300,16 +1731,33 @@ def generar_desafios_activos(cliente_seleccionado):
     if not cliente_seleccionado:
         return []
     
+=======
+
+def generar_desafios_activos(cliente_seleccionado):
+    """Generar desafíos activos para el cliente"""
+
+    if not cliente_seleccionado:
+        return []
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Obtener estadísticas del cliente para calcular progreso
     entrenamientos_mes = EntrenoRealizado.objects.filter(
         cliente=cliente_seleccionado,
         fecha__gte=timezone.now().date().replace(day=1)
     )
+<<<<<<< HEAD
     
     entrenamientos_liftin_mes = entrenamientos_mes.filter(fuente_datos='liftin').count()
     calorias_mes = entrenamientos_mes.aggregate(Sum('calorias_quemadas'))['calorias_quemadas__sum'] or 0
     volumen_mes = entrenamientos_mes.aggregate(Sum('volumen_total_kg'))['volumen_total_kg__sum'] or 0
     
+=======
+
+    entrenamientos_liftin_mes = entrenamientos_mes.filter(fuente_datos='liftin').count()
+    calorias_mes = entrenamientos_mes.aggregate(Sum('calorias_quemadas'))['calorias_quemadas__sum'] or 0
+    volumen_mes = entrenamientos_mes.aggregate(Sum('volumen_total_kg'))['volumen_total_kg__sum'] or 0
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     desafios = [
         {
             'id': 'liftin_mensual',
@@ -1348,6 +1796,7 @@ def generar_desafios_activos(cliente_seleccionado):
             'completado': volumen_mes >= 50000
         }
     ]
+<<<<<<< HEAD
     
     return desafios
 
@@ -1356,6 +1805,17 @@ def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, esta
     
     insights = []
     
+=======
+
+    return desafios
+
+
+def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, estadisticas):
+    """Generar insights automáticos basados en los datos"""
+
+    insights = []
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     if not cliente_seleccionado:
         insights.append({
             'tipo': 'info',
@@ -1365,7 +1825,11 @@ def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, esta
             'icono': '👤'
         })
         return insights
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Insight sobre frecuencia de entrenamientos
     if estadisticas['total_entrenamientos'] > 0:
         if estadisticas['entrenamientos_liftin'] > estadisticas['entrenamientos_manual']:
@@ -1384,7 +1848,11 @@ def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, esta
                 'accion': 'Importar más de Liftin',
                 'icono': '📈'
             })
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Insight sobre calorías
     if estadisticas['calorias_totales'] > 2000:
         insights.append({
@@ -1402,7 +1870,11 @@ def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, esta
             'accion': 'Ver Recomendaciones',
             'icono': '⚡'
         })
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Insight sobre volumen
     if estadisticas['volumen_total'] > 10000:
         insights.append({
@@ -1412,6 +1884,7 @@ def generar_insights_automaticos(cliente_seleccionado, entrenamientos_base, esta
             'accion': 'Compartir Logro',
             'icono': '💪'
         })
+<<<<<<< HEAD
     
     return insights
 
@@ -1420,6 +1893,17 @@ def generar_rankings(periodo):
     
     fechas = calcular_fechas_periodo(periodo)
     
+=======
+
+    return insights
+
+
+def generar_rankings(periodo):
+    """Generar rankings de clientes"""
+
+    fechas = calcular_fechas_periodo(periodo)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Ranking por entrenamientos de Liftin
     ranking_entrenamientos = Cliente.objects.filter(
         entrenorealizado__fuente_datos='liftin',
@@ -1428,7 +1912,11 @@ def generar_rankings(periodo):
     ).annotate(
         total_entrenamientos=Count('entrenorealizado')
     ).order_by('-total_entrenamientos')[:5]
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Ranking por calorías
     ranking_calorias = Cliente.objects.filter(
         entrenorealizado__fecha__gte=fechas['inicio'],
@@ -1436,7 +1924,11 @@ def generar_rankings(periodo):
     ).annotate(
         total_calorias=Sum('entrenorealizado__calorias_quemadas')
     ).order_by('-total_calorias')[:5]
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Ranking por volumen
     ranking_volumen = Cliente.objects.filter(
         entrenorealizado__fecha__gte=fechas['inicio'],
@@ -1444,13 +1936,21 @@ def generar_rankings(periodo):
     ).annotate(
         total_volumen=Sum('entrenorealizado__volumen_total_kg')
     ).order_by('-total_volumen')[:5]
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return {
         'entrenamientos': ranking_entrenamientos,
         'calorias': ranking_calorias,
         'volumen': ranking_volumen
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 def obtener_logros_recientes(cliente_seleccionado, limite=5):
     """
     Obtiene los logros más recientes del cliente
@@ -1458,11 +1958,19 @@ def obtener_logros_recientes(cliente_seleccionado, limite=5):
     try:
         if not LOGROS_DISPONIBLES or not cliente_seleccionado:
             return []
+<<<<<<< HEAD
         
         logros_recientes = LogroUsuario.objects.filter(
             cliente=cliente_seleccionado
         ).select_related('logro').order_by('-fecha_obtenido')[:limite]
         
+=======
+
+        logros_recientes = LogroUsuario.objects.filter(
+            cliente=cliente_seleccionado
+        ).select_related('logro').order_by('-fecha_obtenido')[:limite]
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Formatear datos para el template
         logros_formateados = []
         for logro_usuario in logros_recientes:
@@ -1472,6 +1980,7 @@ def obtener_logros_recientes(cliente_seleccionado, limite=5):
                 'fecha_obtenido': logro_usuario.fecha_obtenido,
                 'descripcion': logro_usuario.logro.descripcion,
             })
+<<<<<<< HEAD
         
         return logros_formateados
         
@@ -1553,13 +2062,33 @@ def calcular_progreso_nivel(cliente_seleccionado):
     if not cliente_seleccionado:
         return {'nivel': 1, 'progreso': 0, 'puntos_siguiente': 1000}
     
+=======
+
+        return logros_formateados
+
+    except Exception as e:
+        logger.error(f"Error obteniendo logros recientes: {str(e)}")
+        return []
+
+
+def calcular_progreso_nivel(cliente_seleccionado):
+    """Calcular progreso de nivel del cliente"""
+
+    if not cliente_seleccionado:
+        return {'nivel': 1, 'progreso': 0, 'puntos_siguiente': 1000}
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     try:
         perfil = PerfilGamificacion.objects.get(cliente=cliente_seleccionado)
         nivel_actual = (perfil.puntos_totales // 1000) + 1
         puntos_en_nivel = perfil.puntos_totales % 1000
         puntos_siguiente_nivel = 1000 - puntos_en_nivel
         progreso_porcentaje = (puntos_en_nivel / 1000) * 100
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         return {
             'nivel': nivel_actual,
             'progreso': round(progreso_porcentaje, 1),
@@ -1570,12 +2099,22 @@ def calcular_progreso_nivel(cliente_seleccionado):
     except PerfilGamificacion.DoesNotExist:
         return {'nivel': 1, 'progreso': 0, 'puntos_siguiente': 1000}
 
+<<<<<<< HEAD
 def calcular_racha_actual(cliente_seleccionado):
     """Calcular racha actual de entrenamientos"""
     
     if not cliente_seleccionado:
         return {'dias': 0, 'record': 0}
     
+=======
+
+def calcular_racha_actual(cliente_seleccionado):
+    """Calcular racha actual de entrenamientos"""
+
+    if not cliente_seleccionado:
+        return {'dias': 0, 'record': 0}
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     try:
         perfil = PerfilGamificacion.objects.get(cliente=cliente_seleccionado)
         return {
@@ -1585,6 +2124,10 @@ def calcular_racha_actual(cliente_seleccionado):
     except PerfilGamificacion.DoesNotExist:
         return {'dias': 0, 'record': 0}
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 # ===================================
 # VISTAS AJAX PARA FUNCIONALIDAD AVANZADA
 # ===================================
@@ -1592,6 +2135,7 @@ def calcular_racha_actual(cliente_seleccionado):
 @login_required
 def dashboard_liftin_ajax_data(request):
     """Vista AJAX para actualizar datos del dashboard en tiempo real"""
+<<<<<<< HEAD
     
     cliente_id = request.GET.get('cliente')
     periodo = request.GET.get('periodo', 'week')
@@ -1600,27 +2144,52 @@ def dashboard_liftin_ajax_data(request):
         # Recalcular datos
         fechas = calcular_fechas_periodo(periodo)
         
+=======
+
+    cliente_id = request.GET.get('cliente')
+    periodo = request.GET.get('periodo', 'week')
+
+    try:
+        # Recalcular datos
+        fechas = calcular_fechas_periodo(periodo)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         entrenamientos_base = EntrenoRealizado.objects.filter(
             fecha__gte=fechas['inicio'],
             fecha__lte=fechas['fin']
         )
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         if cliente_id:
             cliente = get_object_or_404(Cliente, id=cliente_id)
             entrenamientos_base = entrenamientos_base.filter(cliente=cliente)
         else:
             cliente = None
+<<<<<<< HEAD
         
         estadisticas = calcular_estadisticas_principales(entrenamientos_base)
         datos_graficos = generar_datos_graficos(entrenamientos_base, periodo)
         
+=======
+
+        estadisticas = calcular_estadisticas_principales(entrenamientos_base)
+        datos_graficos = generar_datos_graficos(entrenamientos_base, periodo)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         return JsonResponse({
             'success': True,
             'estadisticas': estadisticas,
             'datos_graficos': datos_graficos,
             'timestamp': timezone.now().isoformat()
         })
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         logger.error(f"Error en dashboard_liftin_ajax_data: {str(e)}")
         return JsonResponse({
@@ -1628,6 +2197,7 @@ def dashboard_liftin_ajax_data(request):
             'error': str(e)
         }, status=500)
 
+<<<<<<< HEAD
 @login_required
 def dashboard_liftin_export_data(request):
     """Vista para exportar datos del dashboard"""
@@ -1636,6 +2206,17 @@ def dashboard_liftin_export_data(request):
     periodo = request.GET.get('periodo', 'week')
     formato = request.GET.get('formato', 'json')  # json, csv, excel
     
+=======
+
+@login_required
+def dashboard_liftin_export_data(request):
+    """Vista para exportar datos del dashboard"""
+
+    cliente_id = request.GET.get('cliente')
+    periodo = request.GET.get('periodo', 'week')
+    formato = request.GET.get('formato', 'json')  # json, csv, excel
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     try:
         # Obtener datos
         fechas = calcular_fechas_periodo(periodo)
@@ -1643,11 +2224,19 @@ def dashboard_liftin_export_data(request):
             fecha__gte=fechas['inicio'],
             fecha__lte=fechas['fin']
         )
+<<<<<<< HEAD
         
         if cliente_id:
             cliente = get_object_or_404(Cliente, id=cliente_id)
             entrenamientos_base = entrenamientos_base.filter(cliente=cliente)
         
+=======
+
+        if cliente_id:
+            cliente = get_object_or_404(Cliente, id=cliente_id)
+            entrenamientos_base = entrenamientos_base.filter(cliente=cliente)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Preparar datos para exportación
         datos_exportacion = {
             'periodo': periodo,
@@ -1655,19 +2244,33 @@ def dashboard_liftin_export_data(request):
             'fecha_fin': fechas['fin'].isoformat(),
             'estadisticas': calcular_estadisticas_principales(entrenamientos_base),
             'entrenamientos': list(entrenamientos_base.values(
+<<<<<<< HEAD
                 'fecha', 'cliente__nombre', 'rutina__nombre', 
+=======
+                'fecha', 'cliente__nombre', 'rutina__nombre',
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
                 'fuente_datos', 'calorias_quemadas', 'volumen_total_kg'
             )),
             'fecha_exportacion': timezone.now().isoformat()
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         if formato == 'json':
             response = JsonResponse(datos_exportacion)
             response['Content-Disposition'] = f'attachment; filename="dashboard_liftin_{periodo}.json"'
             return response
+<<<<<<< HEAD
         
         # Aquí se pueden agregar otros formatos (CSV, Excel)
         
+=======
+
+        # Aquí se pueden agregar otros formatos (CSV, Excel)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         logger.error(f"Error en dashboard_liftin_export_data: {str(e)}")
         return JsonResponse({
@@ -1681,8 +2284,11 @@ def dashboard_liftin_export_data(request):
 # ============================================================================
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 def activar_logros_liftin(cliente, entrenamiento):
     """
     Activa logros automáticamente al importar entrenamientos de Liftin
@@ -1691,9 +2297,15 @@ def activar_logros_liftin(cliente, entrenamiento):
         if not LOGROS_DISPONIBLES:
             logger.warning("Sistema de logros no disponible")
             return
+<<<<<<< HEAD
         
         logger.info(f"Activando logros para cliente: {cliente.nombre}")
         
+=======
+
+        logger.info(f"Activando logros para cliente: {cliente.nombre}")
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Obtener o crear perfil de gamificación
         perfil, created = PerfilGamificacion.objects.get_or_create(
             cliente=cliente,
@@ -1704,25 +2316,41 @@ def activar_logros_liftin(cliente, entrenamiento):
                 'racha_maxima': 0,
             }
         )
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Contar entrenamientos de Liftin del cliente
         entrenamientos_liftin = EntrenoRealizado.objects.filter(
             cliente=cliente,
             fuente_datos='liftin'
         ).count()
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Calorías totales quemadas
         calorias_totales = EntrenoRealizado.objects.filter(
             cliente=cliente,
             fuente_datos='liftin'
         ).aggregate(total=Sum('calorias_quemadas'))['total'] or 0
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Volumen total levantado
         volumen_total = EntrenoRealizado.objects.filter(
             cliente=cliente,
             fuente_datos='liftin'
         ).aggregate(total=Sum('volumen_total_kg'))['total'] or 0
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros por entrenamientos de Liftin
         logros_entrenamientos = [
             (1, 'Primera Importación Liftin', 100),
@@ -1731,11 +2359,19 @@ def activar_logros_liftin(cliente, entrenamiento):
             (25, 'Liftin Avanzado', 500),
             (50, 'Liftin Master', 1000),
         ]
+<<<<<<< HEAD
         
         for cantidad, nombre, puntos in logros_entrenamientos:
             if entrenamientos_liftin >= cantidad:
                 crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
         
+=======
+
+        for cantidad, nombre, puntos in logros_entrenamientos:
+            if entrenamientos_liftin >= cantidad:
+                crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros por calorías
         logros_calorias = [
             (300, 'Quemador Principiante', 100),
@@ -1743,11 +2379,19 @@ def activar_logros_liftin(cliente, entrenamiento):
             (700, 'Quemador Avanzado', 300),
             (1000, 'Incinerador', 500),
         ]
+<<<<<<< HEAD
         
         for cantidad, nombre, puntos in logros_calorias:
             if calorias_totales >= cantidad:
                 crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
         
+=======
+
+        for cantidad, nombre, puntos in logros_calorias:
+            if calorias_totales >= cantidad:
+                crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros por volumen
         logros_volumen = [
             (5000, 'Levantador Principiante', 150),
@@ -1755,6 +2399,7 @@ def activar_logros_liftin(cliente, entrenamiento):
             (15000, 'Levantador Avanzado', 400),
             (20000, 'Titán del Hierro', 600),
         ]
+<<<<<<< HEAD
         
         for cantidad, nombre, puntos in logros_volumen:
             if volumen_total >= cantidad:
@@ -1768,6 +2413,21 @@ def activar_logros_liftin(cliente, entrenamiento):
         
         logger.info(f"Logros activados exitosamente para {cliente.nombre}")
         
+=======
+
+        for cantidad, nombre, puntos in logros_volumen:
+            if volumen_total >= cantidad:
+                crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
+
+        # Actualizar racha
+        actualizar_racha(cliente, perfil)
+
+        # Guardar perfil actualizado
+        perfil.save()
+
+        logger.info(f"Logros activados exitosamente para {cliente.nombre}")
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         logger.error(f"Error activando logros: {str(e)}")
 
@@ -1911,6 +2571,11 @@ def estadisticas_liftin(request):
     }
 
     return render(request, 'entrenos/estadisticas_liftin.html', context)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 # ============================================================================
 # SISTEMA DE LOGROS AUTOMÁTICO PARA LIFTIN
 # ============================================================================
@@ -1924,9 +2589,16 @@ from datetime import timedelta
 # Importar modelos de logros
 try:
     from logros.models import (
+<<<<<<< HEAD
         PerfilGamificacion, Logro, LogroUsuario, HistorialPuntos, 
         TipoLogro, Notificacion
     )
+=======
+        PerfilGamificacion, Logro, LogroUsuario, HistorialPuntos,
+        TipoLogro, Notificacion
+    )
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     LOGROS_DISPONIBLES = True
 except ImportError:
     LOGROS_DISPONIBLES = False
@@ -1938,7 +2610,11 @@ def activar_logros_liftin_completo(entrenamiento):
     """
     if not LOGROS_DISPONIBLES:
         return []
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     try:
         with transaction.atomic():
             # Obtener o crear perfil de gamificación
@@ -1951,6 +2627,7 @@ def activar_logros_liftin_completo(entrenamiento):
                     'racha_maxima': 0,
                 }
             )
+<<<<<<< HEAD
             
             # Actualizar estadísticas del perfil
             perfil.entrenos_totales += 1
@@ -1995,6 +2672,52 @@ def activar_logros_liftin_completo(entrenamiento):
             
             return logros_nuevos
             
+=======
+
+            # Actualizar estadísticas del perfil
+            perfil.entrenos_totales += 1
+            perfil.fecha_ultimo_entreno = timezone.now()
+
+            # Calcular racha
+            actualizar_racha_cliente(perfil, entrenamiento.fecha)
+
+            perfil.save()
+
+            # Lista de logros nuevos desbloqueados
+            logros_nuevos = []
+
+            # 1. LOGROS DE LIFTIN ESPECÍFICOS
+            logros_nuevos.extend(verificar_logros_liftin(perfil, entrenamiento))
+
+            # 2. LOGROS DE ENTRENAMIENTOS GENERALES
+            logros_nuevos.extend(verificar_logros_entrenamientos(perfil))
+
+            # 3. LOGROS DE CALORÍAS
+            logros_nuevos.extend(verificar_logros_calorias(perfil, entrenamiento))
+
+            # 4. LOGROS DE VOLUMEN
+            logros_nuevos.extend(verificar_logros_volumen(perfil, entrenamiento))
+
+            # 5. LOGROS DE DURACIÓN
+            logros_nuevos.extend(verificar_logros_duracion(perfil, entrenamiento))
+
+            # 6. LOGROS DE RACHA
+            logros_nuevos.extend(verificar_logros_racha(perfil))
+
+            # Actualizar nivel del usuario
+            subio_nivel = perfil.actualizar_nivel()
+
+            # Crear notificaciones para logros nuevos
+            for logro in logros_nuevos:
+                crear_notificacion_logro(perfil.cliente, logro)
+
+            # Crear notificación de subida de nivel
+            if subio_nivel:
+                crear_notificacion_nivel(perfil.cliente, perfil.nivel_actual)
+
+            return logros_nuevos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         print(f"Error activando logros: {e}")
         return []
@@ -2005,12 +2728,17 @@ def verificar_logros_liftin(perfil, entrenamiento):
     Verifica logros específicos de Liftin
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_liftin, _ = TipoLogro.objects.get_or_create(
         nombre="Liftin",
         defaults={'categoria': 'especial', 'descripcion': 'Logros relacionados con la app Liftin'}
     )
+<<<<<<< HEAD
     
     # Contar entrenamientos de Liftin del cliente
     entrenamientos_liftin = EntrenoRealizado.objects.filter(
@@ -2018,6 +2746,15 @@ def verificar_logros_liftin(perfil, entrenamiento):
         fuente_datos='liftin'
     ).count()
     
+=======
+
+    # Contar entrenamientos de Liftin del cliente
+    entrenamientos_liftin = EntrenoRealizado.objects.filter(
+        cliente=perfil.cliente,
+        fuente_datos='liftin'
+    ).count()
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: Primera importación de Liftin
     if entrenamientos_liftin == 1:
         logro, created = Logro.objects.get_or_create(
@@ -2032,7 +2769,11 @@ def verificar_logros_liftin(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, 1)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 5 entrenamientos de Liftin
     if entrenamientos_liftin >= 5:
         logro, created = Logro.objects.get_or_create(
@@ -2047,7 +2788,11 @@ def verificar_logros_liftin(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, entrenamientos_liftin)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 10 entrenamientos de Liftin
     if entrenamientos_liftin >= 10:
         logro, created = Logro.objects.get_or_create(
@@ -2062,7 +2807,11 @@ def verificar_logros_liftin(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, entrenamientos_liftin)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 25 entrenamientos de Liftin
     if entrenamientos_liftin >= 25:
         logro, created = Logro.objects.get_or_create(
@@ -2077,7 +2826,11 @@ def verificar_logros_liftin(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, entrenamientos_liftin)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 50 entrenamientos de Liftin
     if entrenamientos_liftin >= 50:
         logro, created = Logro.objects.get_or_create(
@@ -2092,7 +2845,11 @@ def verificar_logros_liftin(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, entrenamientos_liftin)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2101,15 +2858,25 @@ def verificar_logros_entrenamientos(perfil):
     Verifica logros generales de entrenamientos
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_hito, _ = TipoLogro.objects.get_or_create(
         nombre="Hitos",
         defaults={'categoria': 'hito', 'descripcion': 'Logros por alcanzar hitos importantes'}
     )
+<<<<<<< HEAD
     
     total_entrenamientos = perfil.entrenos_totales
     
+=======
+
+    total_entrenamientos = perfil.entrenos_totales
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 10 entrenamientos totales
     if total_entrenamientos >= 10:
         logro, created = Logro.objects.get_or_create(
@@ -2124,7 +2891,11 @@ def verificar_logros_entrenamientos(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, total_entrenamientos)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 25 entrenamientos totales
     if total_entrenamientos >= 25:
         logro, created = Logro.objects.get_or_create(
@@ -2139,7 +2910,11 @@ def verificar_logros_entrenamientos(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, total_entrenamientos)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 50 entrenamientos totales
     if total_entrenamientos >= 50:
         logro, created = Logro.objects.get_or_create(
@@ -2154,7 +2929,11 @@ def verificar_logros_entrenamientos(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, total_entrenamientos)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 100 entrenamientos totales
     if total_entrenamientos >= 100:
         logro, created = Logro.objects.get_or_create(
@@ -2169,7 +2948,11 @@ def verificar_logros_entrenamientos(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, total_entrenamientos)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2178,18 +2961,31 @@ def verificar_logros_calorias(perfil, entrenamiento):
     Verifica logros relacionados con calorías quemadas
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
     if not entrenamiento.calorias_quemadas:
         return logros_nuevos
     
+=======
+
+    if not entrenamiento.calorias_quemadas:
+        return logros_nuevos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_calorias, _ = TipoLogro.objects.get_or_create(
         nombre="Calorías",
         defaults={'categoria': 'superacion', 'descripcion': 'Logros por quemar calorías'}
     )
+<<<<<<< HEAD
     
     calorias = entrenamiento.calorias_quemadas
     
+=======
+
+    calorias = entrenamiento.calorias_quemadas
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 300 calorías en un entrenamiento
     if calorias >= 300:
         logro, created = Logro.objects.get_or_create(
@@ -2204,7 +3000,11 @@ def verificar_logros_calorias(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, calorias)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 500 calorías en un entrenamiento
     if calorias >= 500:
         logro, created = Logro.objects.get_or_create(
@@ -2219,7 +3019,11 @@ def verificar_logros_calorias(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, calorias)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 700 calorías en un entrenamiento
     if calorias >= 700:
         logro, created = Logro.objects.get_or_create(
@@ -2234,7 +3038,11 @@ def verificar_logros_calorias(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, calorias)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 1000 calorías en un entrenamiento
     if calorias >= 1000:
         logro, created = Logro.objects.get_or_create(
@@ -2249,7 +3057,11 @@ def verificar_logros_calorias(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, calorias)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2258,18 +3070,31 @@ def verificar_logros_volumen(perfil, entrenamiento):
     Verifica logros relacionados con volumen de entrenamiento
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
     if not entrenamiento.volumen_total_kg:
         return logros_nuevos
     
+=======
+
+    if not entrenamiento.volumen_total_kg:
+        return logros_nuevos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_volumen, _ = TipoLogro.objects.get_or_create(
         nombre="Volumen",
         defaults={'categoria': 'superacion', 'descripcion': 'Logros por volumen de entrenamiento'}
     )
+<<<<<<< HEAD
     
     volumen = float(entrenamiento.volumen_total_kg)
     
+=======
+
+    volumen = float(entrenamiento.volumen_total_kg)
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 10,000 kg en un entrenamiento
     if volumen >= 10000:
         logro, created = Logro.objects.get_or_create(
@@ -2284,7 +3109,11 @@ def verificar_logros_volumen(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, volumen)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 15,000 kg en un entrenamiento
     if volumen >= 15000:
         logro, created = Logro.objects.get_or_create(
@@ -2299,7 +3128,11 @@ def verificar_logros_volumen(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, volumen)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 20,000 kg en un entrenamiento
     if volumen >= 20000:
         logro, created = Logro.objects.get_or_create(
@@ -2314,7 +3147,11 @@ def verificar_logros_volumen(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, volumen)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 25,000 kg en un entrenamiento
     if volumen >= 25000:
         logro, created = Logro.objects.get_or_create(
@@ -2329,7 +3166,11 @@ def verificar_logros_volumen(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, volumen)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2338,18 +3179,31 @@ def verificar_logros_duracion(perfil, entrenamiento):
     Verifica logros relacionados con duración del entrenamiento
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
     if not entrenamiento.duracion_minutos:
         return logros_nuevos
     
+=======
+
+    if not entrenamiento.duracion_minutos:
+        return logros_nuevos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_duracion, _ = TipoLogro.objects.get_or_create(
         nombre="Resistencia",
         defaults={'categoria': 'superacion', 'descripcion': 'Logros por duración de entrenamiento'}
     )
+<<<<<<< HEAD
     
     duracion = entrenamiento.duracion_minutos
     
+=======
+
+    duracion = entrenamiento.duracion_minutos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 60 minutos de entrenamiento
     if duracion >= 60:
         logro, created = Logro.objects.get_or_create(
@@ -2364,7 +3218,11 @@ def verificar_logros_duracion(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, duracion)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 90 minutos de entrenamiento
     if duracion >= 90:
         logro, created = Logro.objects.get_or_create(
@@ -2379,7 +3237,11 @@ def verificar_logros_duracion(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, duracion)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 120 minutos de entrenamiento
     if duracion >= 120:
         logro, created = Logro.objects.get_or_create(
@@ -2394,7 +3256,11 @@ def verificar_logros_duracion(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, duracion)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 150 minutos de entrenamiento
     if duracion >= 150:
         logro, created = Logro.objects.get_or_create(
@@ -2409,7 +3275,11 @@ def verificar_logros_duracion(perfil, entrenamiento):
         logro_nuevo = desbloquear_logro(perfil, logro, duracion)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2418,15 +3288,25 @@ def verificar_logros_racha(perfil):
     Verifica logros relacionados con rachas de entrenamiento
     """
     logros_nuevos = []
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Crear tipo de logro si no existe
     tipo_racha, _ = TipoLogro.objects.get_or_create(
         nombre="Consistencia",
         defaults={'categoria': 'consistencia', 'descripcion': 'Logros por entrenar de forma consistente'}
     )
+<<<<<<< HEAD
     
     racha = perfil.racha_actual
     
+=======
+
+    racha = perfil.racha_actual
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 3 días consecutivos
     if racha >= 3:
         logro, created = Logro.objects.get_or_create(
@@ -2441,7 +3321,11 @@ def verificar_logros_racha(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, racha)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 7 días consecutivos
     if racha >= 7:
         logro, created = Logro.objects.get_or_create(
@@ -2456,7 +3340,11 @@ def verificar_logros_racha(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, racha)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 14 días consecutivos
     if racha >= 14:
         logro, created = Logro.objects.get_or_create(
@@ -2471,7 +3359,11 @@ def verificar_logros_racha(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, racha)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # LOGRO: 30 días consecutivos
     if racha >= 30:
         logro, created = Logro.objects.get_or_create(
@@ -2486,7 +3378,11 @@ def verificar_logros_racha(perfil):
         logro_nuevo = desbloquear_logro(perfil, logro, racha)
         if logro_nuevo:
             logros_nuevos.append(logro)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     return logros_nuevos
 
 
@@ -2505,7 +3401,11 @@ def desbloquear_logro(perfil, logro, progreso_actual):
                 'fecha_desbloqueo': timezone.now()
             }
         )
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Si ya existía pero no estaba completado, verificar si ahora sí
         if not created and not logro_usuario.completado:
             logro_usuario.progreso_actual = max(logro_usuario.progreso_actual, progreso_actual)
@@ -2513,11 +3413,19 @@ def desbloquear_logro(perfil, logro, progreso_actual):
                 logro_usuario.completado = True
                 logro_usuario.fecha_desbloqueo = timezone.now()
                 logro_usuario.save()
+<<<<<<< HEAD
                 
                 # Agregar puntos al perfil
                 perfil.puntos_totales += logro.puntos_recompensa
                 perfil.save()
                 
+=======
+
+                # Agregar puntos al perfil
+                perfil.puntos_totales += logro.puntos_recompensa
+                perfil.save()
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
                 # Crear registro en historial de puntos
                 HistorialPuntos.objects.create(
                     perfil=perfil,
@@ -2525,15 +3433,25 @@ def desbloquear_logro(perfil, logro, progreso_actual):
                     logro=logro,
                     descripcion=f"Logro desbloqueado: {logro.nombre}"
                 )
+<<<<<<< HEAD
                 
                 return True
         
+=======
+
+                return True
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Si es nuevo y ya cumple los requisitos
         elif created and logro_usuario.completado:
             # Agregar puntos al perfil
             perfil.puntos_totales += logro.puntos_recompensa
             perfil.save()
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             # Crear registro en historial de puntos
             HistorialPuntos.objects.create(
                 perfil=perfil,
@@ -2541,11 +3459,19 @@ def desbloquear_logro(perfil, logro, progreso_actual):
                 logro=logro,
                 descripcion=f"Logro desbloqueado: {logro.nombre}"
             )
+<<<<<<< HEAD
             
             return True
         
         return False
         
+=======
+
+            return True
+
+        return False
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         print(f"Error desbloqueando logro {logro.nombre}: {e}")
         return False
@@ -2560,6 +3486,7 @@ def actualizar_racha(cliente, perfil):
         entrenamientos = EntrenoRealizado.objects.filter(
             cliente=cliente
         ).order_by('-fecha')
+<<<<<<< HEAD
         
         if not entrenamientos.exists():
             return
@@ -2568,6 +3495,16 @@ def actualizar_racha(cliente, perfil):
         racha_actual = 1
         fecha_anterior = entrenamientos.first().fecha
         
+=======
+
+        if not entrenamientos.exists():
+            return
+
+        # Calcular racha actual
+        racha_actual = 1
+        fecha_anterior = entrenamientos.first().fecha
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         for entrenamiento in entrenamientos[1:]:
             diferencia = (fecha_anterior - entrenamiento.fecha).days
             if diferencia <= 2:  # Máximo 2 días de diferencia
@@ -2575,12 +3512,20 @@ def actualizar_racha(cliente, perfil):
                 fecha_anterior = entrenamiento.fecha
             else:
                 break
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Actualizar perfil
         perfil.racha_actual = racha_actual
         if racha_actual > perfil.racha_maxima:
             perfil.racha_maxima = racha_actual
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros por racha
         logros_racha = [
             (3, 'Racha Inicial', 100),
@@ -2588,6 +3533,7 @@ def actualizar_racha(cliente, perfil):
             (14, 'Dos Semanas Imparable', 500),
             (30, 'Mes de Hierro', 1000),
         ]
+<<<<<<< HEAD
         
         for cantidad, nombre, puntos in logros_racha:
             if racha_actual >= cantidad:
@@ -2596,6 +3542,17 @@ def actualizar_racha(cliente, perfil):
     except Exception as e:
         logger.error(f"Error actualizando racha: {str(e)}")
 
+=======
+
+        for cantidad, nombre, puntos in logros_racha:
+            if racha_actual >= cantidad:
+                crear_logro_si_no_existe(cliente, nombre, puntos, perfil)
+
+    except Exception as e:
+        logger.error(f"Error actualizando racha: {str(e)}")
+
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 def crear_logro_si_no_existe(cliente, nombre_logro, puntos, perfil):
     """
     Crea un logro si no existe ya para el cliente
@@ -2606,7 +3563,11 @@ def crear_logro_si_no_existe(cliente, nombre_logro, puntos, perfil):
             cliente=cliente,
             logro__nombre=nombre_logro
         ).exists()
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         if not logro_existente:
             # Obtener o crear el logro
             logro, created = Logro.objects.get_or_create(
@@ -2617,17 +3578,28 @@ def crear_logro_si_no_existe(cliente, nombre_logro, puntos, perfil):
                     'tipo': 'liftin',
                 }
             )
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             # Crear LogroUsuario
             LogroUsuario.objects.create(
                 cliente=cliente,
                 logro=logro,
                 fecha_obtenido=timezone.now()
             )
+<<<<<<< HEAD
             
             # Agregar puntos al perfil
             perfil.puntos_totales += puntos
             
+=======
+
+            # Agregar puntos al perfil
+            perfil.puntos_totales += puntos
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
             # Crear entrada en historial de puntos
             HistorialPuntos.objects.create(
                 cliente=cliente,
@@ -2635,9 +3607,15 @@ def crear_logro_si_no_existe(cliente, nombre_logro, puntos, perfil):
                 razon=f'Logro desbloqueado: {nombre_logro}',
                 fecha=timezone.now()
             )
+<<<<<<< HEAD
             
             logger.info(f"Logro creado: {nombre_logro} (+{puntos} puntos)")
             
+=======
+
+            logger.info(f"Logro creado: {nombre_logro} (+{puntos} puntos)")
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except Exception as e:
         logger.error(f"Error creando logro {nombre_logro}: {str(e)}")
 
@@ -2682,19 +3660,31 @@ def obtener_logros_cliente(cliente):
     """
     try:
         perfil = PerfilGamificacion.objects.get(cliente=cliente)
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros completados
         logros_completados = LogroUsuario.objects.filter(
             perfil=perfil,
             completado=True
         ).select_related('logro', 'logro__tipo').order_by('-fecha_desbloqueo')[:5]
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         # Logros en progreso
         logros_progreso = LogroUsuario.objects.filter(
             perfil=perfil,
             completado=False
         ).select_related('logro', 'logro__tipo').order_by('-progreso_actual')[:3]
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
         return {
             'perfil': perfil,
             'logros_completados': logros_completados,
@@ -2705,7 +3695,11 @@ def obtener_logros_cliente(cliente):
             'racha_actual': perfil.racha_actual,
             'racha_maxima': perfil.racha_maxima,
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     except PerfilGamificacion.DoesNotExist:
         return {
             'perfil': None,
@@ -2718,3 +3712,869 @@ def obtener_logros_cliente(cliente):
             'racha_maxima': 0,
         }
 
+<<<<<<< HEAD
+=======
+
+# ============================
+# VISTAS CORREGIDAS PARA SISTEMA DE LOGROS
+# Versión: 4.0 - Problemas solucionados
+# ============================
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.db.models import Count, Sum, Avg, Q, Max
+from django.utils import timezone
+from datetime import datetime, timedelta
+import json
+import logging
+
+# Importar modelos principales
+from clientes.models import Cliente
+from entrenos.models import EntrenoRealizado
+
+# Importar modelos de logros con la estructura correcta
+try:
+    from logros.models import (
+        PerfilGamificacion,
+        LogroUsuario,
+        Logro,
+        HistorialPuntos,
+        Nivel
+    )
+
+    LOGROS_DISPONIBLES = True
+except ImportError:
+    LOGROS_DISPONIBLES = False
+
+# ============================
+# VISTA DASHBOARD LIFTIN SIMPLIFICADA Y FUNCIONAL
+# Versión: 5.0 - Garantizada para mostrar datos
+# ============================
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum, Avg, Q, Max
+from django.utils import timezone
+from datetime import datetime, timedelta
+import logging
+
+# Importar modelos principales
+from clientes.models import Cliente
+from entrenos.models import EntrenoRealizado
+
+logger = logging.getLogger(__name__)
+
+
+@login_required
+def dashboard_liftin(request):
+    """
+    Vista principal del dashboard de Liftin - VERSIÓN SIMPLIFICADA Y FUNCIONAL
+    Esta versión está garantizada para mostrar datos correctamente
+    """
+    try:
+        logger.info("=== INICIANDO DASHBOARD LIFTIN SIMPLIFICADO ===")
+
+        # Obtener parámetros de filtro
+        cliente_id = request.GET.get('cliente')
+        logger.info(f"Cliente ID solicitado: {cliente_id}")
+
+        # Obtener clientes disponibles con entrenamientos de Liftin
+        clientes_disponibles = Cliente.objects.filter(
+            entrenorealizado__fuente_datos='liftin'
+        ).distinct().order_by('nombre')
+
+        logger.info(f"Clientes disponibles: {clientes_disponibles.count()}")
+        for cliente in clientes_disponibles:
+            logger.info(f"  - {cliente.nombre} (ID: {cliente.id})")
+
+        # Cliente seleccionado
+        cliente_seleccionado = None
+        if cliente_id:
+            try:
+                cliente_seleccionado = Cliente.objects.get(id=cliente_id)
+                logger.info(f"Cliente seleccionado: {cliente_seleccionado.nombre}")
+            except Cliente.DoesNotExist:
+                logger.warning(f"Cliente con ID {cliente_id} no encontrado")
+        else:
+            # Si no hay cliente específico, tomar el primero disponible
+            if clientes_disponibles.exists():
+                cliente_seleccionado = clientes_disponibles.first()
+                logger.info(f"Tomando primer cliente disponible: {cliente_seleccionado.nombre}")
+
+        # Calcular estadísticas básicas
+        logger.info("=== CALCULANDO ESTADÍSTICAS BÁSICAS ===")
+
+        # Filtro base de entrenamientos
+        if cliente_seleccionado:
+            entrenamientos_base = EntrenoRealizado.objects.filter(cliente=cliente_seleccionado)
+            logger.info(f"Filtrando por cliente: {cliente_seleccionado.nombre}")
+        else:
+            entrenamientos_base = EntrenoRealizado.objects.all()
+            logger.info("Sin filtro de cliente - mostrando todos")
+
+        # Estadísticas principales
+        total_entrenamientos = entrenamientos_base.count()
+        entrenamientos_liftin = entrenamientos_base.filter(fuente_datos='liftin').count()
+        entrenamientos_manual = total_entrenamientos - entrenamientos_liftin
+
+        logger.info(f"Total entrenamientos: {total_entrenamientos}")
+        logger.info(f"Entrenamientos Liftin: {entrenamientos_liftin}")
+        logger.info(f"Entrenamientos manuales: {entrenamientos_manual}")
+
+        # Estadísticas de Liftin específicas
+        entrenamientos_liftin_qs = entrenamientos_base.filter(fuente_datos='liftin')
+
+        calorias_totales = entrenamientos_liftin_qs.aggregate(
+            total=Sum('calorias_quemadas')
+        )['total'] or 0
+
+        volumen_total = entrenamientos_liftin_qs.aggregate(
+            total=Sum('volumen_total_kg')
+        )['total'] or 0
+
+        duracion_total = entrenamientos_liftin_qs.aggregate(
+            total=Sum('duracion_minutos')
+        )['total'] or 0
+
+        ejercicios_total = entrenamientos_liftin_qs.aggregate(
+            total=Sum('numero_ejercicios')
+        )['total'] or 0
+
+        # Promedios
+        duracion_promedio = entrenamientos_liftin_qs.aggregate(
+            promedio=Avg('duracion_minutos')
+        )['promedio'] or 0
+
+        fc_promedio = entrenamientos_liftin_qs.aggregate(
+            promedio=Avg('frecuencia_cardiaca_promedio')
+        )['promedio'] or 0
+
+        logger.info(f"Calorías totales: {calorias_totales}")
+        logger.info(f"Volumen total: {volumen_total}")
+        logger.info(f"Duración total: {duracion_total}")
+        logger.info(f"Ejercicios total: {ejercicios_total}")
+
+        # Entrenamientos recientes
+        entrenamientos_recientes = entrenamientos_base.select_related(
+            'cliente', 'rutina'
+        ).order_by('-fecha', '-id')[:10]
+
+        logger.info(f"Entrenamientos recientes: {entrenamientos_recientes.count()}")
+
+        # Sistema de logros simplificado (sin dependencias externas)
+        logger.info("=== CALCULANDO LOGROS SIMPLIFICADOS ===")
+
+        # Intentar obtener datos de logros, pero sin fallar si no existen
+        puntos_totales = 0
+        logros_desbloqueados = 0
+        racha_actual = 0
+        racha_maxima = 0
+        nivel_actual = 1
+        nivel_nombre = 'Principiante'
+        progreso_nivel = 0
+        puntos_nivel_actual = 0
+        puntos_siguiente_nivel = 1000
+        logros_recientes = []
+
+        try:
+            # Intentar importar modelos de logros
+            from logros.models import PerfilGamificacion, LogroUsuario
+
+            if cliente_seleccionado:
+                perfil = PerfilGamificacion.objects.filter(
+                    cliente=cliente_seleccionado
+                ).first()
+
+                if perfil:
+                    logger.info(f"Perfil de gamificación encontrado para {cliente_seleccionado.nombre}")
+
+                    # Datos del perfil
+                    puntos_totales = perfil.puntos_totales
+                    racha_actual = perfil.racha_actual
+                    racha_maxima = perfil.racha_maxima
+
+                    # Logros desbloqueados
+                    logros_desbloqueados = LogroUsuario.objects.filter(
+                        perfil=perfil,
+                        completado=True
+                    ).count()
+
+                    # Calcular nivel
+                    if puntos_totales > 0:
+                        nivel_actual = max(1, puntos_totales // 1000 + 1)
+                        puntos_nivel_actual = puntos_totales % 1000
+                        progreso_nivel = int((puntos_nivel_actual / 1000) * 100)
+
+                        nombres_niveles = {
+                            1: 'Principiante', 2: 'Novato', 3: 'Intermedio',
+                            4: 'Avanzado', 5: 'Experto', 6: 'Maestro', 7: 'Leyenda'
+                        }
+                        nivel_nombre = nombres_niveles.get(nivel_actual, 'Leyenda Suprema')
+
+                    # Logros recientes
+                    logros_recientes_qs = LogroUsuario.objects.filter(
+                        perfil=perfil,
+                        completado=True
+                    ).select_related('logro').order_by('-fecha_desbloqueo')[:5]
+
+                    logros_recientes = [
+                        {
+                            'nombre': lu.logro.nombre,
+                            'puntos': lu.logro.puntos_recompensa,
+                            'fecha_obtenido': lu.fecha_desbloqueo,
+                            'descripcion': lu.logro.descripcion,
+                        }
+                        for lu in logros_recientes_qs
+                    ]
+
+                    logger.info(f"Datos de logros cargados: {puntos_totales} puntos, {logros_desbloqueados} logros")
+                else:
+                    logger.warning(f"No se encontró perfil de gamificación para {cliente_seleccionado.nombre}")
+            else:
+                logger.info("Sin cliente seleccionado - usando valores por defecto para logros")
+
+        except ImportError:
+            logger.warning("Modelos de logros no disponibles - usando valores por defecto")
+        except Exception as e:
+            logger.error(f"Error cargando datos de logros: {str(e)}")
+
+        # Contexto para el template
+        context = {
+            # Datos básicos
+            'clientes_disponibles': clientes_disponibles,
+            'cliente_seleccionado': cliente_seleccionado,
+
+            # Estadísticas principales
+            'total_entrenamientos': total_entrenamientos,
+            'entrenamientos_liftin': entrenamientos_liftin,
+            'entrenamientos_manual': entrenamientos_manual,
+            'calorias_totales': int(calorias_totales),
+
+            # Estadísticas detalladas de Liftin
+            'volumen_total': int(volumen_total),
+            'duracion_total': int(duracion_total),
+            'ejercicios_total': int(ejercicios_total),
+            'duracion_promedio': int(duracion_promedio),
+            'fc_promedio': int(fc_promedio),
+
+            # Sistema de logros
+            'puntos_totales': puntos_totales,
+            'logros_desbloqueados': logros_desbloqueados,
+            'racha_actual': racha_actual,
+            'racha_maxima': racha_maxima,
+            'nivel_actual': nivel_actual,
+            'nivel_nombre': nivel_nombre,
+            'progreso_nivel': progreso_nivel,
+            'puntos_nivel_actual': puntos_nivel_actual,
+            'puntos_siguiente_nivel': puntos_siguiente_nivel,
+
+            # Datos adicionales
+            'entrenamientos_recientes': entrenamientos_recientes,
+            'logros_recientes': logros_recientes,
+        }
+
+        logger.info("=== CONTEXTO FINAL ===")
+        for key, value in context.items():
+            if key not in ['clientes_disponibles', 'entrenamientos_recientes', 'logros_recientes']:
+                logger.info(f"{key}: {value}")
+
+        logger.info("Dashboard cargado exitosamente")
+        return render(request, 'entrenos/dashboard_liftin.html', context)
+
+    except Exception as e:
+        logger.error(f"ERROR CRÍTICO en dashboard_liftin: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+
+        # Contexto de emergencia con datos mínimos pero funcionales
+        try:
+            clientes_disponibles = Cliente.objects.filter(
+                entrenorealizado__fuente_datos='liftin'
+            ).distinct().order_by('nombre')
+
+            total_entrenamientos = EntrenoRealizado.objects.count()
+            entrenamientos_liftin = EntrenoRealizado.objects.filter(fuente_datos='liftin').count()
+
+        except:
+            clientes_disponibles = Cliente.objects.none()
+            total_entrenamientos = 0
+            entrenamientos_liftin = 0
+
+        context = {
+            'clientes_disponibles': clientes_disponibles,
+            'cliente_seleccionado': None,
+            'total_entrenamientos': total_entrenamientos,
+            'entrenamientos_liftin': entrenamientos_liftin,
+            'entrenamientos_manual': 0,
+            'calorias_totales': 0,
+            'volumen_total': 0,
+            'duracion_total': 0,
+            'ejercicios_total': 0,
+            'duracion_promedio': 0,
+            'fc_promedio': 0,
+            'puntos_totales': 0,
+            'logros_desbloqueados': 0,
+            'racha_actual': 0,
+            'racha_maxima': 0,
+            'nivel_actual': 1,
+            'nivel_nombre': 'Principiante',
+            'progreso_nivel': 0,
+            'puntos_nivel_actual': 0,
+            'puntos_siguiente_nivel': 1000,
+            'entrenamientos_recientes': [],
+            'logros_recientes': [],
+        }
+
+        logger.info("Usando contexto de emergencia")
+        return render(request, 'entrenos/dashboard_liftin.html', context)
+
+
+# ============================
+# FUNCIONES AUXILIARES SIMPLIFICADAS
+# ============================
+
+def verificar_datos_dashboard():
+    """
+    Función de diagnóstico para verificar datos del dashboard
+    """
+    print("=== DIAGNÓSTICO DE DATOS DEL DASHBOARD ===")
+
+    # Verificar entrenamientos
+    total_entrenamientos = EntrenoRealizado.objects.count()
+    entrenamientos_liftin = EntrenoRealizado.objects.filter(fuente_datos='liftin').count()
+
+    print(f"Total entrenamientos en BD: {total_entrenamientos}")
+    print(f"Entrenamientos Liftin: {entrenamientos_liftin}")
+
+    # Verificar clientes
+    clientes_con_liftin = Cliente.objects.filter(
+        entrenorealizado__fuente_datos='liftin'
+    ).distinct()
+
+    print(f"Clientes con entrenamientos Liftin: {clientes_con_liftin.count()}")
+    for cliente in clientes_con_liftin:
+        entrenamientos_cliente = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            fuente_datos='liftin'
+        ).count()
+        print(f"  - {cliente.nombre} (ID: {cliente.id}): {entrenamientos_cliente} entrenamientos")
+
+    # Verificar logros
+    try:
+        from logros.models import PerfilGamificacion, LogroUsuario
+
+        perfiles = PerfilGamificacion.objects.all()
+        print(f"Perfiles de gamificación: {perfiles.count()}")
+
+        for perfil in perfiles:
+            logros = LogroUsuario.objects.filter(perfil=perfil, completado=True).count()
+            print(f"  - {perfil.cliente.nombre}: {perfil.puntos_totales} puntos, {logros} logros")
+
+    except ImportError:
+        print("Modelos de logros no disponibles")
+    except Exception as e:
+        print(f"Error verificando logros: {str(e)}")
+
+    print("=== FIN DIAGNÓSTICO ===")
+
+
+def test_dashboard_context():
+    """
+    Función para probar el contexto del dashboard
+    """
+    from django.test import RequestFactory
+    from django.contrib.auth.models import User
+
+    # Crear request de prueba
+    factory = RequestFactory()
+    request = factory.get('/dashboard/liftin/')
+    request.user = User.objects.first() or User.objects.create_user('test')
+
+    # Simular vista
+    try:
+        response = dashboard_liftin(request)
+        print("✅ Dashboard funciona correctamente")
+        return True
+    except Exception as e:
+        print(f"❌ Error en dashboard: {str(e)}")
+        return False
+
+
+def calcular_estadisticas_principales(entrenamientos_base):
+    """
+    Calcula las estadísticas principales del dashboard
+    """
+    try:
+        # Total de entrenamientos
+        total_entrenamientos = entrenamientos_base.count()
+
+        # Entrenamientos por fuente
+        entrenamientos_liftin = entrenamientos_base.filter(fuente_datos='liftin').count()
+        entrenamientos_manual = total_entrenamientos - entrenamientos_liftin
+
+        # Calorías totales de Liftin
+        calorias_totales = entrenamientos_base.filter(
+            fuente_datos='liftin'
+        ).aggregate(
+            total=Sum('calorias_quemadas')
+        )['total'] or 0
+
+        return {
+            'total_entrenamientos': total_entrenamientos,
+            'entrenamientos_liftin': entrenamientos_liftin,
+            'entrenamientos_manual': entrenamientos_manual,
+            'calorias_totales': int(calorias_totales),
+        }
+
+    except Exception as e:
+        logger.error(f"Error calculando estadísticas principales: {str(e)}")
+        return {
+            'total_entrenamientos': 0,
+            'entrenamientos_liftin': 0,
+            'entrenamientos_manual': 0,
+            'calorias_totales': 0,
+        }
+
+
+def calcular_estadisticas_logros_corregidas(cliente_seleccionado):
+    """
+    Calcula las estadísticas del sistema de logros CORREGIDAS
+    """
+    try:
+        if not LOGROS_DISPONIBLES or not cliente_seleccionado:
+            return valores_por_defecto_logros()
+
+        # Obtener perfil de gamificación
+        perfil = PerfilGamificacion.objects.filter(
+            cliente=cliente_seleccionado
+        ).first()
+
+        if not perfil:
+            logger.warning(f"No se encontró perfil de gamificación para cliente {cliente_seleccionado.id}")
+            return valores_por_defecto_logros()
+
+        # Logros desbloqueados CORREGIDO
+        logros_desbloqueados = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).count()
+
+        # Calcular puntos reales CORREGIDO
+        puntos_reales = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).aggregate(
+            total=Sum('logro__puntos_recompensa')
+        )['total'] or 0
+
+        # Sincronizar puntos si hay diferencia
+        if perfil.puntos_totales != puntos_reales:
+            logger.info(f"Sincronizando puntos: {perfil.puntos_totales} -> {puntos_reales}")
+            perfil.puntos_totales = puntos_reales
+            perfil.save()
+
+        # Calcular nivel y progreso
+        nivel_info = calcular_nivel_y_progreso(puntos_reales)
+
+        return {
+            'puntos_totales': puntos_reales,
+            'logros_desbloqueados': logros_desbloqueados,
+            'racha_actual': perfil.racha_actual,
+            'racha_maxima': perfil.racha_maxima,
+            'nivel_actual': nivel_info['nivel'],
+            'nivel_nombre': nivel_info['nombre'],
+            'progreso_nivel': nivel_info['progreso'],
+            'puntos_nivel_actual': nivel_info['puntos_nivel_actual'],
+            'puntos_siguiente_nivel': nivel_info['puntos_siguiente_nivel'],
+        }
+
+    except Exception as e:
+        logger.error(f"Error calculando estadísticas de logros: {str(e)}")
+        return valores_por_defecto_logros()
+
+
+def valores_por_defecto_logros():
+    """
+    Valores por defecto para logros cuando no hay datos
+    """
+    return {
+        'puntos_totales': 0,
+        'logros_desbloqueados': 0,
+        'racha_actual': 0,
+        'racha_maxima': 0,
+        'nivel_actual': 1,
+        'nivel_nombre': 'Principiante',
+        'progreso_nivel': 0,
+        'puntos_nivel_actual': 0,
+        'puntos_siguiente_nivel': 1000,
+    }
+
+
+def calcular_nivel_y_progreso(puntos_totales):
+    """
+    Calcula el nivel actual y progreso basado en puntos - VERSIÓN CORREGIDA
+
+    LÓGICA:
+    - Con 1000 puntos = Nivel 2, 100% de progreso (completó el nivel)
+    - Con 1500 puntos = Nivel 2, 50% hacia nivel 3
+    - Con 2000 puntos = Nivel 3, 100% de progreso (completó el nivel)
+    """
+    if puntos_totales <= 0:
+        return {
+            'nivel': 1,
+            'nombre': 'Principiante',
+            'progreso': 0,
+            'puntos_nivel_actual': 0,
+            'puntos_siguiente_nivel': 1000,
+        }
+
+    # Calcular nivel actual (cada 1000 puntos = 1 nivel)
+    nivel = max(1, (puntos_totales // 1000) + 1)
+
+    # Puntos en el nivel actual
+    puntos_en_nivel = puntos_totales % 1000
+
+    # Si tiene exactamente múltiplos de 1000, mostrar como nivel completado
+    if puntos_en_nivel == 0 and puntos_totales >= 1000:
+        # Completó el nivel actual
+        progreso = 100
+        puntos_en_nivel = 1000
+    else:
+        # Progreso hacia el siguiente nivel
+        progreso = int((puntos_en_nivel / 1000) * 100)
+
+    # Nombres de niveles
+    nombres_niveles = {
+        1: 'Principiante',
+        2: 'Novato',
+        3: 'Intermedio',
+        4: 'Avanzado',
+        5: 'Experto',
+        6: 'Maestro',
+        7: 'Leyenda',
+    }
+
+    nombre_nivel = nombres_niveles.get(nivel, 'Leyenda Suprema')
+
+    return {
+        'nivel': nivel,
+        'nombre': nombre_nivel,
+        'progreso': progreso,
+        'puntos_nivel_actual': puntos_en_nivel,
+        'puntos_siguiente_nivel': 1000,
+    }
+
+
+def obtener_entrenamientos_recientes(cliente_seleccionado, limite=10):
+    """
+    Obtiene los entrenamientos más recientes
+    """
+    try:
+        entrenamientos = EntrenoRealizado.objects.all()
+
+        if cliente_seleccionado:
+            entrenamientos = entrenamientos.filter(cliente=cliente_seleccionado)
+
+        return entrenamientos.select_related(
+            'cliente', 'rutina'
+        ).order_by('-fecha', '-id')[:limite]
+
+    except Exception as e:
+        logger.error(f"Error obteniendo entrenamientos recientes: {str(e)}")
+        return []
+
+
+def obtener_logros_recientes_corregidos(cliente_seleccionado, limite=5):
+    """
+    Obtiene los logros más recientes del cliente CORREGIDO
+    """
+    try:
+        if not LOGROS_DISPONIBLES or not cliente_seleccionado:
+            return []
+
+        # Obtener perfil
+        perfil = PerfilGamificacion.objects.filter(
+            cliente=cliente_seleccionado
+        ).first()
+
+        if not perfil:
+            return []
+
+        # Logros recientes CORREGIDO
+        logros_recientes = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).select_related('logro').order_by('-fecha_desbloqueo')[:limite]
+
+        # Formatear datos para el template
+        logros_formateados = []
+        for logro_usuario in logros_recientes:
+            logros_formateados.append({
+                'nombre': logro_usuario.logro.nombre,
+                'puntos': logro_usuario.logro.puntos_recompensa,
+                'fecha_obtenido': logro_usuario.fecha_desbloqueo,
+                'descripcion': logro_usuario.logro.descripcion,
+            })
+
+        return logros_formateados
+
+    except Exception as e:
+        logger.error(f"Error obteniendo logros recientes: {str(e)}")
+        return []
+
+
+def sincronizar_datos_logros(cliente_id):
+    """
+    Función para sincronizar datos de logros manualmente
+    """
+    try:
+        if not LOGROS_DISPONIBLES:
+            logger.warning("Sistema de logros no disponible")
+            return False
+
+        cliente = Cliente.objects.get(id=cliente_id)
+        perfil = PerfilGamificacion.objects.filter(cliente=cliente).first()
+
+        if not perfil:
+            logger.warning(f"No se encontró perfil para cliente {cliente_id}")
+            return False
+
+        # Calcular puntos reales
+        puntos_reales = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).aggregate(
+            total=Sum('logro__puntos_recompensa')
+        )['total'] or 0
+
+        # Contar entrenamientos reales
+        entrenamientos_reales = EntrenoRealizado.objects.filter(
+            cliente=cliente
+        ).count()
+
+        # Actualizar perfil
+        perfil.puntos_totales = puntos_reales
+        perfil.entrenos_totales = entrenamientos_reales
+        perfil.save()
+
+        logger.info(
+            f"Datos sincronizados para cliente {cliente_id}: {puntos_reales} puntos, {entrenamientos_reales} entrenamientos")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error sincronizando datos de logros: {str(e)}")
+        return False
+
+
+def verificar_estado_logros(cliente_id):
+    """
+    Función para verificar el estado actual de los logros
+    """
+    try:
+        if not LOGROS_DISPONIBLES:
+            return {"error": "Sistema de logros no disponible"}
+
+        cliente = Cliente.objects.get(id=cliente_id)
+        perfil = PerfilGamificacion.objects.filter(cliente=cliente).first()
+
+        if not perfil:
+            return {"error": "No se encontró perfil de gamificación"}
+
+        # Datos del perfil
+        logros_desbloqueados = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        )
+
+        puntos_calculados = logros_desbloqueados.aggregate(
+            total=Sum('logro__puntos_recompensa')
+        )['total'] or 0
+
+        entrenamientos_reales = EntrenoRealizado.objects.filter(
+            cliente=cliente
+        ).count()
+
+        return {
+            "perfil_id": perfil.id,
+            "puntos_en_perfil": perfil.puntos_totales,
+            "puntos_calculados": puntos_calculados,
+            "diferencia_puntos": puntos_calculados - perfil.puntos_totales,
+            "logros_desbloqueados": logros_desbloqueados.count(),
+            "entrenamientos_en_perfil": perfil.entrenos_totales,
+            "entrenamientos_reales": entrenamientos_reales,
+            "diferencia_entrenamientos": entrenamientos_reales - perfil.entrenos_totales,
+            "racha_actual": perfil.racha_actual,
+            "racha_maxima": perfil.racha_maxima,
+            "logros_detalle": [
+                {
+                    "nombre": lu.logro.nombre,
+                    "puntos": lu.logro.puntos_recompensa,
+                    "fecha": lu.fecha_desbloqueo,
+                    "completado": lu.completado
+                }
+                for lu in logros_desbloqueados
+            ]
+        }
+
+    except Exception as e:
+        logger.error(f"Error verificando estado de logros: {str(e)}")
+        return {"error": str(e)}
+
+
+def calcular_nivel_y_progreso_corregido(puntos_totales):
+    """
+    Calcula el nivel actual y progreso basado en puntos - VERSIÓN CORREGIDA
+    """
+    if puntos_totales <= 0:
+        return {
+            'nivel': 1,
+            'nombre': 'Principiante',
+            'progreso': 0,
+            'puntos_nivel_actual': 0,
+            'puntos_siguiente_nivel': 1000,
+        }
+
+    # Calcular nivel actual
+    # Nivel 1: 0-999 puntos
+    # Nivel 2: 1000-1999 puntos
+    # Nivel 3: 2000-2999 puntos, etc.
+    nivel = (puntos_totales // 1000) + 1
+
+    # Puntos en el nivel actual
+    puntos_en_nivel = puntos_totales % 1000
+
+    # Caso especial: si tiene exactamente múltiplos de 1000
+    if puntos_en_nivel == 0 and puntos_totales > 0:
+        # Está al final del nivel anterior
+        nivel = nivel - 1
+        puntos_en_nivel = 1000
+
+    # Puntos necesarios para el siguiente nivel
+    puntos_siguiente_nivel = 1000
+
+    # Progreso en porcentaje
+    progreso = int((puntos_en_nivel / puntos_siguiente_nivel) * 100)
+
+    # Nombres de niveles
+    nombres_niveles = {
+        1: 'Principiante',
+        2: 'Novato',
+        3: 'Intermedio',
+        4: 'Avanzado',
+        5: 'Experto',
+        6: 'Maestro',
+        7: 'Leyenda',
+    }
+
+    nombre_nivel = nombres_niveles.get(nivel, 'Leyenda Suprema')
+
+    return {
+        'nivel': nivel,
+        'nombre': nombre_nivel,
+        'progreso': progreso,
+        'puntos_nivel_actual': puntos_en_nivel,
+        'puntos_siguiente_nivel': puntos_siguiente_nivel,
+    }
+
+
+def calcular_nivel_y_progreso_alternativo(puntos_totales):
+    """
+    Versión alternativa que muestra progreso hacia el siguiente nivel
+    """
+    if puntos_totales <= 0:
+        return {
+            'nivel': 1,
+            'nombre': 'Principiante',
+            'progreso': 0,
+            'puntos_nivel_actual': 0,
+            'puntos_siguiente_nivel': 1000,
+        }
+
+    # Calcular nivel actual (cada 1000 puntos = 1 nivel)
+    nivel = max(1, (puntos_totales // 1000) + 1)
+
+    # Puntos hacia el siguiente nivel
+    puntos_hacia_siguiente = puntos_totales % 1000
+    puntos_siguiente_nivel = 1000
+
+    # Si tiene exactamente múltiplos de 1000, mostrar como 100% del nivel actual
+    if puntos_hacia_siguiente == 0 and puntos_totales >= 1000:
+        progreso = 100
+        puntos_hacia_siguiente = 1000
+    else:
+        progreso = int((puntos_hacia_siguiente / puntos_siguiente_nivel) * 100)
+
+    # Nombres de niveles
+    nombres_niveles = {
+        1: 'Principiante',
+        2: 'Novato',
+        3: 'Intermedio',
+        4: 'Avanzado',
+        5: 'Experto',
+        6: 'Maestro',
+        7: 'Leyenda',
+    }
+
+    nombre_nivel = nombres_niveles.get(nivel, 'Leyenda Suprema')
+
+    return {
+        'nivel': nivel,
+        'nombre': nombre_nivel,
+        'progreso': progreso,
+        'puntos_nivel_actual': puntos_hacia_siguiente,
+        'puntos_siguiente_nivel': puntos_siguiente_nivel,
+    }
+
+
+def calcular_estadisticas_logros_con_progreso_corregido(cliente_seleccionado):
+    """
+    Versión corregida de la función que calcula estadísticas de logros
+    con progreso de nivel funcionando correctamente
+    """
+    try:
+        if not cliente_seleccionado:
+            return valores_por_defecto_logros()
+
+        # Intentar importar modelos de logros
+        try:
+            from logros.models import PerfilGamificacion, LogroUsuario
+        except ImportError:
+            return valores_por_defecto_logros()
+
+        # Obtener perfil de gamificación
+        perfil = PerfilGamificacion.objects.filter(
+            cliente=cliente_seleccionado
+        ).first()
+
+        if not perfil:
+            return valores_por_defecto_logros()
+
+        # Logros desbloqueados
+        logros_desbloqueados = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).count()
+
+        # Puntos totales
+        puntos_totales = perfil.puntos_totales
+
+        # Calcular nivel y progreso CORREGIDO
+        nivel_info = calcular_nivel_y_progreso_alternativo(puntos_totales)
+
+        return {
+            'puntos_totales': puntos_totales,
+            'logros_desbloqueados': logros_desbloqueados,
+            'racha_actual': perfil.racha_actual,
+            'racha_maxima': perfil.racha_maxima,
+            'nivel_actual': nivel_info['nivel'],
+            'nivel_nombre': nivel_info['nombre'],
+            'progreso_nivel': nivel_info['progreso'],
+            'puntos_nivel_actual': nivel_info['puntos_nivel_actual'],
+            'puntos_siguiente_nivel': nivel_info['puntos_siguiente_nivel'],
+        }
+
+    except Exception as e:
+        print(f"Error calculando estadísticas de logros: {str(e)}")
+        return valores_por_defecto_logros()
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)

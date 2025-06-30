@@ -1,0 +1,2302 @@
+Listado de rutas de carpetas
+El número de serie del volumen es B280-4E62
+C:.
+|   db.sqlite3
+|   estructura.txt
+|   limpieza_datos.log
+|   limpieza_datos.py
+|   limpieza_datos_bd.py
+|   limpieza_datos_simplificado.py
+|   manage.py
+|   package-lock.json
+|   package.json
+|   Procfile
+|   README_JOI.txt
+|   requirements.txt
+|   verificar_urls_clientes.py
+|   views.py
+|   __init__.py
+|   
++---.git
+|   |   COMMIT_EDITMSG
+|   |   config
+|   |   description
+|   |   HEAD
+|   |   index
+|   |   
+|   +---hooks
+|   |       applypatch-msg.sample
+|   |       commit-msg.sample
+|   |       fsmonitor-watchman.sample
+|   |       post-update.sample
+|   |       pre-applypatch.sample
+|   |       pre-commit.sample
+|   |       pre-merge-commit.sample
+|   |       pre-push.sample
+|   |       pre-rebase.sample
+|   |       pre-receive.sample
+|   |       prepare-commit-msg.sample
+|   |       push-to-checkout.sample
+|   |       sendemail-validate.sample
+|   |       update.sample
+|   |       
+|   +---info
+|   |       exclude
+|   |       
+|   +---logs
+|   |   |   HEAD
+|   |   |   
+|   |   \---refs
+|   |       +---heads
+|   |       |       main
+|   |       |       
+|   |       \---remotes
+|   |           \---origin
+|   |                   main
+|   |                   
+|   +---objects
+|   |   +---00
+|   |   |       0d8e1118a74ea8f63a2fecff22d4308342d111
+|   |   |       4f577c2a10de468cb3ce708b59c7fa42ca2301
+|   |   |       5b7768c8e38b3efb3b5ed217ef8907924c514d
+|   |   |       af7c52eb1e1d0255073e06eaf9df780296b47e
+|   |   |       c17ef73467547369edf7a0e7d01cabed0c785f
+|   |   |       ea2e81c795d561526c7e5ab9e793cc9b38d144
+|   |   |       
+|   |   +---01
+|   |   |       82690c0e92d51fa7b75185903db699b810733d
+|   |   |       990c21fa228ea1baebcb4788ec67d90ded0bb7
+|   |   |       cb33edddeb066070c55ed0b937872841c085e9
+|   |   |       eb9360822461e24a8ddd079c16bac2af559b65
+|   |   |       
+|   |   +---02
+|   |   |       4590708d308a9332cc940703e785aacfca4e3d
+|   |   |       ba2098f1e64a0eb5d5f15e55a3a4cb4482c884
+|   |   |       e6e22500db18a8e0d21405702da8530ab3ef9a
+|   |   |       eda3f21a336375999b1d7b22637568d86e02a1
+|   |   |       f1553990a22b9d0d1995c994fbb363512fef26
+|   |   |       f283abada802aa2dc4fab5181c166ab711b75a
+|   |   |       
+|   |   +---03
+|   |   |       73a33b3a7505846e18715e7f55d024762c9c1f
+|   |   |       a1de2fef69c9ef77a8517ecf0d2d0cb90f0f51
+|   |   |       bca2bcf5eee22a2f7536ea54297250a4206fac
+|   |   |       
+|   |   +---04
+|   |   |       446965dc662b35ae52646f2af4d5238ec750fd
+|   |   |       91d579c051558016dc6b1af76495b1dad025f1
+|   |   |       b25e9684ac096bfbb8ed66c1a13387baf2f3cc
+|   |   |       c02741ad3052841a6eae6ac680b571699a8d3a
+|   |   |       
+|   |   +---06
+|   |   |       5c99003f3c70bab5021070f5c44372a7ece1e1
+|   |   |       64121996a97e23e0e3585e7e2404200f43c2a5
+|   |   |       c964d30d98e74773a21defdf6d0bd26f52c295
+|   |   |       
+|   |   +---07
+|   |   |       0b61a26dd6fdd1e1d468b391ab37ac8eff4c57
+|   |   |       8c7c2f17ddf97fb82ba7aa631d8ca11a572bd4
+|   |   |       
+|   |   +---08
+|   |   |       94279e25815ca583444bc7764857d456712999
+|   |   |       a4aa87fe2aed55a157e3c6075bb520b3c520e9
+|   |   |       bfc59f18d8e61c0b8e40d75ed99e2efeb1ce16
+|   |   |       d47fc2982161eb6e0b89fe8d8c29ad7b32b56f
+|   |   |       f25be1389c89a2ba00f08483adf39df74b9cfa
+|   |   |       
+|   |   +---09
+|   |   |       e184079a1f456426fcdb7c4d9a83523090e46a
+|   |   |       
+|   |   +---0a
+|   |   |       55035e3a85cf25dbf40968cd2c3531fce40572
+|   |   |       70fd87755dbbefcb351efcf620e667f86a2c30
+|   |   |       80857d2d65a01ad35d2b11218db6d796a5e104
+|   |   |       df5aa1f2a2719cc80c4a964aa9b24fa3f223da
+|   |   |       
+|   |   +---0b
+|   |   |       7480904edc4b4f5f8e4a414a4f999334b3e804
+|   |   |       983eefcdd3b5303b6c39aa89aa1d8d38880b3a
+|   |   |       9f01d8313b5fb697602ae8434fcc6ab1754545
+|   |   |       cc9cd7b59992c6d69009504e94b175c6645898
+|   |   |       
+|   |   +---0c
+|   |   |       2e1e7223c0846a939d70c3344e08ae5b4b302d
+|   |   |       7d47adf437cb2a56398b991292b100dc9c7633
+|   |   |       a125df6849f0e09c51dc0c56712f9f3dc284ff
+|   |   |       e4e035ae4ec3dfe601af33100b1368bac9034d
+|   |   |       
+|   |   +---0d
+|   |   |       0c4c31de2a9c16c81320d22a33ee2f4fc5e250
+|   |   |       692695560ff345cf397b810f83d45d59c90396
+|   |   |       dd36b95d207bb1023eff29795f8009195767dd
+|   |   |       
+|   |   +---0e
+|   |   |       f7f9990da8b32169793b2986b6d05f2d5559c3
+|   |   |       
+|   |   +---0f
+|   |   |       26928431a88af578a2a05da90653e31ad2bb1b
+|   |   |       3f18f77954bc08b78946047c332558348912ea
+|   |   |       9a2fd843f2e9763f91ffce1464d9e6fdf3ae0a
+|   |   |       
+|   |   +---10
+|   |   |       504d4a8415ce8a543e248477cd05da12eb43ba
+|   |   |       5ce2da2d6447d11dfe32bfb846c3d5b199fc99
+|   |   |       b50033a110d4283874218bc784b5d46c21fe54
+|   |   |       e4937a05b96f627c0ee16e9fa51e4fe9a815b3
+|   |   |       
+|   |   +---11
+|   |   |       065c9b2430591d5035e86815b1c0e15d77dd10
+|   |   |       10d1f79dc37f61544f55d3e4e908c708df6a9a
+|   |   |       4073a08222950c15a993b27054d59e6722a6e6
+|   |   |       50903b872ce2b15608f36f7b0191879ef15e3e
+|   |   |       
+|   |   +---12
+|   |   |       3634294f411a8103cbb65f0c176809d3e8eb41
+|   |   |       625c47f573f98ac333c66c83f80ee8b7474693
+|   |   |       d60887f08e64712ec20a40154d521fe7740a7a
+|   |   |       
+|   |   +---13
+|   |   |       0b539cb6500a87892a3ff4e5be9938d512ae15
+|   |   |       6fc49a9a58d24d748003f531909f163d075d3c
+|   |   |       cd84a02fdd042d5df52cccf96805cbd8cc6fe1
+|   |   |       
+|   |   +---14
+|   |   |       6ab09b7c50daf1f04814fccb913b8d87302176
+|   |   |       e34006707d54d6a0534f9fb161870279913bb6
+|   |   |       f6729208a3bfcef4ff738e13d054cb120e5bff
+|   |   |       
+|   |   +---16
+|   |   |       1953a8b3cd1ec838dda27e2f676b5a3e40719f
+|   |   |       9e54adbe32c1cdca7b4dc6b0235ffff8548ca1
+|   |   |       
+|   |   +---17
+|   |   |       48eafbaf27a2273507f803ca43dea924736c68
+|   |   |       
+|   |   +---18
+|   |   |       33eb730b4c9b16a3477ae98aa15f23aa16a4c3
+|   |   |       597c0f0ecf10628a9a484161921ec76ec3b1d0
+|   |   |       bc22477348c36584417cd9a57e734b7999798a
+|   |   |       
+|   |   +---19
+|   |   |       143b4b3dc805df3eced864ecd0f992527a1518
+|   |   |       
+|   |   +---1a
+|   |   |       270f5cb91dd7b2bac7584180774bed5e450037
+|   |   |       784602c36c89d44516c94e19e8560ab2e4f72e
+|   |   |       86433c223039bda5f68f8b6ef10d15e5e0eff7
+|   |   |       
+|   |   +---1b
+|   |   |       057eef0d332fed244bc1760e3c67492977b2fa
+|   |   |       a7b40bef7ef1f6efbe0718d3d00ac3f9f3910e
+|   |   |       c8724a79a21465291b3c0424f1280dd4eda9ac
+|   |   |       d98ae164f74b3fe367f52515687e97d74c0032
+|   |   |       e96b4ecd394aca99b1481dab5689f0d93526ea
+|   |   |       
+|   |   +---1c
+|   |   |       031087798e8a64c27abff92428431df663584b
+|   |   |       333d92b57977784fd534a53bb23226c638e71c
+|   |   |       39f672103d721b9e82e3d98f35f2f5051a7a9f
+|   |   |       4c81d2668dc82d28dd4b122a4643b0de93c6c6
+|   |   |       6b99fc0946c3f41df99174e3621eb88d3c23e7
+|   |   |       951f8b720b8ecf36ca137ccb4f13b8065f0a4f
+|   |   |       a64ae5b08ed18efda27c9a58a8496d31afac2a
+|   |   |       f017db54bc13c203db51102789f9b1637b02cc
+|   |   |       
+|   |   +---1d
+|   |   |       52c260f2987b63385bf9aa4e04eb7a410a0202
+|   |   |       7a544e6f2cbff6655a017f843931e991a156a6
+|   |   |       9bacbc0a22e0d0a21abd8cd816e59f79109039
+|   |   |       faae69a83cc7cc855e60686ef799a8cb25ef6e
+|   |   |       
+|   |   +---1e
+|   |   |       38081b951adddd6fffd2d88fd4d05fe02ad586
+|   |   |       46ac6c7ea3bd37760edf2d55e24a28e4164d9f
+|   |   |       
+|   |   +---1f
+|   |   |       283e9e93b96036637b7fb97560db10273ef45d
+|   |   |       2db6f738c89824848e4a2b37d503eadc170cfc
+|   |   |       7ce5de454538db4f2ca826ef03dcdfdad105c1
+|   |   |       ac152f3817999341c500ad36ad23a4eb4be3a3
+|   |   |       c03c6232ab7d1232cf7af609ce82d79a45e66d
+|   |   |       
+|   |   +---20
+|   |   |       2783290651a508ac77e75f7b39a69239bd8bce
+|   |   |       8a00570578b507081cb1e77ff8bb75e3f13b22
+|   |   |       a855efd3c067a74dff4799c1ff470e3189d231
+|   |   |       bae2167a7813e8d1182dbdab94bb05071d9a2c
+|   |   |       
+|   |   +---21
+|   |   |       5482c45a6a23b9357c134ba7c57545ccd21417
+|   |   |       73f62ef8734b62984471df92efe9a5ae5d4e40
+|   |   |       
+|   |   +---22
+|   |   |       3cd5370ccf374592f6cd5d1ba3e88986b8d85f
+|   |   |       8854f3b00be502dbb2deed17020bbfe915556d
+|   |   |       ad88648e07b02e4d3f311ade499ba1ac5b7738
+|   |   |       
+|   |   +---23
+|   |   |       ebe8e5c7e1fe5def03cfd27162b66e02a5cb50
+|   |   |       
+|   |   +---24
+|   |   |       2b81a45f8540831ef7c40536f79530b6652c62
+|   |   |       641f6e1636581986bde38d903579d960045e09
+|   |   |       8328f3d05de92bcd6ac8aa9803cffd44e9e471
+|   |   |       854fc7ab00feee310fd84864ef53dee84b6654
+|   |   |       ae9a44a7af8853eed60ba86fdeeed1f1721e22
+|   |   |       bf7bf1a0194fe387797978193420cb6b404f90
+|   |   |       f3bc2d61addd21f3d6c65f603e647ab8480fe0
+|   |   |       
+|   |   +---25
+|   |   |       a8805aa025a301edc5b224614e2d1b77658952
+|   |   |       cecbae72c11124d512add56c0fa8ba282b4878
+|   |   |       d89c6870401d398e81d5cb6dfeca6a25dee4fd
+|   |   |       
+|   |   +---26
+|   |   |       1cefee82d8b76415a009322fb1d9f79287414e
+|   |   |       55119405f9f5294642fde1774db73399f521a2
+|   |   |       d33521af10bcc7fd8cea344038eaaeb78d0ef5
+|   |   |       
+|   |   +---27
+|   |   |       1d37363a42c0f14596df89c545cac99eb41689
+|   |   |       db4a76df63489f3a7919f3d9861321c0450016
+|   |   |       
+|   |   +---28
+|   |   |       479f1b40ec02d4272a180fccf9828a2d6f075f
+|   |   |       8bc7013ce514a084c397d2840e92dc33f954f2
+|   |   |       
+|   |   +---29
+|   |   |       78c3f7057b5bb86226fa5e1c5829229a55a3b9
+|   |   |       80148fac3eec4572367221ace24fbd80fc6baf
+|   |   |       d5c088e55a92ebc037fc40b5710e8e4a728abf
+|   |   |       e4965c66381f2d6990f2ca1751c7c7c75fc7d2
+|   |   |       faf6fbe55d9b10746ab5a8edb569f9c782e7f3
+|   |   |       
+|   |   +---2a
+|   |   |       56fc580c382a796f208de48ad7f3b510ebd670
+|   |   |       821e168fbd14bdb5b2c446337a8a383d4c2f63
+|   |   |       8b404b60fad14a4a0fc8fa08f50fad3ba428df
+|   |   |       f1b36ea61f389e65e54ba4355c7d834cb24dfb
+|   |   |       
+|   |   +---2b
+|   |   |       4b83424752b4d801b5014418fb25dd188ce3f2
+|   |   |       74058d23746b6aa789693573283ed969821274
+|   |   |       9003bff0e5e150c1b4516510c08ee10b71fdfd
+|   |   |       
+|   |   +---2c
+|   |   |       5649d31089b222143ad84b00aac9c4136905c5
+|   |   |       bf586de381417326bd7fccd6c1c0b9a810c8ce
+|   |   |       f0f85f2c9d0804e2b12e4466c046029da8f0f6
+|   |   |       
+|   |   +---2d
+|   |   |       153c7a7792c1e1850ab19773bf18ba0341a1b0
+|   |   |       17b9d8e057659eba3730ad1917efd98ef89a5c
+|   |   |       1d5e1eba9f08af38c2ca1f5b4c715d0d8c1491
+|   |   |       23c8c3442feb4c54bb924097bfa08948df5784
+|   |   |       28d44904a10862f0b49d7d1c193af30beb6495
+|   |   |       
+|   |   +---2e
+|   |   |       0d3832c9299c3994f627cd64ed0341a5da7b14
+|   |   |       39a9b183d065e8f33052d29f082b350c4ab502
+|   |   |       d6ea372402ead0da6351a7aa337355b94d521d
+|   |   |       d8219f985afa47852a59cd67ce0d6835332475
+|   |   |       
+|   |   +---2f
+|   |   |       0c5fb0c2f24cd7fbc43d07b8915049c58e6a5e
+|   |   |       
+|   |   +---30
+|   |   |       1c53e25d93c217910f49c51f8fad19c11295b8
+|   |   |       255ff377719751d344db5ffb76e5979bac077c
+|   |   |       2f9b94472984a336300f7a410893358c7cc665
+|   |   |       69c6f27bfdec0b246d21311f50951e5ed6c356
+|   |   |       cb5c905ab15b7e968cce0acbbbe2d0554eec93
+|   |   |       e203bb800936214d26626acbc8c576b2b1a722
+|   |   |       e3e1c0be39e4729c08e104081ad8b8bce0c58e
+|   |   |       fcf53d466c7ac7841d8c4fbd93106c0235488a
+|   |   |       
+|   |   +---31
+|   |   |       09165388fa12da1eb04e88a4a5ed47598c7a06
+|   |   |       5c4615e02e5603cc1eb1f2a570c245c1ebb2a9
+|   |   |       92e6c37f7127584c2e5d29f3ab49352e517357
+|   |   |       
+|   |   +---32
+|   |   |       475334cce569f9249520ff94c34d90a1a7ed78
+|   |   |       97766ba1cde72143d374508e005d9735882a22
+|   |   |       e5ac7de893370dfbbffa11a373a9c3b3662d12
+|   |   |       f911bf68a6035f8a7f5f4e169307069399e78c
+|   |   |       fabfe87a20739c31e5782700c6e1f6e2b54481
+|   |   |       
+|   |   +---33
+|   |   |       5626482285a715f3952d803fd3c08e947e3534
+|   |   |       
+|   |   +---34
+|   |   |       5ecabe23c3718bf9836f490add26c4a543ca51
+|   |   |       9d951e25fb55af2363e20342d1038b5b88b80f
+|   |   |       bebe07d3ba17aad8d69d8d4512b9f1ab8314a0
+|   |   |       
+|   |   +---35
+|   |   |       19bb54707460eaef1ac7bbef00c2a2a19b5fb5
+|   |   |       8572a6576bb33f5a4a16763803c2769d48f278
+|   |   |       e157f7963ba3ca7ea92a71cc0de2facce52fef
+|   |   |       fec1895452acf79bf625c7a2875ba606107cff
+|   |   |       
+|   |   +---36
+|   |   |       e40522ce710629323e9fd940161e15c9cf8bec
+|   |   |       
+|   |   +---37
+|   |   |       0675933c202d7dfaa1e6149493fd5464176d22
+|   |   |       66c88abb1e9c1c9dc3d3a01d53548372150278
+|   |   |       
+|   |   +---38
+|   |   |       27f095a0bdc09f1ce8d42900b9d00d26718230
+|   |   |       64e042fed51280d1cb236c078c4aa0a7d2f746
+|   |   |       69352e31c682713843a19fd79cce17bf8cc60d
+|   |   |       b005e5cdd2101ca6ba80ccfde04e932684fc90
+|   |   |       
+|   |   +---39
+|   |   |       08654080435149f100fdb3437a9721420ef50a
+|   |   |       bf7fdfef4463b559a4d6d9251af590f0439a7a
+|   |   |       
+|   |   +---3a
+|   |   |       5ad44103285c03f44aca91ca775724d1c52be2
+|   |   |       93398d0610b1e5b478ec9f847911036b951739
+|   |   |       
+|   |   +---3b
+|   |   |       19285734251bd44ba90495f3edf1429417937f
+|   |   |       1b77499790cc91ff4d9d244e1a111da9417ce0
+|   |   |       94c49f52eda2709eed8d439b8d91800f67a0f7
+|   |   |       b7a8c9189abd8cb24917356638f56e035cfc0c
+|   |   |       
+|   |   +---3c
+|   |   |       81591648d19d516833776d83918d3cc5c4aab2
+|   |   |       acc1a4a6687991a5b1142700de6016e41cfc21
+|   |   |       c5e94b35d306dadf087d314772179ddaae24cf
+|   |   |       
+|   |   +---3d
+|   |   |       5bf09dbd5b041381511a5c0becbdf6cc9c16ac
+|   |   |       b4ec7fa6612625ec731a2103a489bcdbce4637
+|   |   |       fc66e05927f7eba85358252d8a56afb7a34540
+|   |   |       
+|   |   +---3e
+|   |   |       3fb355810d37caed0c7609b07441d5c15efd3a
+|   |   |       6de29b133beef4d08e11babbca4889fad1e5a8
+|   |   |       b18be58ee50e6bb73c498ef60b949e61cf7c56
+|   |   |       
+|   |   +---3f
+|   |   |       6c55cd804e71f6d3039f6956431bfeba7eeffa
+|   |   |       ca8ac9cec19f061dcdd82afd8de4804c898590
+|   |   |       ce2d478c5698e8454b65fe8a7756c48aa17282
+|   |   |       de9a3ff2b7d94365d497abcbca4da9595ffc7d
+|   |   |       
+|   |   +---40
+|   |   |       59b15544994e5e73e9b219c31627055dfa17bc
+|   |   |       d2cf88e9765fa9300fca968185c8f76a07f92f
+|   |   |       
+|   |   +---41
+|   |   |       26b4f9e3d07a75c5d366f4abfe3371b2be3057
+|   |   |       3fa5533bd5b8e93537c2e4f138f975d4b58cfe
+|   |   |       48a2de0f86a303f7c3ad7a59d63a3d9c8c0a2f
+|   |   |       6ac6dce45f6fbbfc9a45dea0c468259dc17292
+|   |   |       86b711d2548e987ad835526cce30fe33deb747
+|   |   |       
+|   |   +---42
+|   |   |       8c696687eae44f1ab71516eac98de6be8c7243
+|   |   |       
+|   |   +---43
+|   |   |       0476000e77b1d3322694dfd6307fd8bce4ccf4
+|   |   |       4474e4215212ab40ea9dedac84f63e374d82d2
+|   |   |       6bf1255b0952e9b839c279eb83ad987e98e8c6
+|   |   |       baee991fa789e677bab52c358c15ed1827dcb1
+|   |   |       c27704148b422559b10cd41fbdaced0b4f3172
+|   |   |       fead95069b9fc4e90bfa6ebfcb82904108cdf4
+|   |   |       fffa5c20adfbd897a8ead983b2f8148a1c33b7
+|   |   |       
+|   |   +---44
+|   |   |       3cfb9a2fe9b98f0386712aa3fde9681fa3ff89
+|   |   |       69416ffbe460874c6d0d652f399a8cd5cc98c8
+|   |   |       8fbfc758b57ba78575cbe3641dab48f4f3fca4
+|   |   |       d756deabf4176cd69a0e7a3bcd9e9df50b5a18
+|   |   |       ea64cb1b213c3e9953216abac84cd16cc885d9
+|   |   |       
+|   |   +---45
+|   |   |       1025e2c7d24e9e02a2042025b688da7e0b9265
+|   |   |       e3c25ca00e630db7410b98f87e01d86b95fdab
+|   |   |       
+|   |   +---46
+|   |   |       b084d7583aaa6d35ee5c7bf2621f9b8ba66ce9
+|   |   |       
+|   |   +---48
+|   |   |       144c18c01d5e5de60bbed94db793b38422531a
+|   |   |       23dc562fb9c9679dc6b7121895bc63f334e6d3
+|   |   |       646c3f01942e29c3fffee080c10203adb13c8c
+|   |   |       6facb52101f965fd3c74e03c4c4299006cdcd9
+|   |   |       721eaa4dae63514987494ec6023078461a8bd3
+|   |   |       93aa2f70d916528dfc3a1a7cd44e45439e26b6
+|   |   |       9a2da1a8984b5e0d8482a5512613dd7112d986
+|   |   |       cdfb45d271e9a087af382d32af230a44e4465d
+|   |   |       
+|   |   +---49
+|   |   |       1ba1cec41418c881bd2faa6233c34dbeadc4d7
+|   |   |       
+|   |   +---4a
+|   |   |       0b3bf009dc8aa9634681bd11b863924457c5e3
+|   |   |       e4eab8d041023297234ba62e9e17563d3b2adf
+|   |   |       
+|   |   +---4b
+|   |   |       0cfd113b2dc62617e17811352d7424864e2bad
+|   |   |       be632f10acf2e04f2c6dfe4c4beb920a4ab372
+|   |   |       c19fef17c61a0214f8ac6cff715af519263728
+|   |   |       dcfcb8ddf83909b37899b4a6cd01cf0932ea69
+|   |   |       
+|   |   +---4c
+|   |   |       2fa90cce12ce2983c6575352f3f38adb844bd0
+|   |   |       7c7cfc230318b043dd8149ace69dd13d3d74be
+|   |   |       a5748c3867383a078312e5200b6cb12d40af20
+|   |   |       df39f0abeb8c52ffb1616ce0be887e45633423
+|   |   |       fd21d5bae83820ce21eed6122d50447f91e963
+|   |   |       
+|   |   +---4d
+|   |   |       0b7d3e345cd5b1119ee1868ab826d9a1c87fd5
+|   |   |       4200818c11034d5363f9b822fe80491189e9c4
+|   |   |       5ade38f0fd3a5bd481be166924d276aae82965
+|   |   |       7544c5a489dc641439a11e6d51d0155d67924c
+|   |   |       80338ce6df261e3ba456189bb09c4add5a3ca5
+|   |   |       ca94f414ee9fdfa596cf9cc0148b7673353d90
+|   |   |       eae78af9fbd4c841ea197125fb83babb588123
+|   |   |       
+|   |   +---4e
+|   |   |       5f390755b0014aef2d6897826702acd52b9079
+|   |   |       cb13f2525fae021a16e299c35919b3f0311b11
+|   |   |       f1a3be9159a28768aa153aed6241e688c19d71
+|   |   |       
+|   |   +---4f
+|   |   |       1419fe47b485d67b46588a1d8af9cb9ff07925
+|   |   |       4772b7193a9cb9ad58557b6753489d26ccbbe9
+|   |   |       4773284ea4742fbb44475c7f14c8908d978c87
+|   |   |       72c0886a69d732dc6b9607d66ac03cfd841aa7
+|   |   |       74573ae1c653fdd1ebf8f5753a5ddf1306b189
+|   |   |       a8e7697168a38cfb41f8a4844470e5d253ffce
+|   |   |       
+|   |   +---50
+|   |   |       49528ad0d5901a3499e71a88a36853c19e5639
+|   |   |       7c7d9f293deb442690a3cc1d91a6367c38119e
+|   |   |       b4f97276b46f2d3cd7102aaede3c526d3887b6
+|   |   |       
+|   |   +---51
+|   |   |       22bff5dfd013c6514605af8ab2034cb6388a5f
+|   |   |       62b8068687b2cd8357f1769584addf5a6d1334
+|   |   |       c41c0192361cc6ad08d798ad9a3acae99fc115
+|   |   |       f73ed8cf96d7e2d7299e2834aa7a78b195ef20
+|   |   |       
+|   |   +---53
+|   |   |       7b79c00f85bf0db084e282e71dc11332f97f31
+|   |   |       8af2eb069d0288e7651c8d951f8a4fe4a9ad96
+|   |   |       
+|   |   +---54
+|   |   |       1802f4e98232bbc2ed642477eeb1fb89de7909
+|   |   |       
+|   |   +---55
+|   |   |       155c4e98df784a945bcedaf99914365ba301af
+|   |   |       8e5d90f2248c869eed969f7af0a946fff9eae4
+|   |   |       b59c5f4e3cba386ce88c93dcf6f97bb7f34f82
+|   |   |       
+|   |   +---57
+|   |   |       0a5669374963a6ed9120aa784b8aaf15bceacc
+|   |   |       31673c45c38624c85a2038c9a50b1781a54a79
+|   |   |       42929e48e0599656cf0e76a6554aadaed88d14
+|   |   |       d0cc86f48fb65f6224aa574d385d9f2c0beb4d
+|   |   |       
+|   |   +---58
+|   |   |       0f87f405c01bbd5779d3c7ac1f75cda8eb21dd
+|   |   |       83d877e89b89d42fa121725ae7b726dbfa5f50
+|   |   |       
+|   |   +---59
+|   |   |       162024ed384536040f0bda730abc91bc9658a3
+|   |   |       2b093bc3c32079f61779b387f49ad2b45d2e80
+|   |   |       4dfb5ad3d41de8bb4b3c8b525741d1f040ae50
+|   |   |       
+|   |   +---5a
+|   |   |       3ba9bf75541ff0aa71dfb8afb745a9935a67bd
+|   |   |       
+|   |   +---5b
+|   |   |       16389725ef2998b93ee22ac5058c0e3dddce0f
+|   |   |       7d58845479e6dd3e5a3670a1464304a9211ff7
+|   |   |       d42c11aff0ba988d6b2d581766912f6e2bfff6
+|   |   |       df5bbd3de3e51e837d9adf7833df3026c6faf4
+|   |   |       
+|   |   +---5c
+|   |   |       839fe547b9029a45ca138400ac18fc88a31780
+|   |   |       8b7a81735eb134ce7c9d455cb7fdde46862c50
+|   |   |       a133c0e69f296ecdd8eb9ae5f38a0aa4ab0212
+|   |   |       ab723e0afc21c069bcea2b352a022a60862549
+|   |   |       b06f3449a4ebcf9b186527a637aa8efa7a5d2b
+|   |   |       c08fb92a168d8a4bd69b40d38ff15ab01fa05e
+|   |   |       d89f300d0570aa7f6a0461eae838dfb9124cc0
+|   |   |       
+|   |   +---5d
+|   |   |       1c1990ae8f12c838c0ada978db98f46c59dea2
+|   |   |       6da8822c85f8e588a666b07775e3a9752ceddf
+|   |   |       c47d472ba4b55eaf5de9c8f2162b17d5a446d5
+|   |   |       
+|   |   +---5e
+|   |   |       2d6501b5a222b651a5fdece223f01b3f79fa36
+|   |   |       8f5c5943447445e8939415389c9656c94e4a15
+|   |   |       
+|   |   +---5f
+|   |   |       aa80fdb9800ebd22f8e9be1672761913043591
+|   |   |       dcee2bf52509e9904cd21786ef40e019ac81a4
+|   |   |       e3e0859d9ad86c16b2235b42b9127905747aba
+|   |   |       
+|   |   +---60
+|   |   |       12dcb374a3605332f0a2ac0015f05c2985f52c
+|   |   |       34cbddaebc1902820a7b63da31a714297492ad
+|   |   |       3991d5a17f7d63b46529533dc6f4aed1b79750
+|   |   |       c593b705d7331a443f1843fdd633e61adc1a05
+|   |   |       
+|   |   +---61
+|   |   |       d00759c76f3e403e711920a37cf7f987f15856
+|   |   |       
+|   |   +---62
+|   |   |       8d1af9572e223f8359339850d1575ed878e13b
+|   |   |       fd4dec00d2a679299fe3a4b2a56e7089461d2a
+|   |   |       
+|   |   +---63
+|   |   |       246b8b2487699c2ef3226a13deed04a6e44f3c
+|   |   |       697e38849c6c1876ad8bfe8d8d1e3dd15be0bd
+|   |   |       a7d66c3b4f012f0ad58856eef58708ffde6c5b
+|   |   |       eab7114b0b2c0629514996dcae2dd267cb5e1a
+|   |   |       
+|   |   +---64
+|   |   |       9fb5f57204ec2c1bc1c6059f4a7acc96bca31c
+|   |   |       a57fc9cef0ece2c3fb3b90831478b635968f80
+|   |   |       d063532fb6e5878606bc4b6d83143210e69de1
+|   |   |       e1caad34d1ced8f681e3ba7722cfefde077fde
+|   |   |       
+|   |   +---65
+|   |   |       b58d035f9acf96f626bee31e1fe65719af9593
+|   |   |       
+|   |   +---66
+|   |   |       0a99093114f82608ee395a7829da4a3b7eed47
+|   |   |       2f331f97d1f38d1577219d14684833db9618fc
+|   |   |       47f7d06c888098a24c334be06ec966da73a14c
+|   |   |       78679f3f25708dbf491988569142e4188fd96d
+|   |   |       
+|   |   +---67
+|   |   |       032851375d8c41789680ab06e1de9e36055a77
+|   |   |       18411cf68e487280f6bd9d4d74de266584e988
+|   |   |       2ef1a5f5a8862ca1b28a655f5f4e1355347a98
+|   |   |       4a4066c69dd15c27405158529e1a0c868e8da4
+|   |   |       782cb182d46eec403b619be6c2172fd38ae3f3
+|   |   |       
+|   |   +---68
+|   |   |       0dc36fdf0069e45f6d8a3a26edcff6934f19a8
+|   |   |       98dcaeb02f78d03539b1d0a83b5071c39e2155
+|   |   |       9d80de287ae3efd05fc8f1ad8588e4c1db2782
+|   |   |       a28d6ad6b10a967ff8ca51f41f503a7cab80bd
+|   |   |       afd6d2592395509b829dc3f4cb7091116999af
+|   |   |       bad79520076ada3ffeea148dc2e65dc559d1d7
+|   |   |       c8806fe4ca0d58c74e9b2bf6afd0dbeefbc275
+|   |   |       
+|   |   +---69
+|   |   |       7c29259932a4aeea36f5b6fc7398fc9761b07d
+|   |   |       
+|   |   +---6a
+|   |   |       385ecf5ffc3e5d3c940320869f512bfb7ab714
+|   |   |       
+|   |   +---6b
+|   |   |       5de88a6a07e52737ae5f0547ec659ac181922e
+|   |   |       d7eaa3e02c80d0cbb01f64869b56e304ec9d5f
+|   |   |       
+|   |   +---6c
+|   |   |       48b5ae699a66c6cab670cf2489a2cce7c00b67
+|   |   |       4c0722114c38ce4e11cf306bdee6b84a3b5fd8
+|   |   |       
+|   |   +---6d
+|   |   |       1ff63ebfb38242165491ee1e97a94279625254
+|   |   |       36ca5699e7bfd09ce502fc948a199c9355aab8
+|   |   |       b6e19cab19a324adba55373650a02eb0bc5843
+|   |   |       
+|   |   +---6e
+|   |   |       099f61188d5bb060a3d2a8d1f7377e07c6bc7e
+|   |   |       29a68ac217eca644fa022c8032ea5670f04b6e
+|   |   |       48c1dddb863a6541154dccca75d3a2077f0846
+|   |   |       54f5adfacbbbcaa663b995b0c8851579617fb8
+|   |   |       
+|   |   +---6f
+|   |   |       42addb1aa70963565e3ee7b00dbbd92b552296
+|   |   |       
+|   |   +---71
+|   |   |       16d6c1dfdf05c6a3c0d2a372fb992a03e4d25b
+|   |   |       a9a8c6963753869cdb311492f46f2a56b258ab
+|   |   |       b91c999ec6c6cc00a8d243e5b53fc8901e5f95
+|   |   |       d17840536ad95f380949115a7d85ad8fcf8591
+|   |   |       
+|   |   +---72
+|   |   |       48ed76ab5a083d05bc0160fc37f7ad48749d06
+|   |   |       a74811143805f189ecfbf44504f1075518e86a
+|   |   |       c00d77e79ab824ed27251410113ffcf9a68ed8
+|   |   |       
+|   |   +---73
+|   |   |       27a655bd209bee0cec41d09a9c5d8716666802
+|   |   |       9d92538085df8a00ca15cd177610cc7951e4c3
+|   |   |       b730a705ad39f9a44edf4f9bc1590b8d1e0502
+|   |   |       
+|   |   +---74
+|   |   |       78c2c4e6ce6794489a5586632db235cdd95e29
+|   |   |       9c2d2402258e39b16f7847090e0a11d9c0d25b
+|   |   |       abef4eb515df790da4b55623096c1df53997fe
+|   |   |       
+|   |   +---75
+|   |   |       0b3207aeb800f8e76420253229bd1c5c135d0d
+|   |   |       409e5562f4b56673adf19815e13c6e1e3d4f55
+|   |   |       969330bfdb01584f344ae3662c38119ebbea36
+|   |   |       c7795bf7e1e6b6f665ea63aabbeeaf98c024c7
+|   |   |       d967740674c416ef9a2c0d1b7767ff1ef839b5
+|   |   |       
+|   |   +---76
+|   |   |       cd54174fd4574375b4b83ce4ad44f8e1d84d34
+|   |   |       df5196a140d385d5806ac96b17e2e75cf81eff
+|   |   |       f8aabb0989b05b0f0b152e542da672e98d37b0
+|   |   |       
+|   |   +---77
+|   |   |       4ef26309dcdb17b1e8ffa19fb309c383406d3a
+|   |   |       6310f75b53df0f3f213be4f56594f3eab373f8
+|   |   |       ea87739d09b8b1b0b50f8c435512d5eb540dcd
+|   |   |       
+|   |   +---78
+|   |   |       06764d793f0cb1af3fe679821a7619db249d51
+|   |   |       2acbec138ef153f21d75c95ea8d175d3e16843
+|   |   |       628b17fe33f51ffee970fc3d88cbf5aea99fc8
+|   |   |       6cadd2a30630f5afb74099b297fa2692d4757c
+|   |   |       beed90f788b780211716d80b94b5ddde88ac81
+|   |   |       c33602f502e1bba42efd9b41966fd3cea070a4
+|   |   |       
+|   |   +---79
+|   |   |       f03f5250f298febaafc847c2e0ba902945caf2
+|   |   |       
+|   |   +---7a
+|   |   |       52586c267d6cf48b50b548d1a3de039c3ddb48
+|   |   |       73d6fc9c48a0c9fb99291650819d2ae22c5b8e
+|   |   |       7846d5751e83b28ed0307830c3099e71a3db4d
+|   |   |       
+|   |   +---7b
+|   |   |       4064ec034aaf64005779e9607d6bf5a484ca2f
+|   |   |       5c7594cc55c83d213c91800a677c7ebf0c4234
+|   |   |       628236370464b32195a267cb8ba95bbc829996
+|   |   |       
+|   |   +---7c
+|   |   |       18ad59dfc37f537cfd158e9222062fa9196e37
+|   |   |       1db175c69e595df1d7950d0500e725d4d9eefa
+|   |   |       31ec91145538b8f985d8991489b076daec514c
+|   |   |       8523cb62dc5b372212d4f5fcad3e0bb62991f7
+|   |   |       8579e01d1fe7956198994bfe18f8a7ebb61b93
+|   |   |       e503c2dd97ba78597f6ff6e4393132753573f6
+|   |   |       fb8cb1266b0fca6aa9cfec0765f9b488291bf2
+|   |   |       fc710639e937c79f1f41ca851a92e8b3b2d619
+|   |   |       
+|   |   +---7d
+|   |   |       519a414baacc62a31a202c000f902920c4b800
+|   |   |       8b8a5b7f7280cc468ae56da03e572101c6e44a
+|   |   |       f050b83ac4a42d383c3e57360c53c52c57abb8
+|   |   |       
+|   |   +---7e
+|   |   |       735db15cf33805b1ab498b4476f218d4f690a5
+|   |   |       747b4f38e9314ef4671e36128522a787251be4
+|   |   |       91d78979dec07fb54771e3a898f87ef2d1de71
+|   |   |       b0de97ab2784bec6ef21cd5aceb3ef1ccbdab4
+|   |   |       
+|   |   +---7f
+|   |   |       37b5d99122b4928505d1e0ac5ca7279edd56ed
+|   |   |       3af25ce1b3aeb29eaa313c83337e1e21eb2ed0
+|   |   |       
+|   |   +---80
+|   |   |       5a34b5bddee7b4b3e6d22978d2f9fe072453ae
+|   |   |       6dc5c4339db0a8769f475b4b7dddf1b38cff5c
+|   |   |       bb056af6be8cf89765a10207f939703732a53e
+|   |   |       
+|   |   +---81
+|   |   |       273509b4f9fdc7fa6c8599bca704674d215115
+|   |   |       
+|   |   +---82
+|   |   |       0ffe31aa1dbaf750bb38f4b12a2315309e8f96
+|   |   |       30007141a7e0d6d361b097f47b8e281c91c878
+|   |   |       dbbb7a212113654ec2da3da4b7b1dad3a7e160
+|   |   |       
+|   |   +---83
+|   |   |       0d9ddd366073cfbc238aa673f5c196b77804a9
+|   |   |       25d6177064ab02616737dbeb4acdcb9477767a
+|   |   |       b259ac42c6c97ae8dbf85a02109b9ee8f2d164
+|   |   |       
+|   |   +---84
+|   |   |       6fd9d3a4b0ee9b1ef2be03a152a14fbb328961
+|   |   |       ceaac6f5558c8f6783fe84a0f6e78953aed2c7
+|   |   |       
+|   |   +---85
+|   |   |       55e09cec44d2f4c7109ef6a1777ee6c32a5033
+|   |   |       8013ef772a0d5aac187025f865bcbcd985388e
+|   |   |       d2d173b02c975a9e99c88ad80007e95ee1df39
+|   |   |       
+|   |   +---86
+|   |   |       79b72159b9cc249283d4a935c59d4ebd592864
+|   |   |       
+|   |   +---87
+|   |   |       5115056e1f59fa30af8fc268a3f2a0964cca46
+|   |   |       c435a8007560c42f44da9a1b9327481b1284d2
+|   |   |       
+|   |   +---88
+|   |   |       4ecc801a5ded3932f0c7a5881e45596b8c4b76
+|   |   |       5e7459059b4455c192d67434fdfefe2ca0d481
+|   |   |       ea3d66e33b37d7a8a1264a769d35fa197a1ecc
+|   |   |       
+|   |   +---89
+|   |   |       1b62b8f4e90e710316354bdbb8de059154a790
+|   |   |       319894c8b3ba4b4af26c43344b0b0cf69efb12
+|   |   |       e95ab44dc74c5be08339a937908a73c15c86ab
+|   |   |       f7349469e0b5b0ffbbf1cd995c7cb74131a2ab
+|   |   |       
+|   |   +---8a
+|   |   |       6527e167ad6902e0cd306fd42b3efdbbaa6eb6
+|   |   |       
+|   |   +---8b
+|   |   |       71686ec520d312b40174cd54e930a208cc602d
+|   |   |       768781f036acf4d7e6e94d4f082f1e5c287ef0
+|   |   |       8c395472a5a6b3598af42086e590417ace9933
+|   |   |       
+|   |   +---8c
+|   |   |       0a9bbe1c0b0c2726a6b31bd89a567c68ee16a7
+|   |   |       38f3f3dad51e4585f3984282c2a4bec5349c1e
+|   |   |       7fd961e26cf5a9c3fa3a2f4a74826963864502
+|   |   |       99c610979c0ee9c3d96512ffa37fcca49f45b7
+|   |   |       b8a2b12cb7207f971f93f5e3f6fcfff8863d4c
+|   |   |       
+|   |   +---8d
+|   |   |       35efd99beda9dcfb891466bde60bc92f634081
+|   |   |       5c6a3a9f6c2f4277734e20c504c3e0d50f23e1
+|   |   |       8c4f37ad3088b6e061a48adac7cd85c25da8e9
+|   |   |       d24a4d7e6e023d8ad336e7ab9d890ae00f1448
+|   |   |       e5413aeddbcc1f0d19b760c40ca8a222237bc2
+|   |   |       
+|   |   +---8e
+|   |   |       5157e768cc31dca076ba9cec35e7842e9ff48e
+|   |   |       f59c2264fed0b6fa6066072db0dc0537feb4c8
+|   |   |       
+|   |   +---90
+|   |   |       52d7ec6948b2957a29c20981d0e01a321e48df
+|   |   |       c812e54b6edf34c75052f6db4429574955412c
+|   |   |       d5e73f8a88fe13161b2c2b763e83411ee06b02
+|   |   |       
+|   |   +---91
+|   |   |       363badfc3ba3f47199e0948a4e3e9a8a381cc5
+|   |   |       
+|   |   +---92
+|   |   |       44cda64817a1f6daddd7c74efbdd8051323bb2
+|   |   |       6b8e21b524c4bdd8a2f094d7f8b3043196112a
+|   |   |       
+|   |   +---93
+|   |   |       0b9406ad128ba040af0a7a2597ad69d595cee8
+|   |   |       1305ce65c1eb4462503632b031f68b2e54525b
+|   |   |       291468f8c74748c276ba3ef40e02e776a2ee65
+|   |   |       59d819cf4df1cc410682fdf6006c590a249ce5
+|   |   |       df649739b4391f9846710a59dfb112de47d740
+|   |   |       
+|   |   +---94
+|   |   |       ee7d8f55e9644870dc6a0bbff139ec1febed7e
+|   |   |       
+|   |   +---96
+|   |   |       a4c62ef4c353109f22c5d4c7bf7827fe74597b
+|   |   |       b87fdd708ef19fc3c6e466c44d7c212efa1d14
+|   |   |       bcf8a29b11beaacc5d62d9c9ae7f7905ca2a7a
+|   |   |       e24976cd628d15e8d492753ce1aff76f647937
+|   |   |       
+|   |   +---97
+|   |   |       3f373e461a4a6fc9fc12c4220b7aa36220eddc
+|   |   |       910a9949126a13793506efed884f378fc8449a
+|   |   |       
+|   |   +---98
+|   |   |       129e4d085964f15f188d2e2647964d052a6f42
+|   |   |       acd9c0f721d4da00781b0ab879dfc0b674f17d
+|   |   |       e4887e63304810c68355a72b7c97250e51a3db
+|   |   |       
+|   |   +---99
+|   |   |       1e2562af98d7e4699fb094b79f2ab876933fd4
+|   |   |       
+|   |   +---9a
+|   |   |       8513b281a07be031fcec21f888d5e0adcc2e04
+|   |   |       996af33e94cfae1c46160db04cfa1fa17e8c12
+|   |   |       fe90e41e2cbedd24c9b0f6a409897a42400890
+|   |   |       
+|   |   +---9b
+|   |   |       008e4c145a5eafcd355b21fd6233448589a54b
+|   |   |       93257e37ab256ad01b3c4a3ffc065c145f55a1
+|   |   |       da85b3d7b6d274c4b6d96b7ff7dcbe1a7e1ce3
+|   |   |       
+|   |   +---9c
+|   |   |       36b0bb81b9d9f1d548e034b663841eeced4e1b
+|   |   |       
+|   |   +---9e
+|   |   |       0c43a005a02284fa087c0a62dad529117e0086
+|   |   |       1a9b7f3b87270298c51d76e708fcbb4bde119c
+|   |   |       7f6ab80384dd8c09172e8f40c6ef44388b7a2f
+|   |   |       977547c82aa4dc10a7dc7c42c305d94cb13ec4
+|   |   |       a12b5a9da16b5f17d55df25b5b077e430301ad
+|   |   |       
+|   |   +---9f
+|   |   |       0d07fc55d78b8662360256297ffcf6c9d6494e
+|   |   |       c04094964786db564c511b439244ee7015ccea
+|   |   |       
+|   |   +---a0
+|   |   |       0f3d9b6cf6d6062a018352cb4aedb259eb8957
+|   |   |       d2253e00db2270c3c48b618fa7610605ef23a4
+|   |   |       
+|   |   +---a1
+|   |   |       1321938426a9b29509294fadfd64755c4a18aa
+|   |   |       48cb7a60696cce6ce031c61077ba20ee66a80b
+|   |   |       ca1d3f4e246eb6b7bc4bc078b0cce37cc27e42
+|   |   |       
+|   |   +---a2
+|   |   |       23233caa554df019050522ded742deb080a842
+|   |   |       556d0478d3a7f69ff95ed27d6a9f4e231f0a73
+|   |   |       591fa477a8788ab12e7a3a2bcedc88fb06d069
+|   |   |       8feb346633de8ce2b37937e10b3c2af13def7d
+|   |   |       a79cf1e60347e15187421322bca049ae14ea5e
+|   |   |       
+|   |   +---a3
+|   |   |       13ebbd2186b272004f1d3d36e50cf23bcfc598
+|   |   |       e1804cf4a0634a2934d08759293147d085e1d8
+|   |   |       
+|   |   +---a4
+|   |   |       284fca1352028182f8bd4395c95418bcd0c148
+|   |   |       6ce15ca7410d587e948f0858261d0747275d49
+|   |   |       97054cdb13ee9a8c9d7d05ff92ae9ab747ac18
+|   |   |       faaa1dfa226ac68c6a7898f7161d0e2956dcb3
+|   |   |       
+|   |   +---a5
+|   |   |       8841f004129659c58f6cfa9c05174e0e63c63b
+|   |   |       
+|   |   +---a7
+|   |   |       1dd822b69a8c21f0ce4f169634b4ddae13219b
+|   |   |       6c830713d6452ece3d5dd2f02b20589b8bb96c
+|   |   |       919c4d057bcbec2b85b6a00d6c898db2eb908b
+|   |   |       
+|   |   +---a8
+|   |   |       71345e86dbc8ea7e8066f93b09fef5ca3f5189
+|   |   |       
+|   |   +---a9
+|   |   |       0e169e9b84a909b0aa66b38110fb030b4672f1
+|   |   |       
+|   |   +---aa
+|   |   |       1cae9eeb451b0aefffeb7f5c6ea75753b6a190
+|   |   |       
+|   |   +---ab
+|   |   |       5cd5933e47b66154886ad069e6a141ede7e2d1
+|   |   |       6aabb0a98a339ea0c65ed8e59e255f23775f26
+|   |   |       
+|   |   +---ac
+|   |   |       009ba0c6de3fb133d1bf37bc6425059abfe4e2
+|   |   |       bab53ff8921b8ea39867f596438f2318b324c8
+|   |   |       c901ca45fa144632c4582cca456d9529892921
+|   |   |       f5986d48e621ff8a6bec4c247206b425874d93
+|   |   |       
+|   |   +---ad
+|   |   |       00bbb24cca5c7a8f0fbec768edc8cb46c53af5
+|   |   |       bc3980d4eeb1995110e32f259d96ee5296b4b6
+|   |   |       
+|   |   +---ae
+|   |   |       c2fb3889cd716af2d2a628be1695773f41794c
+|   |   |       e73a870958111c7a608735f5f05698100927f8
+|   |   |       
+|   |   +---b0
+|   |   |       78f194ce6f6a6890f9e8081ae4da583b0e99f8
+|   |   |       de6111f48c703c135cfad588666e6d1b566802
+|   |   |       
+|   |   +---b1
+|   |   |       91504e834b86aecb23f270ae3b7f62bc24d319
+|   |   |       
+|   |   +---b2
+|   |   |       5e8a64f58d8fea797471ab538f881286d88cbf
+|   |   |       8abe6469915d6ff572f941cf55fb98d527341d
+|   |   |       
+|   |   +---b3
+|   |   |       491f124d0e1a8027f372c257f3bb26ece6319b
+|   |   |       67829344bbe8ff6a3dcc48073a654bf8f8ed18
+|   |   |       9e0b07792a4eac656f88cb2fc1d50f167d495e
+|   |   |       bf768609f7d35af76bb089ad9fede1a7738afb
+|   |   |       e098674990bb8783e40b3f640f3fd5f2255d3a
+|   |   |       
+|   |   +---b5
+|   |   |       da1a6b496e342398ceb1845b1bd186e95fdfbf
+|   |   |       e6ad1f008c8db710cdbdd0b527186b18d10812
+|   |   |       
+|   |   +---b6
+|   |   |       4173cd3ac72dfdc13ac9b4ab2ba1cb114b59de
+|   |   |       64d61937be6fa51d59453a7c21228b5d2ace7a
+|   |   |       73d63f7a12c1774a8ff5b745ebd44fc40fcfc9
+|   |   |       a058400b2a20322b8363e8d3c886769bab0582
+|   |   |       
+|   |   +---b7
+|   |   |       89a2494ae0cf608e057a6dadb0e9bac00cf046
+|   |   |       
+|   |   +---b8
+|   |   |       842ab900ee9326ec19827e12ea296c55c6ea54
+|   |   |       d0fdb7b9e6081d660d255abbff02f55f737cf1
+|   |   |       d16db25027ebe1988d4c553731b864b6117e0f
+|   |   |       
+|   |   +---b9
+|   |   |       24ed616cccb99123c8a936492c4aae9bffbf9d
+|   |   |       3be90515ccd0b9daedaa589e42bf5929693f1f
+|   |   |       3c97e7a8a7cf28954a443e710fa2108354964a
+|   |   |       
+|   |   +---ba
+|   |   |       a14446a12a703ec764d367044d654c0c36b6f5
+|   |   |       e1e6bae692cee6ad9e26fd6ea122e84833b7b9
+|   |   |       
+|   |   +---bb
+|   |   |       3fb0467d874e34e2837e41c3a2a2dfeec6d7cf
+|   |   |       abf245558f732fee3aae302f7d0fe477263bf0
+|   |   |       
+|   |   +---bc
+|   |   |       3f7b40ff5ff6533f852f99e523d7cf5eb17666
+|   |   |       945913b977d2250cc69a5c0cd10ba9e1324888
+|   |   |       
+|   |   +---bd
+|   |   |       5c24f21a7c2a4f7f51ee27381392bdd1aaacc6
+|   |   |       66364d500e83e2687301dbf9b4f593639c3aca
+|   |   |       8d643a5824e32837ac0c3914b1f99fce27ba99
+|   |   |       d7a0dae7156e0ee47a5337f3c4e68c9b20dc95
+|   |   |       fd7e8cf544402212ed1cb352eea36d22d7c3d3
+|   |   |       
+|   |   +---be
+|   |   |       a589bd9251f82f7fa907d721affd99c4000142
+|   |   |       f92be5c2a4b0536735c08889071cdcec683567
+|   |   |       fb645cbdd6a098bbf105a152a239272df12bef
+|   |   |       
+|   |   +---bf
+|   |   |       7de4c5302504629fcdf5da4981652dfb3ea88b
+|   |   |       81f35beea07595a0cfbbab349a18c0ce7942dc
+|   |   |       9985d3f44610bd43d9daada9876db12100d504
+|   |   |       9d6e6ba1368ddfffae48ec8d58a84a7a6da3eb
+|   |   |       
+|   |   +---c0
+|   |   |       5d3a61ea132aa01c0909bc219c1db2120cb39a
+|   |   |       b131667f9c76fe8d8293e9bc4aee4d68485d4c
+|   |   |       
+|   |   +---c1
+|   |   |       55a1b199e9a713cc0542ab26710f4b5a356306
+|   |   |       e831a7d04cb0d7da4db4e05556436ff1062591
+|   |   |       
+|   |   +---c2
+|   |   |       45ef4176b8f02a24efd02a15e5826c06105707
+|   |   |       5d437153b1b71239df4c715d6a763ae2333dfb
+|   |   |       e61e5800bbd8c07d848c0d5ec8deb4b4fe03fd
+|   |   |       
+|   |   +---c3
+|   |   |       2939d98dfeed283c5140db897fa0969e39ce95
+|   |   |       
+|   |   +---c4
+|   |   |       30ae9236a9bb4f1b2184498e9a3ce1bf7d5b69
+|   |   |       4a7ba40c743b1dbf83e1caffce97e8f7513bf0
+|   |   |       5ef5875d53cd8fed6ba0c7ed27238b9f461e73
+|   |   |       cebea1bf0b0d4368a4d464ba0738aefd288f18
+|   |   |       e2710873ad25e92a5e48a70b0ad91747aba9d8
+|   |   |       
+|   |   +---c5
+|   |   |       8dc1c6af66f63d8bd744bdca4f244fd5938cb7
+|   |   |       934f5f625ff743063751db48f202d0def2f0ec
+|   |   |       
+|   |   +---c6
+|   |   |       08e02702863edfd10e36f8fcf397df04d7b64f
+|   |   |       6e3b76365d7fa06f5f30614ebcc9b813ca8b44
+|   |   |       8ccd2193e7c886eefb52f5580723d4f99407ef
+|   |   |       c7b5ea23a755db5c629727677fa9d7a42eb0d5
+|   |   |       ce78833e47599818f9a6317c31edf22ded3221
+|   |   |       
+|   |   +---c7
+|   |   |       5a3b7c08029f2c784c32b66332de06db6507d2
+|   |   |       771124ce19178666bdb0fddc8bad74e4db3d07
+|   |   |       fc7f4f936fcc7d673af0032cabac58f18da564
+|   |   |       
+|   |   +---c8
+|   |   |       c69b2acc1cd0104aa9fbcd61893d9eeace8f25
+|   |   |       ca5d96214a9a8a7e2b323dfe84f3b3acc11b55
+|   |   |       d4ea168eaba1b859c1adf3751280e095c65d70
+|   |   |       
+|   |   +---c9
+|   |   |       5c1f6780402627650faa6d3c10306833d41746
+|   |   |       91e2550ae4f276c4269b3314b7fc127460ed87
+|   |   |       c3243520b9bf54e9828c2db0b2421067c95439
+|   |   |       
+|   |   +---ca
+|   |   |       35fc0ca31849e96f8669dfdc81d81c2f658711
+|   |   |       52c08f76244c1bbf0a1bc30383f3f72790b705
+|   |   |       
+|   |   +---cb
+|   |   |       249d7b92ec430f86a0facd5be4930c2e6a408f
+|   |   |       3268db161cc71a12a034c8b0b90296bb5436ac
+|   |   |       7b84a263419cabde0aa38ddad00e79b4db68ab
+|   |   |       
+|   |   +---cc
+|   |   |       a5bbecf021a598719b9050cc796f6a50a3c44b
+|   |   |       
+|   |   +---cd
+|   |   |       3726cf30618cc39f01bc4e3f65a54cd1534a03
+|   |   |       916d7b386a4b22ca5dfb1461ecca30b7bd637d
+|   |   |       a32c34aaa0424f4d45504c230e02a4dc7ffb58
+|   |   |       c3ad603cee5f78d35a96d98e707ee366d55299
+|   |   |       
+|   |   +---ce
+|   |   |       13ce8f9a17c05fe671b9b7ad7fa434cd495f68
+|   |   |       6d30f215f332445b8b36a821e908af735d1a3c
+|   |   |       96cdf7118b2ce5e8425ee26e36287611415c6e
+|   |   |       ec87b082966de369c80e67342d8971bacc5512
+|   |   |       f111e602f2e1e086e45a553ed59e19fc418bfb
+|   |   |       
+|   |   +---cf
+|   |   |       5d830c0e79303cf7da40ba8eb0a0fe08a1bf84
+|   |   |       78b128f989f4cc85bc8d27e6be5b8cc8f0b4b6
+|   |   |       96dcaf9c33e59dbe87ff8be3a203dc21eebc7b
+|   |   |       d21c42ee8c18d0a92287bd61b7d845ccc1916a
+|   |   |       
+|   |   +---d0
+|   |   |       4f34c1e81976de525d730a98b366a6756201b6
+|   |   |       87f0702c6afc8ec2ffdebad320d1414242cd94
+|   |   |       a9b4b716b7903e1677749c418810d90953f6d8
+|   |   |       dee8da21821ce0689d1b33f65108dc7ffcb25c
+|   |   |       
+|   |   +---d1
+|   |   |       0d830e9b8faecf6555ca6f59639d14a34ce433
+|   |   |       1e6e82d068da6187e5770abfbd9666842f3dda
+|   |   |       2e99836a37686db04d38492653131064bf599e
+|   |   |       54d45dbb29fe9d4fab2820c43a39f42048f78e
+|   |   |       7a681dc44319bc2b4473536738400f7b088327
+|   |   |       
+|   |   +---d2
+|   |   |       6a9205af2e3a34fe9ecfceaf0438d871c1fa28
+|   |   |       dabbb4b3efead795e9b4bc6066e16383820645
+|   |   |       
+|   |   +---d3
+|   |   |       2af45f6f177509c1eaa0007ccd66479fbb5b7f
+|   |   |       7f2685d469043519112a482c864c85c5d1f258
+|   |   |       daeab8909597077addecf34ab05800705f77c8
+|   |   |       
+|   |   +---d4
+|   |   |       3b3a6a91ec683e1b93fb741a79bc305527dd29
+|   |   |       6eb0384cfaad37801b96e9cf9f5cfd1b2c1046
+|   |   |       922a1df5b3c8604a1f8ad3e0aa1b7623340b7e
+|   |   |       
+|   |   +---d5
+|   |   |       7e46944a963631c95d9c889b377fb9d4ce7e35
+|   |   |       c0f32c8b6846ae40c1465bf6e9385248f4bcdd
+|   |   |       
+|   |   +---d6
+|   |   |       4b9da7360a617a98a1cd95733bc086df238b89
+|   |   |       6f73ab89ff0818519d9a7ca71b20e26bf5821b
+|   |   |       b7b0a8797dc4c568c41d23def2b1ea309415e0
+|   |   |       
+|   |   +---d7
+|   |   |       3d731f7ca5f05eac8565fcf3f71cf3a1415bbb
+|   |   |       9e2b2cc223adbf208d17749ad6dd4c1656e3f4
+|   |   |       
+|   |   +---d8
+|   |   |       24702523352144c521e8c2bf57f7e38d75ea6b
+|   |   |       30d7a2f9f7f0649af7f5b6727206b2bbd4f93b
+|   |   |       aa965b6728087698363091b3226be17a022157
+|   |   |       
+|   |   +---d9
+|   |   |       bf49a8fd47d4c04e8920c23bc76f43e8200ed6
+|   |   |       d39cc4460a4f4f09eb0fa11e6d65eb7d68592e
+|   |   |       
+|   |   +---da
+|   |   |       22b9efa7d3396ce301b8dd52d55b0e2fcc9259
+|   |   |       8e14ed64d60bdd04f940a56d7ffe0093c4dd47
+|   |   |       
+|   |   +---db
+|   |   |       1ac6371428f2b7261d710d7884cc5fdb3d6305
+|   |   |       2690adb6ba779339fa8968de07c805bc8512d0
+|   |   |       654e3794a88da4605339aa0f58d416e4609e2a
+|   |   |       
+|   |   +---dc
+|   |   |       9a1172762993a83eca737dfaa9569e4059acc1
+|   |   |       
+|   |   +---dd
+|   |   |       02f973ffac9248294c499ec7cbdedb5991162a
+|   |   |       10829d2a77745315422542ba2406d98c535805
+|   |   |       3cf24583b7a902b1bb9809ec948a4750512866
+|   |   |       407a06dc4becc6cf55bfa023e2b114d5013138
+|   |   |       4c8b5f22c3c7ce2a812b55fcae897b10a4a0af
+|   |   |       862b07a70fc6fb097af5fdc0f046ba34cd60c2
+|   |   |       c58b19ec7a89ade6327318d970526f837976a2
+|   |   |       fe2b20896dd390c255fb6468d8eac53356064f
+|   |   |       
+|   |   +---de
+|   |   |       09c32284cb310e80c2fa8faf6d26279116a43a
+|   |   |       255c4eb0a3278ba59904a514cc610c66c30b10
+|   |   |       4d0e6da89a92eacba85d4232671f9bc1c31636
+|   |   |       76e93adeb38b0820ef951d3a0e1f33a6b8cb88
+|   |   |       b8e7d6c28ea078ffb696448cbc7d8411add4dd
+|   |   |       
+|   |   +---df
+|   |   |       1da112a04852daf1217bfcf80f8f0fc14813f5
+|   |   |       
+|   |   +---e0
+|   |   |       0a3f96db654e593838929e1ea595f6f9ff4f37
+|   |   |       56000bf50839dc697f4dfcaecdffbf5d9aef64
+|   |   |       7f52b09e2a0fdaa5491772e50fda2de28b735e
+|   |   |       
+|   |   +---e1
+|   |   |       0b04dc1bcfb8b1a489a300ba68a8e7361d6343
+|   |   |       b15db5ccb5368bc7850b3c3a7ef3671bc1d208
+|   |   |       f3588bd6d47c3b63ee2c455fe01d98210cf693
+|   |   |       ffdbed0d8ca663cfcab21818bb3f9c6938c7a2
+|   |   |       
+|   |   +---e2
+|   |   |       81dddeb1e4f43bda62f49a469ccc08685fa9d8
+|   |   |       d3ae452e8385f2fc9268fe65acb8a5a9e32149
+|   |   |       
+|   |   +---e3
+|   |   |       1859de567a147f21692c6d43d3ff6a09e7f7f2
+|   |   |       db54c441b27c25ac7266aa0c878720624be9e0
+|   |   |       
+|   |   +---e4
+|   |   |       00e9d0c6763862d1f53672cac6802ef528780e
+|   |   |       50633e21c0247fecad0b6e9cdd02981ab1921c
+|   |   |       e5a45670cce8c4d44061cf5dac06f0652c4018
+|   |   |       
+|   |   +---e5
+|   |   |       1ea83f5bb0e420a11f6b91c18654d0a227da97
+|   |   |       ad367bfbd1c9e2868247934a7b125d7b7e8027
+|   |   |       c88e43e65ce9b7812cf15a35e9006fa8cc2ad4
+|   |   |       
+|   |   +---e6
+|   |   |       480086c3980762052f805336fb60b76ff84e82
+|   |   |       4e2a3e981f8d8050ab5c9f01a6c7cd471b3b94
+|   |   |       8d41f591e5b3bbb04ca7fc553230be3fa26745
+|   |   |       9756575467457f63e4b7aaf803234c8f33deec
+|   |   |       9de29bb2d1d6434b8b29ae775ad8c2e48c5391
+|   |   |       d74f133214b480b300f2c6ab71c0c0ee176af3
+|   |   |       dff0e191bc7c609d1ba78057a8dfe390cfc3c5
+|   |   |       
+|   |   +---e7
+|   |   |       1b958aa786a2b68f77e560a63346febf9bd263
+|   |   |       27f67505127d5550e2b58382966f46442fe4d4
+|   |   |       9d375c55cf1bf2705f80a11610f6cf22c3a18c
+|   |   |       cbd69cd2b9042276577afe487d5ebef9dfc88c
+|   |   |       
+|   |   +---e8
+|   |   |       74c0f509b854965fb250633aebc64dfa19bcf2
+|   |   |       79d6b7ae7e56ebdc044c2b64be5d1b4959ef67
+|   |   |       fd5f07f9be73663ab4da616bdaaa6d402c3735
+|   |   |       
+|   |   +---e9
+|   |   |       681528a227f857f6ddbfd72a4586c6af6afdd8
+|   |   |       b6f8e5562ac565c01edcc8ea6a22aa49ed5133
+|   |   |       
+|   |   +---ea
+|   |   |       2211ee58b5997d75186920b207a17c3ecd6aad
+|   |   |       bcf0d747f0721eecfbef2c4abfcecc7fa04fa9
+|   |   |       
+|   |   +---eb
+|   |   |       106b9f59b48cef669d07d366153647937246a9
+|   |   |       45c7b5f0c71a3f6ffaf3ded8f40bd038bcdfd2
+|   |   |       55c27917838c6b0c5eef110bdb8526be711965
+|   |   |       e84c8c5429b0578d56baea9021e0ccbac6ad2b
+|   |   |       efdbc5193e46842b7f63db40c8faa3ca7ded2c
+|   |   |       
+|   |   +---ec
+|   |   |       26238c29accdd8df23a1616a388ecbb534c402
+|   |   |       2efc997ad7da2b8248a8e4ef713cda5b494862
+|   |   |       bc3fbe7b11c7254dd0cce83bdf1043b5dd871d
+|   |   |       c5d4f29fccdc33adb2395db928d70a6042a951
+|   |   |       
+|   |   +---ed
+|   |   |       28a2dbc035ba192b2f8851b1393ffe17418026
+|   |   |       3565400aba4cf205d9b29399dad5f21dd1a3e9
+|   |   |       
+|   |   +---ee
+|   |   |       2a0b65f39cd6afcca815b4b5896a4989e80bd1
+|   |   |       9f52bed78b952acb865a52c93c31644e4191d4
+|   |   |       f7227792eb9da77e0797f5bd543954599a855e
+|   |   |       
+|   |   +---ef
+|   |   |       06197542f309710319083b318ee7122d2b1f59
+|   |   |       eda64986371acbd2a0bf5af51216e211dfa123
+|   |   |       
+|   |   +---f0
+|   |   |       08efe7010310bb15ee7b05faccf780e6526ab3
+|   |   |       9a6040cf2b01d60f197a5c390298823d6ca0be
+|   |   |       b6bf3a829812c621698055cdf497dc39448c35
+|   |   |       
+|   |   +---f1
+|   |   |       d8cc341d2ae9d7d202ef19c59003244aebe8d6
+|   |   |       
+|   |   +---f2
+|   |   |       4058415084f5dcdd355d4cb0b7b28a6dec4cd5
+|   |   |       64320f47c6c0eb25e2a258cb94dcad7432e97e
+|   |   |       77663886b62f75acb182991f4db42ff35052ec
+|   |   |       880fb0043b8dabc9f83fe5fe73223e4499eccb
+|   |   |       8b2e8b33c6b595ca981e5d3871e0c389901cf4
+|   |   |       8d5a9ab8aa140f53a77ad664bad56dbd15020c
+|   |   |       a7a1950f79131c5255a15aaebaa3b2a956bd27
+|   |   |       
+|   |   +---f3
+|   |   |       50d72f69181db024012f0ab9fe689f093e3981
+|   |   |       d84a5da43da6e58965e36a2a0e9b42281e26ac
+|   |   |       ed798434baac41fa8eacbfa48eded2308812c4
+|   |   |       
+|   |   +---f4
+|   |   |       0b27f47da411062930b3758fc7b242e932f91e
+|   |   |       
+|   |   +---f5
+|   |   |       536ebc2d3b10ded6750bd5d9eba59566733ea7
+|   |   |       9221a33841c82d47cea9816ee8261d8f447cb3
+|   |   |       c623dd114ddde99427f8007e8e70fd1b79f022
+|   |   |       
+|   |   +---f6
+|   |   |       10a06a439a15ea9131d713bde972bd61c7b94b
+|   |   |       3715462562d32e4bacaf8329117e7abe0abbaa
+|   |   |       42c3f7a77a5833bc3dfee643ad8ca6387b23e7
+|   |   |       7ad9df37008043a00d8b7ce8e1f1e3f455ed6b
+|   |   |       a42155ad81f648ca22e06d250f39e4ef718924
+|   |   |       f1ca5a876f86acd6b59fa2671c55dc3e92c304
+|   |   |       
+|   |   +---f7
+|   |   |       93e40e5cda1ddc9262c146a4db3c7d2b5066e2
+|   |   |       
+|   |   +---f8
+|   |   |       0433de49f994390830ae156a4a9619964b4350
+|   |   |       099655f87ce22cafc4a25c9b59077177c67914
+|   |   |       1013dc5a44fe7ce3d1a47927a8559cd940c01a
+|   |   |       89fe56b23feb379d87b9b2d429977c704d5cf2
+|   |   |       d4bcb244ae60840350a370d06a56751e054930
+|   |   |       e2cd5295a7d8f414b11929ce51cdb9832dc99e
+|   |   |       
+|   |   +---f9
+|   |   |       58496de49e5d5405365b9ad4e035ecc49c243d
+|   |   |       8157f2c9493a9b8296d914d69d6d1ff330f677
+|   |   |       e8942f4d6742eb1943b239809e3927143800b4
+|   |   |       
+|   |   +---fa
+|   |   |       781916e8b571323735773d423a0f06f56d9787
+|   |   |       
+|   |   +---fb
+|   |   |       59cdd15d670fb7b3c5a91094029c23dfee1ef5
+|   |   |       5eaa232d6b0353532f6426a83819395ca43f73
+|   |   |       a7eee43974e8bd2e07bc54e278018f9b13fe46
+|   |   |       
+|   |   +---fc
+|   |   |       4c0bf05126d2cbac929bb11752173305462fd8
+|   |   |       c12146e4a34dc36fffca5b9f1eebd1ab0c48d9
+|   |   |       
+|   |   +---fd
+|   |   |       5db0a91a521904100a47d274a9911617eb690b
+|   |   |       83afbbd2be57030938ebf05877797588d92a38
+|   |   |       
+|   |   +---fe
+|   |   |       cf0f47984146fb69c11de7ce013b94ec59702d
+|   |   |       dbda5f5187120d1cfd53f9ffe48316a0aa42e1
+|   |   |       
+|   |   +---ff
+|   |   |       770374b314ad98601f798b1c977b6b35938888
+|   |   |       ed1247dd05d8b081bc89e944a190e6848e6ff6
+|   |   |       
+|   |   +---info
+|   |   \---pack
+|   \---refs
+|       +---heads
+|       |       main
+|       |       
+|       +---remotes
+|       |   \---origin
+|       |           main
+|       |           
+|       \---tags
++---.idea
+|   |   .gitignore
+|   |   .name
+|   |   gymproject.iml
+|   |   misc.xml
+|   |   modules.xml
+|   |   vcs.xml
+|   |   workspace.xml
+|   |   
+|   \---inspectionProfiles
+|           profiles_settings.xml
+|           Project_Default.xml
+|           
++---anuncios
+|   |   admin.py
+|   |   apps.py
+|   |   models.py
+|   |   tests.py
+|   |   urls.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---static
+|   |   \---anuncios
+|   +---templates
+|   |   \---anuncios
+|   |           index.html
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---clientes
+|   |   admin.py
+|   |   apps.py
+|   |   forms.py
+|   |   models.py
+|   |   tests.py
+|   |   urls.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   0002_initial.py
+|   |   |   0003_cliente_entrenos_perfectos.py
+|   |   |   0004_bitacoradiaria.py
+|   |   |   0005_estadosemanal.py
+|   |   |   0006_estadosemanal_sugerencia.py
+|   |   |   0007_minireto.py
+|   |   |   0008_sugerenciaaceptada.py
+|   |   |   0009_bitacoradiaria_aprendizaje_and_more.py
+|   |   |   0010_bitacoradiaria_peso_kg.py
+|   |   |   0011_bitacoradiaria_que_puedo_mejorar_and_more.py
+|   |   |   0012_bitacoradiaria_dolor_articular_and_more.py
+|   |   |   0013_bitacoradiaria_autoconciencia_and_more.py
+|   |   |   0014_bitacoradiaria_circunferencia_biceps_and_more.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           0002_initial.cpython-313.pyc
+|   |           0002_rename_correo_cliente_email_alter_cliente_telefono.cpython-313.pyc
+|   |           0003_cliente_direccion_cliente_fecha_nacimiento_and_more.cpython-313.pyc
+|   |           0003_cliente_entrenos_perfectos.cpython-313.pyc
+|   |           0004_bitacoradiaria.cpython-313.pyc
+|   |           0004_cliente_antebrazos_cliente_biceps_cliente_caderas_and_more.cpython-313.pyc
+|   |           0005_estadosemanal.cpython-313.pyc
+|   |           0005_medida.cpython-313.pyc
+|   |           0006_cliente_programa.cpython-313.pyc
+|   |           0006_estadosemanal_sugerencia.cpython-313.pyc
+|   |           0007_alter_cliente_genero.cpython-313.pyc
+|   |           0007_minireto.cpython-313.pyc
+|   |           0008_revisionprogreso.cpython-313.pyc
+|   |           0008_sugerenciaaceptada.cpython-313.pyc
+|   |           0009_bitacoradiaria_aprendizaje_and_more.cpython-313.pyc
+|   |           0009_revisionprogreso_antebrazos_revisionprogreso_caderas_and_more.cpython-313.pyc
+|   |           0010_alter_revisionprogreso_options_objetivocliente.cpython-313.pyc
+|   |           0010_bitacoradiaria_peso_kg.cpython-313.pyc
+|   |           0011_alter_objetivocliente_unique_together.cpython-313.pyc
+|   |           0011_bitacoradiaria_que_puedo_mejorar_and_more.cpython-313.pyc
+|   |           0012_bitacoradiaria_dolor_articular_and_more.cpython-313.pyc
+|   |           0012_dietaasignada.cpython-313.pyc
+|   |           0013_bitacoradiaria_autoconciencia_and_more.cpython-313.pyc
+|   |           0013_cliente_proximo_registro_peso.cpython-313.pyc
+|   |           0014_bitacoradiaria_circunferencia_biceps_and_more.cpython-313.pyc
+|   |           0014_cliente_rutina_actual.cpython-313.pyc
+|   |           0015_plannutricional.cpython-313.pyc
+|   |           0016_cliente_user_userprofile.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---static
+|   |   \---clientes
+|   +---templates
+|   |   \---clientes
+|   |       |   agregar.html
+|   |       |   agregar_revision.html
+|   |       |   asignar_dieta.html
+|   |       |   blade-runner-demo.html
+|   |       |   calendario_bitacoras.html
+|   |       |   campo.html
+|   |       |   campo_mejorado.html
+|   |       |   comparar.html
+|   |       |   cuidado_sugerido.html
+|   |       |   dashboard.html
+|   |       |   definir_objetivo.html
+|   |       |   detalle.html
+|   |       |   editar.html
+|   |       |   eliminar.html
+|   |       |   historial.html
+|   |       |   home.html
+|   |       |   home_apple_fitness.html
+|   |       |   index.html
+|   |       |   inicio.html
+|   |       |   lista_revisiones.html
+|   |       |   mapa_energia.html
+|   |       |   mockup_demo.html
+|   |       |   panel_cliente.html
+|   |       |   panel_entrenador.html
+|   |       |   recuerdos_semanales.html
+|   |       |   registrar_bitacora.html
+|   |       |   responder_sugerencia.html
+|   |       |   temp.html
+|   |       |   
+|   |       \---partials
+|   |               comparador.html
+|   |               _alertas.html
+|   |               _comparador_medidas.html
+|   |               _graficas.html
+|   |               _modal_recordatorio.html
+|   |               _tabla_objetivos.html
+|   |               
+|   +---templatetags
+|   |   |   custom_tags.py
+|   |   |   dict_extras.py
+|   |   |   extra_filters.py
+|   |   |   filtros.py
+|   |   |   form_tags.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           custom_tags.cpython-313.pyc
+|   |           dict_extras.cpython-313.pyc
+|   |           extra_filters.cpython-313.pyc
+|   |           filtros.cpython-313.pyc
+|   |           form_tags.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           forms.cpython-313.pyc
+|           joi_engine.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---core
++---dietas
+|   |   admin.py
+|   |   apps.py
+|   |   forms.py
+|   |   models.py
+|   |   tests.py
+|   |   urls.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           0002_remove_dieta_calorias_remove_dieta_cliente_and_more.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---static
+|   |   \---dietas
+|   +---templates
+|   |   \---dietas
+|   |           agregar_comida.html
+|   |           agregar_dieta.html
+|   |           asignar_dieta.html
+|   |           editar_dieta.html
+|   |           eliminar_dieta.html
+|   |           index.html
+|   |           listar_dietas.html
+|   |           quitar_dieta.html
+|   |           ver_dieta.html
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           forms.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---entrenos
+|   |   admin.py
+|   |   api.py
+|   |   apps.py
+|   |   forms.py
+|   |   models.py
+|   |   models_backup.py
+|   |   sincronizar_logros.py
+|   |   tests.py
+|   |   urls.py
+|   |   urls_api.py
+|   |   utils.py
+|   |   views.py
+|   |   views_liftin.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   0002_registrowhoop.py
+|   |   |   0003_registrowhoop_hrv_registrowhoop_rhr.py
+|   |   |   0004_registrowhoop_eficiencia_sueno_and_more.py
+|   |   |   0005_remove_registrowhoop_estres_sueno.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           0002_entrenorealizado_detalleejerciciorealizado.cpython-313.pyc
+|   |           0002_registrowhoop.cpython-313.pyc
+|   |           0003_detalleejerciciorealizado_series.cpython-313.pyc
+|   |           0003_registrowhoop_hrv_registrowhoop_rhr.cpython-313.pyc
+|   |           0004_detalleejerciciorealizado_completado.cpython-313.pyc
+|   |           0004_registrowhoop_eficiencia_sueno_and_more.cpython-313.pyc
+|   |           0005_remove_registrowhoop_estres_sueno.cpython-313.pyc
+|   |           0005_serierealizada.cpython-313.pyc
+|   |           0006_serierealizada_completado_planpersonalizado.cpython-313.pyc
+|   |           0007_alter_planpersonalizado_cliente_and_more.cpython-313.pyc
+|   |           0008_alter_serierealizada_peso_kg.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---templates
+|   |   \---entrenos
+|   |           empezar_entreno.html
+|   |           entrenos_filtrados.html
+|   |           entreno_anterior.html
+|   |           hacer_entreno.html
+|   |           historial_entrenos.html
+|   |           registro_whoop.html
+|   |           resumen_entreno.html
+|   |           tarjeta_whoop.html
+|   |           
+|   +---templatetags
+|   |   |   custom_filters.py
+|   |   |   custom_tags.py
+|   |   |   entreno_tags.py
+|   |   |   sum_volumen_filtros.py
+|   |   |   tiempo_extras.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           custom_filters.cpython-313.pyc
+|   |           custom_tags.cpython-313.pyc
+|   |           entreno_tags.cpython-313.pyc
+|   |           sum_volumen_filtros.cpython-313.pyc
+|   |           tiempo_extras.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           api.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           forms.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           urls_api.cpython-313.pyc
+|           utils.cpython-313.pyc
+|           views.cpython-313.pyc
+|           views_liftin.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---gymproject
+|   |   asgi.py
+|   |   settings.py
+|   |   urls.py
+|   |   wsgi.py
+|   |   __init__.py
+|   |   
+|   +---static
+|   |   \---css
+|   |           apple_fitness_style.css
+|   |           
+|   \---__pycache__
+|           settings.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           wsgi.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---joi
+|   |   admin.py
+|   |   apps.py
+|   |   context_processors.py
+|   |   forms.py
+|   |   models.py
+|   |   tests.py
+|   |   urls.py
+|   |   utils.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           0002_entrenamiento_recomendacion_joi.cpython-313.pyc
+|   |           0003_logro.cpython-313.pyc
+|   |           0004_eventologro.cpython-313.pyc
+|   |           0005_motivacionusuario.cpython-313.pyc
+|   |           0006_recuerdoemocional.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---static
+|   |   +---core
+|   |   |   \---avatars
+|   |   |           estresado.png
+|   |   |           motivado.png
+|   |   |           neutro.png
+|   |   |           triste.png
+|   |   |           
+|   |   \---joi
+|   |       |   joi_ausente.png
+|   |       |   joi_feliz.png
+|   |       |   joi_glitch.png
+|   |       |   joi_motivada.png
+|   |       |   joi_normal.png
+|   |       |   joi_triste.png
+|   |       |   joy_contemplativa.jpg
+|   |       |   
+|   |       \---avatars
+|   |               estresado.png
+|   |               motivado.png
+|   |               neutro.png
+|   |               triste.png
+|   |               
+|   +---templates
+|   |   |   diario.html
+|   |   |   diario_resumen.html
+|   |   |   entrenar.html
+|   |   |   entrenar_gracias.html
+|   |   |   historial.html
+|   |   |   inicio.html
+|   |   |   logros.html
+|   |   |   recuerdos.html
+|   |   |   
+|   |   +---joi
+|   |   |   |   diario.html
+|   |   |   |   diario_resumen.html
+|   |   |   |   recuerdos.html
+|   |   |   |   
+|   |   |   \---partials
+|   |   |           joi_flotante.html
+|   |   |           
+|   |   \---partials
+|   |           joi_flotante.html
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           context_processors.cpython-313.pyc
+|           forms.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           utils.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---logros
+|   |   admin.py
+|   |   analysis.py
+|   |   apps.py
+|   |   models.py
+|   |   services.py
+|   |   urls.py
+|   |   utils.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---fixtures
+|   |       initial_data.json
+|   |       
+|   +---management
+|   |   |   __init__.py
+|   |   |   
+|   |   +---commands
+|   |   |   |   cargar_logros_misiones.py
+|   |   |   |   __init__.py
+|   |   |   |   
+|   |   |   \---__pycache__
+|   |   |           cargar_logros_misiones.cpython-313.pyc
+|   |   |           __init__.cpython-313.pyc
+|   |   |           
+|   |   \---__pycache__
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---templates
+|   |   \---logros
+|   |           analisis_cliente.html
+|   |           analisis_global.html
+|   |           detalle_logro.html
+|   |           detalle_mision.html
+|   |           lista_logros.html
+|   |           lista_misiones.html
+|   |           notificaciones.html
+|   |           perfil_gamificacion.html
+|   |           
+|   +---templatetags
+|   |   |   logros_tags.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           logros_tags.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           analysis.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           models.cpython-313.pyc
+|           services.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           utils.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---media
+|   \---clientes_fotos
+|           2a22588e67dfa51aff4d0b55c8e7b5c2.jpg
+|           artbreeder-image-2025-06-17T10_04_44.903Z.jpeg
+|           artbreeder-image-2025-06-17T10_04_44_FyImia2.903Z.jpeg
+|           artbreeder-image-2025-06-17T10_04_44_LQSsNyd.903Z.jpeg
+|           artbreeder-image-2025-06-17T10_04_44_WNEHBKa.903Z.jpeg
+|           Captura_de_pantalla_2025-03-01_124033.png
+|           Captura_de_pantalla_2025-03-01_124033_1Be4ePu.png
+|           Captura_de_pantalla_2025-03-01_124033_YpsRcvH.png
+|           envase.jpg
+|           Flux_Dev_portrait_of_a_beautiful_young_woman_featuring_pastel__0.jpg
+|           life_is_strange___max_caulfield_by_zevylily-d8libj7.jpg
+|           _2.jpg
+|           _20150831_153008.JPG
+|           _20150911_111302.JPG
+|           _20150911_111302_pZ6VJkM.JPG
+|           _3.jpg
+|           
++---node_modules
+|   |   .package-lock.json
+|   |   
+|   +---react
+|   |   |   compiler-runtime.js
+|   |   |   index.js
+|   |   |   jsx-dev-runtime.js
+|   |   |   jsx-dev-runtime.react-server.js
+|   |   |   jsx-runtime.js
+|   |   |   jsx-runtime.react-server.js
+|   |   |   LICENSE
+|   |   |   package.json
+|   |   |   react.react-server.js
+|   |   |   README.md
+|   |   |   
+|   |   \---cjs
+|   |           react-compiler-runtime.development.js
+|   |           react-compiler-runtime.production.js
+|   |           react-compiler-runtime.profiling.js
+|   |           react-jsx-dev-runtime.development.js
+|   |           react-jsx-dev-runtime.production.js
+|   |           react-jsx-dev-runtime.profiling.js
+|   |           react-jsx-dev-runtime.react-server.development.js
+|   |           react-jsx-dev-runtime.react-server.production.js
+|   |           react-jsx-runtime.development.js
+|   |           react-jsx-runtime.production.js
+|   |           react-jsx-runtime.profiling.js
+|   |           react-jsx-runtime.react-server.development.js
+|   |           react-jsx-runtime.react-server.production.js
+|   |           react.development.js
+|   |           react.production.js
+|   |           react.react-server.development.js
+|   |           react.react-server.production.js
+|   |           
+|   +---react-dom
+|   |   |   client.js
+|   |   |   client.react-server.js
+|   |   |   index.js
+|   |   |   LICENSE
+|   |   |   package.json
+|   |   |   profiling.js
+|   |   |   profiling.react-server.js
+|   |   |   react-dom.react-server.js
+|   |   |   README.md
+|   |   |   server.browser.js
+|   |   |   server.bun.js
+|   |   |   server.edge.js
+|   |   |   server.js
+|   |   |   server.node.js
+|   |   |   server.react-server.js
+|   |   |   static.browser.js
+|   |   |   static.edge.js
+|   |   |   static.js
+|   |   |   static.node.js
+|   |   |   static.react-server.js
+|   |   |   test-utils.js
+|   |   |   
+|   |   \---cjs
+|   |           react-dom-client.development.js
+|   |           react-dom-client.production.js
+|   |           react-dom-profiling.development.js
+|   |           react-dom-profiling.profiling.js
+|   |           react-dom-server-legacy.browser.development.js
+|   |           react-dom-server-legacy.browser.production.js
+|   |           react-dom-server-legacy.node.development.js
+|   |           react-dom-server-legacy.node.production.js
+|   |           react-dom-server.browser.development.js
+|   |           react-dom-server.browser.production.js
+|   |           react-dom-server.bun.development.js
+|   |           react-dom-server.bun.production.js
+|   |           react-dom-server.edge.development.js
+|   |           react-dom-server.edge.production.js
+|   |           react-dom-server.node.development.js
+|   |           react-dom-server.node.production.js
+|   |           react-dom-test-utils.development.js
+|   |           react-dom-test-utils.production.js
+|   |           react-dom.development.js
+|   |           react-dom.production.js
+|   |           react-dom.react-server.development.js
+|   |           react-dom.react-server.production.js
+|   |           
+|   \---scheduler
+|       |   index.js
+|       |   index.native.js
+|       |   LICENSE
+|       |   package.json
+|       |   README.md
+|       |   unstable_mock.js
+|       |   unstable_post_task.js
+|       |   
+|       \---cjs
+|               scheduler-unstable_mock.development.js
+|               scheduler-unstable_mock.production.js
+|               scheduler-unstable_post_task.development.js
+|               scheduler-unstable_post_task.production.js
+|               scheduler.development.js
+|               scheduler.native.development.js
+|               scheduler.native.production.js
+|               scheduler.production.js
+|               
++---nutricion
+|       calcular_plan_nutricional.html
+|       plan_nutricional_resultado.html
+|       
++---rutinas
+|   |   admin.py
+|   |   apps.py
+|   |   forms.py
+|   |   models.py
+|   |   tests.py
+|   |   urls.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   0001_initial.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           0001_initial.cpython-313.pyc
+|   |           0002_remove_rutina_cliente_remove_rutina_dia_and_more.cpython-313.pyc
+|   |           0003_ejercicio.cpython-313.pyc
+|   |           0004_programa_delete_rutina.cpython-313.pyc
+|   |           0005_rutina.cpython-313.pyc
+|   |           0006_remove_rutina_descripcion_rutina_ejercicios.cpython-313.pyc
+|   |           0007_remove_rutina_ejercicios_alter_rutina_programa_and_more.cpython-313.pyc
+|   |           0008_rutina_ejercicios_alter_rutina_programa.cpython-313.pyc
+|   |           0009_rutinaejercicio_peso_kg_and_more.cpython-313.pyc
+|   |           0010_alter_programa_descripcion_asignacion.cpython-313.pyc
+|   |           0011_programa_icono_alter_programa_descripcion.cpython-313.pyc
+|   |           0012_remove_programa_descripcion_programa_fecha_creacion_and_more.cpython-313.pyc
+|   |           0013_rutina_orden.cpython-313.pyc
+|   |           0014_ejercicioenrutina.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   +---static
+|   |   \---rutinas
+|   +---templates
+|   |   +---programas
+|   |   |       agregar_programa.html
+|   |   |       agregar_rutina.html
+|   |   |       detalle_programa.html
+|   |   |       editar_programa.html
+|   |   |       eliminar_programa.html
+|   |   |       form_programa.html
+|   |   |       lista_programas.html
+|   |   |       
+|   |   \---rutinas
+|   |           agregar.html
+|   |           agregar_ejercicio.html
+|   |           agregar_rutina.html
+|   |           detalle_rutina.html
+|   |           editar_rutina_ejercicio.html
+|   |           eliminar_rutina.html
+|   |           index.html
+|   |           list.html
+|   |           lista_ejercicios.html
+|   |           
+|   +---templatetags
+|   |   |   form_filters.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           form_filters.cpython-313.pyc
+|   |           __init__.cpython-313.pyc
+|   |           
+|   \---__pycache__
+|           admin.cpython-313.pyc
+|           apps.cpython-313.pyc
+|           forms.cpython-313.pyc
+|           models.cpython-313.pyc
+|           urls.cpython-313.pyc
+|           views.cpython-313.pyc
+|           __init__.cpython-313.pyc
+|           
++---static
+|   |   manifest.json
+|   |   
+|   +---css
+|   |       apple_fitness_style.css
+|   |       blade-runner-atmosphere.css
+|   |       custom.css
+|   |       dashboard.css
+|   |       dashboard_bladestyle.css
+|   |       dashboard_liftin_mejorado.css
+|   |       holographic-animations.css
+|   |       holographic-fixes.css
+|   |       
+|   +---frontend
+|   |   |   joi.png
+|   |   |   JoiCard.js
+|   |   |   
+|   |   \---static
+|   |       \---frontend
+|   |               JoiCard.jsx
+|   |               
+|   +---images
+|   |       4f.png
+|   |       ChatGPT Image 7 jun 2025, 17_52_51.png
+|   |       d610817b-d7ca-49a6-8a42-a819e8795f51.png
+|   |       fondo_cyberpunk.png
+|   |       fondo_holografico.png
+|   |       jo4i.png
+|   |       jo5i.png
+|   |       joi.jpg
+|   |       joi.png
+|   |       joi11.png
+|   |       joi20.jpg
+|   |       joi21.jpg
+|   |       joi23.png
+|   |       joi3.png
+|   |       joi8.png
+|   |       joi_activa.jpg
+|   |       joi_avatar.png
+|   |       joi_glitch.png
+|   |       joi_mockup.png
+|   |       joi_neutra.png
+|   |       mujer_cyberpunk.jpg
+|   |       
+|   +---img
+|   |   |   cuerpo_humano.png
+|   |   |   
+|   |   \---programas
+|   |           default.png
+|   |           diet-food.png
+|   |           female-fitness.png
+|   |           herbal.png
+|   |           meditation.png
+|   |           strong.png
+|   |           treadmill.png
+|   |           weight-scale.png
+|   |           
+|   +---js
+|   |       blade-runner-particles.js
+|   |       cronometros.js
+|   |       dashboard_liftin_mejorado.js
+|   |       graficas.js
+|   |       holographic-background.js
+|   |       ia_sugerencias_predicciones.js
+|   |       notificaciones.js
+|   |       series.js
+|   |       timers.js
+|   |       
+|   \---sounds
++---staticfiles
+|   |   manifest.json
+|   |   
+|   +---admin
+|   |   +---css
+|   |   |   |   autocomplete.css
+|   |   |   |   base.css
+|   |   |   |   changelists.css
+|   |   |   |   dark_mode.css
+|   |   |   |   dashboard.css
+|   |   |   |   forms.css
+|   |   |   |   login.css
+|   |   |   |   nav_sidebar.css
+|   |   |   |   responsive.css
+|   |   |   |   responsive_rtl.css
+|   |   |   |   rtl.css
+|   |   |   |   unusable_password_field.css
+|   |   |   |   widgets.css
+|   |   |   |   
+|   |   |   \---vendor
+|   |   |       \---select2
+|   |   |               LICENSE-SELECT2.md
+|   |   |               select2.css
+|   |   |               select2.min.css
+|   |   |               
+|   |   +---img
+|   |   |   |   calendar-icons.svg
+|   |   |   |   icon-addlink.svg
+|   |   |   |   icon-alert.svg
+|   |   |   |   icon-calendar.svg
+|   |   |   |   icon-changelink.svg
+|   |   |   |   icon-clock.svg
+|   |   |   |   icon-deletelink.svg
+|   |   |   |   icon-hidelink.svg
+|   |   |   |   icon-no.svg
+|   |   |   |   icon-unknown-alt.svg
+|   |   |   |   icon-unknown.svg
+|   |   |   |   icon-viewlink.svg
+|   |   |   |   icon-yes.svg
+|   |   |   |   inline-delete.svg
+|   |   |   |   LICENSE
+|   |   |   |   README.txt
+|   |   |   |   search.svg
+|   |   |   |   selector-icons.svg
+|   |   |   |   sorting-icons.svg
+|   |   |   |   tooltag-add.svg
+|   |   |   |   tooltag-arrowright.svg
+|   |   |   |   
+|   |   |   \---gis
+|   |   |           move_vertex_off.svg
+|   |   |           move_vertex_on.svg
+|   |   |           
+|   |   \---js
+|   |       |   actions.js
+|   |       |   autocomplete.js
+|   |       |   calendar.js
+|   |       |   cancel.js
+|   |       |   change_form.js
+|   |       |   core.js
+|   |       |   filters.js
+|   |       |   inlines.js
+|   |       |   jquery.init.js
+|   |       |   nav_sidebar.js
+|   |       |   popup_response.js
+|   |       |   prepopulate.js
+|   |       |   prepopulate_init.js
+|   |       |   SelectBox.js
+|   |       |   SelectFilter2.js
+|   |       |   theme.js
+|   |       |   unusable_password_field.js
+|   |       |   urlify.js
+|   |       |   
+|   |       +---admin
+|   |       |       DateTimeShortcuts.js
+|   |       |       RelatedObjectLookups.js
+|   |       |       
+|   |       \---vendor
+|   |           +---jquery
+|   |           |       jquery.js
+|   |           |       jquery.min.js
+|   |           |       LICENSE.txt
+|   |           |       
+|   |           +---select2
+|   |           |   |   LICENSE.md
+|   |           |   |   select2.full.js
+|   |           |   |   select2.full.min.js
+|   |           |   |   
+|   |           |   \---i18n
+|   |           |           af.js
+|   |           |           ar.js
+|   |           |           az.js
+|   |           |           bg.js
+|   |           |           bn.js
+|   |           |           bs.js
+|   |           |           ca.js
+|   |           |           cs.js
+|   |           |           da.js
+|   |           |           de.js
+|   |           |           dsb.js
+|   |           |           el.js
+|   |           |           en.js
+|   |           |           es.js
+|   |           |           et.js
+|   |           |           eu.js
+|   |           |           fa.js
+|   |           |           fi.js
+|   |           |           fr.js
+|   |           |           gl.js
+|   |           |           he.js
+|   |           |           hi.js
+|   |           |           hr.js
+|   |           |           hsb.js
+|   |           |           hu.js
+|   |           |           hy.js
+|   |           |           id.js
+|   |           |           is.js
+|   |           |           it.js
+|   |           |           ja.js
+|   |           |           ka.js
+|   |           |           km.js
+|   |           |           ko.js
+|   |           |           lt.js
+|   |           |           lv.js
+|   |           |           mk.js
+|   |           |           ms.js
+|   |           |           nb.js
+|   |           |           ne.js
+|   |           |           nl.js
+|   |           |           pl.js
+|   |           |           ps.js
+|   |           |           pt-BR.js
+|   |           |           pt.js
+|   |           |           ro.js
+|   |           |           ru.js
+|   |           |           sk.js
+|   |           |           sl.js
+|   |           |           sq.js
+|   |           |           sr-Cyrl.js
+|   |           |           sr.js
+|   |           |           sv.js
+|   |           |           th.js
+|   |           |           tk.js
+|   |           |           tr.js
+|   |           |           uk.js
+|   |           |           vi.js
+|   |           |           zh-CN.js
+|   |           |           zh-TW.js
+|   |           |           
+|   |           \---xregexp
+|   |                   LICENSE.txt
+|   |                   xregexp.js
+|   |                   xregexp.min.js
+|   |                   
+|   +---core
+|   |   \---avatars
+|   |           estresado.png
+|   |           motivado.png
+|   |           neutro.png
+|   |           triste.png
+|   |           
+|   +---css
+|   |       apple_fitness_style.css
+|   |       blade-runner-atmosphere.css
+|   |       custom.css
+|   |       dashboard.css
+|   |       dashboard_bladestyle.css
+|   |       dashboard_liftin_mejorado.css
+|   |       holographic-animations.css
+|   |       holographic-fixes.css
+|   |       
+|   +---frontend
+|   |   |   joi.png
+|   |   |   JoiCard.js
+|   |   |   
+|   |   \---static
+|   |       \---frontend
+|   |               JoiCard.jsx
+|   |               
+|   +---images
+|   |       4f.png
+|   |       ChatGPT Image 7 jun 2025, 17_52_51.png
+|   |       d610817b-d7ca-49a6-8a42-a819e8795f51.png
+|   |       fondo_cyberpunk.png
+|   |       fondo_holografico.png
+|   |       jo4i.png
+|   |       jo5i.png
+|   |       joi.jpg
+|   |       joi.png
+|   |       joi11.png
+|   |       joi20.jpg
+|   |       joi21.jpg
+|   |       joi23.png
+|   |       joi3.png
+|   |       joi8.png
+|   |       joi_activa.jpg
+|   |       joi_avatar.png
+|   |       joi_glitch.png
+|   |       joi_holo.png
+|   |       joi_mockup.png
+|   |       joi_neutra.png
+|   |       mockup_demo.html
+|   |       mujer_cyberpunk.jpg
+|   |       
+|   +---img
+|   |   |   cuerpo_humano.png
+|   |   |   
+|   |   \---programas
+|   |           default.png
+|   |           diet-food.png
+|   |           female-fitness.png
+|   |           herbal.png
+|   |           meditation.png
+|   |           strong.png
+|   |           treadmill.png
+|   |           weight-scale.png
+|   |           
+|   +---joi
+|   |   |   joi_ausente.png
+|   |   |   joi_feliz.png
+|   |   |   joi_glitch.png
+|   |   |   joi_motivada.png
+|   |   |   joi_normal.png
+|   |   |   joi_triste.png
+|   |   |   joy_contemplativa.jpg
+|   |   |   
+|   |   \---avatars
+|   |           estresado.png
+|   |           motivado.png
+|   |           neutro.png
+|   |           triste.png
+|   |           
+|   \---js
+|           blade-runner-particles.js
+|           cronometros.js
+|           dashboard_liftin_mejorado.js
+|           graficas.js
+|           holographic-background.js
+|           ia_sugerencias_predicciones.js
+|           notificaciones.js
+|           series.js
+|           timers.js
+|           
++---templates
+|   |   base.html
+|   |   form.html
+|   |   list.html
+|   |   register.html
+|   |   
+|   +---entrenos
+|   |       dashboard_liftin.html
+|   |       detalle_ejercicios_liftin.html
+|   |       detalle_entrenamiento.html
+|   |       editar_entrenamiento_liftin.html
+|   |       eliminar_entrenamiento_liftin.html
+|   |       entrenos_filtrados.html
+|   |       estadisticas_liftin.html
+|   |       exportar_datos_liftin.html
+|   |       historial_entrenos.html
+|   |       importar_liftin.html
+|   |       importar_liftin_completo.html
+|   |       lista_entrenamientos.html
+|   |       resumen_entreno.html
+|   |       
+|   +---includes
+|   |       notificaciones_dropdown.html
+|   |       
+|   \---registration
+|           login.html
+|           
+\---templatetags
+        custom_tags.py
+        form_tags.py
+        __init__.py
+        

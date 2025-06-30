@@ -1,3 +1,88 @@
+<<<<<<< HEAD
+=======
+import re
+
+
+# entrenos/utils.py
+
+def normalizar_nombre_ejercicio(nombre):
+    if not isinstance(nombre, str):
+        return nombre
+    return nombre.strip().title()
+
+
+def extraer_ejercicios(notas_texto):
+    ejercicios = []
+
+    if not notas:
+        return ejercicios
+
+    # Reemplazar "\n" y "\\n" por saltos de línea reales
+    notas = notas.replace("\\n", "\n").replace("\n", "\n")
+
+    # Cortar encabezado si existe
+    if "Ejercicios Detallados:" in notas:
+        notas = notas.split("Ejercicios Detallados:")[-1]
+
+    lineas = notas.strip().splitlines()
+
+    for linea in lineas:
+        linea = linea.strip()
+        if not linea:
+            continue
+
+        match = re.match(r'^([✓✗N]?)\s*(.+?):\s*([\d.,PC]+),\s*(\d+x\d+)', linea)
+        if match:
+            completado_raw, nombre, peso, repeticiones = match.groups()
+            nombre = re.sub(r'^[✓✗N\s\\n]*', '', nombre.strip())
+            ejercicios.append({
+                'nombre': nombre,
+                'peso': peso.strip(),
+                'repeticiones': repeticiones.strip(),
+                'completado': completado_raw == '✓',
+            })
+
+    return ejercicios
+
+
+import re
+
+
+def parsear_ejercicios(notas):
+    ejercicios = []
+
+    if not notas:
+        return ejercicios
+
+    # Reemplazar "\n" y "\\n" por saltos de línea reales
+    notas = notas.replace("\\n", "\n").replace("\n", "\n")
+
+    # Cortar encabezado si existe
+    if "Ejercicios Detallados:" in notas:
+        notas = notas.split("Ejercicios Detallados:")[-1]
+
+    lineas = notas.strip().splitlines()
+
+    for linea in lineas:
+        linea = linea.strip()
+        if not linea:
+            continue
+
+        match = re.match(r'^([✓✗N]?)\s*(.+?):\s*([\d.,PC]+),\s*(\d+x\d+)', linea)
+        if match:
+            completado_raw, nombre, peso, repeticiones = match.groups()
+            nombre = re.sub(r'^[✓✗N\s\\n]*', '', nombre.strip())
+            ejercicios.append({
+                'nombre': nombre,
+                'peso': peso.strip(),
+                'repeticiones': repeticiones.strip(),
+                'completado': completado_raw == '✓',
+            })
+
+    return ejercicios
+
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 def analizar_entreno_whoop(registro):
     hrv = registro.hrv
     rhr = registro.rhr

@@ -69,6 +69,131 @@ from clientes.models import Cliente
 
 from django.db.models import Avg
 
+<<<<<<< HEAD
+=======
+# entrenos/views.py
+
+from django.shortcuts import render
+from entrenos.models import DetalleEjercicioRealizado
+
+from django.shortcuts import render
+from entrenos.models import EntrenoRealizado
+from .utils import parsear_ejercicios  # crea este archivo o añade allí la función
+
+from django.shortcuts import render
+from .models import EntrenoRealizado
+from .utils import extraer_ejercicios  # si lo pones en un archivo aparte, si no, define ahí mismo
+
+from django.shortcuts import render
+from entrenos.models import EntrenoRealizado
+from entrenos.utils import parsear_ejercicios
+
+from collections import Counter
+from entrenos.models import EntrenoRealizado
+from entrenos.utils import parsear_ejercicios
+from django.shortcuts import render
+
+from collections import Counter
+from django.core.paginator import Paginator
+from entrenos.models import EntrenoRealizado
+from entrenos.utils import parsear_ejercicios
+from django.shortcuts import render
+
+from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
+from entrenos.utils import normalizar_nombre_ejercicio
+
+
+def detalle_ejercicio(request, nombre):
+    registros = []
+    nombre_normalizado = normalizar_nombre_ejercicio(nombre)
+
+    entrenos = EntrenoRealizado.objects.exclude(notas_liftin__isnull=True).exclude(notas_liftin='')
+
+    for entreno in entrenos:
+        ejercicios = parsear_ejercicios(entreno.notas_liftin)
+        for e in ejercicios:
+            if normalizar_nombre_ejercicio(e["nombre"]) == nombre_normalizado:
+                e["fecha"] = entreno.fecha
+                e["cliente"] = getattr(entreno.cliente, 'nombre', str(entreno.cliente))
+                try:
+                    e["peso_float"] = float(str(e["peso"]).replace(",", "."))
+                except:
+                    e["peso_float"] = None
+                registros.append(e)
+
+    registros = sorted(registros, key=lambda x: x["fecha"])
+
+    return render(request, "entrenos/detalle_ejercicio.html", {
+        "nombre": nombre_normalizado,
+        "registros": registros
+    })
+
+
+def ejercicios_realizados_view(request):
+    filtro = request.GET.get('filtro')
+    if filtro:
+        filtro = filtro.strip().title()
+
+    ejercicios = []
+    contador = Counter()
+
+    entrenos = EntrenoRealizado.objects.exclude(notas_liftin__isnull=True).exclude(notas_liftin='').order_by('-fecha')
+
+    for entreno in entrenos:
+        ejercicios_parsed = parsear_ejercicios(entreno.notas_liftin)
+        for e in ejercicios_parsed:
+            e['fecha'] = entreno.fecha
+            e['cliente'] = getattr(entreno.cliente, 'nombre', str(entreno.cliente))
+            if not filtro or e['nombre'] == filtro:
+                ejercicios.append(e)
+            nombre_normalizado = e['nombre'].strip().title()  # Ejemplo: "press banca" → "Press Banca"
+            e['nombre'] = nombre_normalizado
+            contador[nombre_normalizado] += 1
+
+    ejercicios_mas_realizados = sorted(
+        [{'nombre': nombre, 'veces': veces} for nombre, veces in contador.items()],
+        key=lambda x: x['veces'],
+        reverse=True
+    )
+
+    # ✅ paginar todos los ejercicios (10 por página)
+    paginator = Paginator(ejercicios, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # === Tabla de mayor peso por ejercicio ===
+    def convertir_peso(p):
+        try:
+            return float(str(p).replace(",", "."))
+        except:
+            return None
+
+    # Clonar para evitar modificar el original
+    ejercicios_para_max = ejercicios.copy()
+    for e in ejercicios_para_max:
+        e["peso_float"] = convertir_peso(e["peso"])
+
+    # Filtrar válidos y quedarnos con el de mayor peso por nombre
+    mayores_por_ejercicio = {}
+    for e in ejercicios_para_max:
+        if e["peso_float"] is None:
+            continue
+        nombre = e["nombre"]
+        if nombre not in mayores_por_ejercicio or e["peso_float"] > mayores_por_ejercicio[nombre]["peso_float"]:
+            mayores_por_ejercicio[nombre] = e
+
+    mayores_list = sorted(mayores_por_ejercicio.values(), key=lambda x: x["nombre"])
+
+    return render(request, 'entrenos/tabla_ejercicios.html', {
+        'ejercicios': page_obj,
+        'page_obj': page_obj,
+        'ejercicios_mas_realizados': ejercicios_mas_realizados,
+        'filtro': filtro,
+        'mayores_por_ejercicio': mayores_list,
+    })
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 
 @login_required
 def dashboard_liftin(request):
@@ -2843,6 +2968,10 @@ from .forms import RegistroWhoopForm
 
 from django.shortcuts import redirect
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 @login_required
 def registrar_whoop(request):
     if request.method == 'POST':

@@ -7,6 +7,10 @@
 from django.urls import path
 from . import views
 from . import views_liftin
+<<<<<<< HEAD
+=======
+from .views import ejercicios_realizados_view
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 
 app_name = 'entrenos'
 
@@ -20,6 +24,10 @@ urlpatterns = [
     path('eliminar/<int:pk>/', views.eliminar_entreno, name='eliminar_entreno'),
     path('resumen/<int:entreno_id>/', views.resumen_entreno, name='resumen_entreno'),
     path('whoop/editar/<int:pk>/', views.editar_whoop, name='editar_whoop'),
+<<<<<<< HEAD
+=======
+    path('ejercicio/<str:nombre>/', views.detalle_ejercicio, name='detalle_ejercicio'),
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
 
     # ============================================================================
     # URLs DE LIFTIN CORREGIDAS
@@ -27,7 +35,11 @@ urlpatterns = [
 
     # Dashboard principal de Liftin
     path('liftin/', views_liftin.dashboard_liftin, name='dashboard_liftin'),
+<<<<<<< HEAD
 
+=======
+    path('ejercicios-realizados/', ejercicios_realizados_view, name='tabla_ejercicios'),
+>>>>>>> 1ad65a8 (mensaje claro de los cambios)
     # Dashboard por cliente específico
     path('liftin/cliente/<int:cliente_id>/', views_liftin.dashboard_liftin_cliente, name='dashboard_liftin_cliente'),
 
