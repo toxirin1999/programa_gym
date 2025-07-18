@@ -17,7 +17,10 @@ urlpatterns = [
     path('mapa/energia/', views.mapa_energia, name='mapa_energia'),
     path('joi/cuidado/', views.recomendacion_cuidado, name='recomendacion_cuidado'),
     path('blade-demo/', views.blade_runner_demo, name='blade_runner_demo'),
+    path('api/lista-clientes/', views.api_lista_clientes, name='api_lista_clientes'),
     # Clientes
+    path('asignar_programa/<int:cliente_id>/', views.asignar_programa, name='asignar_programa'),
+    path('asignar_rutina/<int:cliente_id>/', views.asignar_rutina, name='asignar_rutina'),
     path('agregar/', views.agregar_cliente, name='agregar_cliente'),
     path('editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
     path('eliminar/<int:cliente_id>/', views.eliminar_cliente, name='eliminar_cliente'),

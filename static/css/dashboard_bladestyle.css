@@ -799,3 +799,8 @@ body {
   font-size: 0.9rem;
   line-height: 1.5;
 }
+select.form-control option,
+select.form-select option {
+    background-color: #FFFFFF; /* Fondo blanco para las opciones */
+    color: #000000;           /* Texto negro para las opciones */
+}

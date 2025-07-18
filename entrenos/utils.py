@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import re
 
 
@@ -82,7 +80,6 @@ def parsear_ejercicios(notas):
     return ejercicios
 
 
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
 def analizar_entreno_whoop(registro):
     hrv = registro.hrv
     rhr = registro.rhr

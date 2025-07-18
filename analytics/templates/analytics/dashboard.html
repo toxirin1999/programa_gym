@@ -1,0 +1,1088 @@
+<!-- 📊 TEMPLATE PRINCIPAL DEL CENTRO DE ANÁLISIS -->
+<!-- Archivo: templates/analytics/dashboard.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Centro de Análisis - {{ cliente.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+<style>
+    /* =================================================================== */
+    /* 1. VARIABLES GLOBALES Y ESTILOS BASE
+    /* =================================================================== */
+    :root {
+        --primary-color: #3b82f6;
+        --secondary-color: #1e40af;
+        --accent-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --dark-bg: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --border-color: #334155;
+    }
+.frequency-bar-container {
+    width: 150px; /* Ancho fijo para la barra */
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 0 1rem;
+}
+
+.frequency-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+}
+    body {
+        background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+        color: var(--text-primary);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        min-height: 100vh;
+    }
+.chart-title .title-icon {
+    font-size: 1.1em; /* Un poco más grande que el texto */
+    margin-right: 0.5rem;
+    line-height: 1;
+}
+    .analytics-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* =================================================================== */
+    /* 2. HEADER DEL DASHBOARD
+    /* =================================================================== */
+    .analytics-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analytics-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1 )" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+        z-index: 0;
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-client-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .client-avatar {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        border: 3px solid white;
+        object-fit: cover;
+    }
+
+    .client-text h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: white;
+    }
+
+    .client-text .client-goal {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.2rem 0.6rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        color: white;
+    }
+
+    .header-ai-assistant {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 1.5rem;
+    }
+
+    .ai-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--accent-color);
+    }
+
+    .ai-message {
+        margin: 0;
+        font-style: italic;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .header-bottom-row {
+        margin-top: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .date-filter-form {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .date-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .date-filter-form label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .date-filter-form input[type="date"] {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        font-family: inherit;
+    }
+
+    .btn-apply-filter {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-apply-filter:hover {
+        background: var(--secondary-color);
+    }
+
+    /* =================================================================== */
+    /* 3. TARJETAS DE MÉTRICAS
+    /* =================================================================== */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        border-color: var(--primary-color);
+    }
+
+    .metric-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .metric-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .metric-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-change {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+    }
+
+    .metric-change.positive {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+    }
+
+    .metric-change.negative {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+    }
+
+    /* =================================================================== */
+    /* 4. SECCIONES DE CONTENIDO (Gráficos, Recomendaciones, etc.)
+    /* =================================================================== */
+    .chart-section, .recommendations-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-card, .recommendation-card, .progress-section {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .recommendation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .recommendation-priority {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .priority-alta { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); }
+    .priority-media { background: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+    .priority-baja { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+
+    .progress-section {
+        margin-bottom: 2rem;
+    }
+
+    .exercise-progress {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .exercise-progress:last-child { border-bottom: none; }
+    .exercise-name { font-weight: 600; flex: 1; }
+    .progress-value { font-weight: 600; color: var(--success-color); }
+
+    .progress-bar {
+        width: 200px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 1rem;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--success-color), var(--accent-color));
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    /* =================================================================== */
+    /* 5. UTILIDADES Y ANIMACIONES
+    /* =================================================================== */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+/* Archivo: templates/analytics/dashboard.html */
+/* ... dentro del bloque <style> ... */
+
+/* --- Estilos para la Sección de Pestañas --- */
+.tabbed-section {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    margin-bottom: -2px; /* Alinea el borde con el borde del contenedor */
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none; /* Oculto por defecto */
+}
+
+.tab-content.active {
+    display: block; /* Visible cuando está activo */
+    animation: fadeIn 0.4s;
+}
+
+.exercise-progress-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+    border-radius: 0.5rem;
+}
+/* Archivo: templates/analytics/dashboard.html */
+/* ... dentro del bloque <style> ... */
+
+/* --- Estilos para la Sección de Estado del Atleta --- */
+.athlete-status-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    border: 1px solid;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+}
+
+.status-icon {
+    font-size: 2.5rem;
+}
+
+.status-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.status-text p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Colores dinámicos basados en el nivel de fatiga */
+.status-baja {
+    border-color: var(--success-color);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+.status-baja .status-text h4 strong {
+    color: var(--success-color);
+}
+
+.status-moderada {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+.status-moderada .status-text h4 strong {
+    color: var(--primary-color);
+}
+
+.status-alta {
+    border-color: var(--warning-color);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+.status-alta .status-text h4 strong {
+    color: var(--warning-color);
+}
+
+.status-critica {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+.status-critica .status-text h4 strong {
+    color: var(--danger-color);
+}
+
+.exercise-progress-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.exercise-progress-link:last-child {
+    border-bottom: none;
+}
+
+.exercise-name { font-weight: 600; flex-grow: 1; }
+.exercise-detail { color: var(--text-secondary); font-size: 0.9rem; margin: 0 1rem; }
+.progress-value.positive { font-weight: 600; color: var(--success-color); }
+.progress-value.negative { font-weight: 600; color: var(--warning-color); }
+.empty-tab { text-align: center; color: var(--text-secondary); padding: 2rem; }
+
+    /* =================================================================== */
+    /* 6. DISEÑO RESPONSIVE (Media Queries)
+    /* =================================================================== */
+    @media (max-width: 768px) {
+        .analytics-container {
+            padding: 1rem;
+        }
+
+        .header-top-row, .header-client-info {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .header-ai-assistant {
+            display: none; /* Ocultar el asistente en pantallas pequeñas para ahorrar espacio */
+        }
+
+        .chart-section, .recommendations-section, .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <!-- Archivo: templates/analytics/dashboard.html -->
+
+    <!-- Header Mejorado -->
+    <div class="analytics-header fade-in">
+        <div class="header-top-row">
+            <!-- Sección Izquierda: Cliente -->
+            <div class="header-client-info">
+                {% if cliente.foto %}
+                <img src="{{ cliente.foto.url }}" alt="Foto de {{ cliente.nombre }}" class="client-avatar">
+                {% endif %}
+                <div class="client-text">
+                    <h2>Análisis de {{ cliente.nombre }}</h2>
+                    <span class="client-goal">{{ cliente.get_objetivo_principal_display }}</span>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Fila Inferior: Filtro de Fechas -->
+        <div class="header-bottom-row">
+            <form method="GET" action="{% url 'analytics:dashboard_cliente' cliente.id %}" class="date-filter-form">
+                <div class="date-input-group">
+                    <label for="fecha_inicio">Desde:</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+                </div>
+                <div class="date-input-group">
+                    <label for="fecha_fin">Hasta:</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+                </div>
+                <button type="submit" class="btn-apply-filter">Aplicar Filtro</button>
+            </form>
+        </div>
+    </div>
+    {% if estado_atleta %}
+    <div class="athlete-status-section fade-in status-{{ estado_atleta.nivel }}">
+        <div class="status-icon">
+            {% if estado_atleta.nivel == 'baja' %}🔋{% elif estado_atleta.nivel == 'moderada' %}⚡{% elif estado_atleta.nivel == 'alta' %}⚠️{% else %}🚨{% endif %}
+        </div>
+        <div class="status-text">
+            <h4>Estado de Recuperación: <strong>{{ estado_atleta.nivel|title }}</strong></h4>
+            <p>{{ estado_atleta.recomendacion_descanso }}</p>
+        </div>
+    </div>
+    {% endif %}
+    <div class="metrics-grid fade-in">
+        <!-- Volumen Total -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.volumen_total.anterior|floatformat:0 }} kg">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">💪</div>
+            <div class="metric-value">{{ metricas_principales.volumen_total|floatformat:0 }}</div>
+            <div class="metric-label">Volumen Total (kg)</div>
+            {% with comp=comparativas.volumen_total %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.diferencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+
+        <!-- Intensidad Promedio -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.intensidad_promedio.anterior|floatformat:1 }} kg/min">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #10b981, #06b6d4);">⚡</div>
+            <div class="metric-value">{{ metricas_principales.intensidad_promedio|floatformat:1 }}</div>
+            <div class="metric-label">Intensidad Promedio (kg/min)</div>
+            {% with comp=comparativas.intensidad_promedio %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.diferencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+
+        <!-- Calorías Quemadas -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.calorias_totales.anterior|floatformat:0 }}">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">🔥</div>
+            <div class="metric-value">{{ metricas_principales.calorias_totales|floatformat:0 }}</div>
+            <div class="metric-label">Calorías Quemadas</div>
+            {% with comp=comparativas.calorias_totales %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.diferencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+
+        <!-- Frecuencia Semanal -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.frecuencia_semanal.anterior|floatformat:1 }}">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4);">📅</div>
+            <div class="metric-value">{{ metricas_principales.frecuencia_semanal|floatformat:1 }}</div>
+            <div class="metric-label">Entrenamientos/Semana</div>
+            {% with comp=comparativas.frecuencia_semanal %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.diferencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+
+        <!-- Duración Promedio -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.duracion_promedio.anterior|floatformat:0 }} min">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);">⏱️</div>
+            <div class="metric-value">{{ metricas_principales.duracion_promedio|floatformat:0 }}</div>
+            <div class="metric-label">Duración Promedio (min)</div>
+            {% with comp=comparativas.duracion_promedio %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.diferencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+
+        <!-- Consistencia -->
+        <div class="metric-card" data-tippy-content="Anterior: {{ comparativas.consistencia.anterior|floatformat:0 }}%">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #10b981, #f59e0b);">🎯</div>
+            <div class="metric-value">{{ metricas_principales.consistencia|floatformat:0 }}%</div>
+            <div class="metric-label">Consistencia</div>
+            {% with comp=comparativas.consistencia %}{% if comp.diferencia_pct != 0 %}
+            <div class="metric-change {% if comp.digerencia_pct > 0 %}positive{% else %}negative{% endif %}">{{ comp.diferencia_pct|floatformat:1 }}% vs período anterior</div>
+            {% endif %}{% endwith %}
+        </div>
+    </div>
+
+
+    <!-- Gráficos -->
+    <div class="chart-section fade-in">
+        <div class="chart-card">
+            <div class="chart-title">
+                <span class="title-icon">📈</span>
+                Evolución del Volumen
+            </div>
+            <div style="height: 250px;">
+                <canvas id="volumeChart"></canvas>
+            </div>
+            {% if volumen_vacio %}
+            <p style="text-align:center; color: var(--text-secondary); font-size: 0.9rem;">
+                ⚠️ No hay datos de volumen registrados.
+            </p>
+            {% endif %}
+        </div>
+
+
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ===== SECCIÓN DE ANÁLISIS DE EJERCICIOS CON PESTAÑAS (NUEVA) ===== -->
+    <!-- =================================================================== -->
+    <div class="tabbed-section fade-in">
+        <div class="chart-title">
+            <span class="title-icon">🏋️</span>
+            Análisis por Ejercicio
+        </div>
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="openTab(event, 'mejor-progresion')">🏆 Mejor Progresión</button>
+            <button class="tab-btn" onclick="openTab(event, 'estancados')">📉 Estancados</button>
+            <button class="tab-btn" onclick="openTab(event, 'mas-frecuentes')">🔄 Más Frecuentes</button>
+        </div>
+
+        <!-- Contenido de la Pestaña: Mejor Progresión -->
+        <div id="mejor-progresion" class="tab-content active">
+            {% for ejercicio in ejercicios_mejor_progresion %}
+            <a href="{% url 'analytics:progresion' cliente.id %}?ejercicio={{ ejercicio.nombre_ejercicio|urlencode }}" class="exercise-progress-link">
+                <div class="exercise-name">{{ ejercicio.nombre_ejercicio }}</div>
+                <div class="exercise-detail">{{ ejercicio.peso_inicial|floatformat:0 }}kg ➔ {{ ejercicio.peso_final|floatformat:0 }}kg</div>
+                <div class="progress-value positive">+{{ ejercicio.progresion_peso|floatformat:1 }}%</div>
+            </a>
+            {% empty %}
+            <p class="empty-tab">No hay datos de progresión positiva.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Contenido de la Pestaña: Estancados -->
+        <div id="estancados" class="tab-content">
+            {% for ejercicio in ejercicios_estancados %}
+            <a href="{% url 'analytics:progresion' cliente.id %}?ejercicio={{ ejercicio.nombre_ejercicio|urlencode }}" class="exercise-progress-link">
+                <div class="exercise-name">{{ ejercicio.nombre_ejercicio }}</div>
+                <div class="exercise-detail">{{ ejercicio.peso_inicial|floatformat:0 }}kg ➔ {{ ejercicio.peso_final|floatformat:0 }}kg</div>
+                <div class="progress-value negative">{{ ejercicio.progresion_peso|floatformat:1 }}%</div>
+            </a>
+            {% empty %}
+            <p class="empty-tab">¡Genial! No se detectan ejercicios estancados.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Contenido de la Pestaña: Más Frecuentes -->
+        <div id="mas-frecuentes" class="tab-content">
+            {% for ejercicio in ejercicios_mas_frecuentes %}
+            <a href="{% url 'analytics:progresion' cliente.id %}?ejercicio={{ ejercicio.nombre_ejercicio|urlencode }}" class="exercise-progress-link">
+                <div class="exercise-name">{{ ejercicio.nombre_ejercicio }}</div>
+                <div class="frequency-bar-container">
+                    <div class="frequency-bar" style="width: {{ ejercicio.porcentaje_frecuencia }}%;"></div>
+                </div>
+                <div class="exercise-detail">{{ ejercicio.sesiones }} sesiones en el período</div>
+            </a>
+            {% empty %}
+            <p class="empty-tab">No hay datos de frecuencia de ejercicios.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="recommendations-section fade-in">
+        <div class="recommendation-card">
+            <div class="chart-title">
+                💡 Recomendaciones Activas
+            </div>
+            {% for recomendacion in recomendaciones %}
+            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <div class="recommendation-priority priority-{{ recomendacion.get_prioridad_display|lower }}">
+                    {{ recomendacion.get_prioridad_display }}
+                </div>
+                <h4 style="margin: 0.5rem 0; color: var(--text-primary);">{{ recomendacion.titulo }}</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                    {{ recomendacion.descripcion|truncatewords:20 }}
+                </p>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                🎉 ¡Excelente! No hay recomendaciones pendientes.
+            </p>
+            {% endfor %}
+        </div>
+
+        <div class="recommendation-card">
+            <div class="chart-title">
+                📊 Entrenamientos Recientes
+            </div>
+            {% for entreno in entrenamientos_recientes|slice:":5" %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                <div>
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ entreno.fecha }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        {{ entreno.nombre_rutina_liftin|default:"Entrenamiento Manual" }}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; color: var(--accent-color);">{{ entreno.volumen_total_kg|floatformat:0 }} kg</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ entreno.duracion_minutos }} min</div>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                No hay entrenamientos recientes.
+            </p>
+            {% endfor %}
+        </div>
+
+
+    </div>
+
+    <!-- Navegación a Análisis Detallados -->
+    <div class="nav-tabs fade-in">
+        <div class="dashboards-grid">
+            <a href="{% url 'analytics:progresion' cliente.id %}" class="dashboard-btn from-blue">
+                <div class="icon">📈</div>
+                <div class="title">Análisis de Progresión</div>
+                <ul>
+                    <li>• Historial por ejercicio</li>
+                    <li>• Tendencia de carga</li>
+                    <li>• Progreso semanal</li>
+                </ul>
+            </a>
+
+            <a href="{% url 'analytics:comparativas' cliente.id %}" class="dashboard-btn from-purple">
+                <div class="icon">🔄</div>
+                <div class="title">Comparativas</div>
+                <ul>
+                    <li>• Comparación entre periodos</li>
+                    <li>• Volumen y consistencia</li>
+                    <li>• Métricas clave</li>
+                </ul>
+            </a>
+
+            <a href="{% url 'analytics:recomendaciones' cliente.id %}" class="dashboard-btn from-yellow">
+                <div class="icon">💡</div>
+                <div class="title">Recomendaciones</div>
+                <ul>
+                    <li>• Inteligencia adaptativa</li>
+                    <li>• Revisión de progreso</li>
+                    <li>• Sugerencias IA</li>
+                </ul>
+            </a>
+
+            <a href="{% url 'analytics:predicciones' cliente.id %}" class="dashboard-btn from-pink">
+                <div class="icon">🔮</div>
+                <div class="title">Predicciones</div>
+                <ul>
+                    <li>• Estimación futura de peso</li>
+                    <li>• Cálculo de incremento</li>
+                    <li>• Confianza del sistema</li>
+                </ul>
+            </a>
+        </div>
+
+
+        <div class="dashboards-grid">
+            <a href="{% url 'analytics:progresion_avanzado' cliente.id %}" class="dashboard-btn from-green">
+                <div class="icon">📊</div>
+                <div class="title">Dashboard de Progresión</div>
+                <ul>
+                    <li>• Ratios de Fuerza</li>
+                    <li>• Gráfico radar</li>
+                    <li>• Estándares por edad/peso</li>
+                    <li>• Recomendaciones de equilibrio</li>
+                </ul>
+            </a>
+
+            <a href="{% url 'analytics:intensidad_avanzado' cliente.id %}" class="dashboard-btn from-orange">
+                <div class="icon">🔥</div>
+                <div class="title">Dashboard de Intensidad</div>
+                <ul>
+                    <li>• Zonas de Entrenamiento</li>
+                    <li>• Análisis de Carga</li>
+                    <li>• Fatiga acumulada</li>
+                    <li>• Recomendaciones de descanso</li>
+                </ul>
+            </a>
+            <a href="{% url 'analytics:dashboard_ia_principal' cliente.id %}" class="dashboard-btn from-cyan">
+                <div class="icon">🧠</div>
+                <div class="title">Dashboard de IA</div>
+                <ul>
+                    <li>• Análisis personalizado</li>
+                    <li>• Recomendaciones adaptativas</li>
+                    <li>• Riesgos y oportunidades</li>
+                </ul>
+            </a>
+
+        </div>
+
+        <style>
+            .dashboards-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+   gap: 1.5rem;
+   margin-top: 1rem;
+ }
+
+ /* ---------- ESTILO BASE DEL BOTÓN ---------- */
+ .dashboard-btn {
+ display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+   position: relative;
+   padding: 1.5rem;
+   border-radius: 1rem;
+   color: white;
+   text-decoration: none;
+   border: 1px solid var(--border-color);
+   transition: transform 0.3s ease, box-shadow 0.3s ease;
+   overflow: hidden;
+   z-index: 1;
+ }
+
+ /* ---------- GLOW ANIMADO ---------- */
+ .dashboard-btn::before {
+   content: '';
+   position: absolute;
+   inset: -2px;
+   border-radius: 1.2rem;
+   background: linear-gradient(135deg, #00faff, #ff00e0);
+   filter: blur(8px);
+   opacity: 0;
+   transition: opacity 0.4s ease;
+   z-index: -1;
+ }
+
+ .dashboard-btn:hover::before {
+   opacity: 0.6;
+   animation: pulseGlow 2s infinite ease-in-out;
+ }
+
+ /* ---------- ANIMACIÓN HOVER ---------- */
+ .dashboard-btn:hover {
+   transform: translateY(-6px) scale(1.02);
+   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+ }
+
+ /* ---------- CONTENIDO INTERNO ---------- */
+ .dashboard-btn .icon {
+   font-size: 2rem;
+   margin-bottom: 0.5rem;
+ }
+
+ .dashboard-btn .title {
+   font-weight: 700;
+   font-size: 1.2rem;
+   margin-bottom: 0.75rem;
+   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+ }
+
+ .dashboard-btn ul {
+   padding: 0;
+   list-style: none;
+   font-size: 0.9rem;
+   opacity: 0.85;
+   margin: 0;
+   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+ }
+
+ /* ---------- COLORES DEGRADADOS ---------- */
+ .from-blue    { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+ .from-purple  { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
+ .from-yellow  { background: linear-gradient(135deg, #facc15, #f59e0b); }
+ .from-pink    { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+ .from-green   { background: linear-gradient(135deg, #10b981, #06b6d4); }
+ .from-orange  { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+ /* ---------- GLOW ANIMADO ---------- */
+ @keyframes pulseGlow {
+   0%   { filter: blur(8px) brightness(1); }
+   50%  { filter: blur(12px) brightness(1.4); }
+   100% { filter: blur(8px) brightness(1); }
+ }
+
+ /* ---------- OPCIONAL: ESTILO ACTIVO ---------- */
+ .dashboard-btn.active {
+   outline: 2px solid #32ffdd;
+   outline-offset: 2px;
+   box-shadow: 0 0 15px rgba(50, 255, 221, 0.6);
+ }
+
+        </style>
+    </div>
+    {% include "partials/_tabla_ejercicios.html" %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // --- 1. LÓGICA PARA LOS GRÁFICOS (Chart.js) ---
+
+        console.log('🔍 Iniciando carga de gráficos...');
+        if (typeof Chart === 'undefined') {
+            console.error('❌ Chart.js no está cargado');
+        } else {
+            let datosVolumen = [];
+            let datosIntensidad = [];
+
+            try {
+                const volumenRaw = {{ datos_volumen|safe }};
+                const intensidadRaw = {{ datos_intensidad|safe }};
+                datosVolumen = Array.isArray(volumenRaw) ? volumenRaw : [];
+                datosIntensidad = Array.isArray(intensidadRaw) ? intensidadRaw : [];
+                console.log('✅ Volumen:', datosVolumen.length, 'datos. Intensidad:', datosIntensidad.length, 'datos.');
+            } catch (e) {
+                console.error('⚠️ Error al parsear los datos JSON de los gráficos:', e);
+            }
+
+            const colors = {
+                primary: '#3b82f6',
+                secondary: '#06b6d4',
+                success: '#10b981',
+                warning: '#f59e0b',
+                danger: '#ef4444'
+            };
+
+            function crearGraficoVolumen() {
+                const canvas = document.getElementById('volumeChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (window.volumeChartInstance) window.volumeChartInstance.destroy();
+                window.volumeChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: datosVolumen.map(d => d.fecha),
+                        datasets: [{
+                            label: 'Volumen (kg)',
+                            data: datosVolumen.map(d => d.volumen_total),
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '20',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: colors.primary,
+                            pointBorderColor: '#ffffff',
+                            pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#cbd5e1' }, grid: { color: '#334155' } },
+                            y: { ticks: { color: '#cbd5e1' }, grid: { color: '#334155' } }
+                        }
+                    }
+                });
+                console.log('📈 Gráfico de volumen creado/actualizado.');
+            }
+
+            function crearGraficoIntensidad() {
+                const canvas = document.getElementById('intensityChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (window.intensityChartInstance) window.intensityChartInstance.destroy();
+                const intensidadValores = datosIntensidad.map(d => d.intensidad_promedio);
+                const promedio = intensidadValores.length > 0 ? intensidadValores.reduce((a, b) => a + b, 0) / intensidadValores.length : 0;
+                window.intensityChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Alta Intensidad', 'Media Intensidad', 'Baja Intensidad'],
+                        datasets: [{
+                            data: promedio > 0 ? [promedio > 50 ? 35 : 10, promedio > 30 ? 45 : 30, promedio < 30 ? 25 : 10] : [0, 0, 0],
+                            backgroundColor: [colors.danger, colors.warning, colors.success],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', usePointStyle: true } } }
+                    }
+                });
+                console.log('💡 Gráfico de intensidad creado/actualizado.');
+            }
+
+            crearGraficoVolumen();
+            crearGraficoIntensidad();
+        }
+
+        // --- 2. LÓGICA PARA LOS TOOLTIPS (Tippy.js) ---
+
+        console.log('🔍 Inicializando tooltips...');
+        if (typeof tippy === 'function') {
+            tippy('[data-tippy-content]', {
+                animation: 'scale-subtle', // Animación de entrada
+                theme: 'light-border',     // Tema visual
+                placement: 'top',          // Posición
+                arrow: true,               // Muestra una flecha
+                inertia: true,             // Añade un efecto suave al mover el ratón
+            });
+            console.log('✅ Tooltips interactivos inicializados.');
+        } else {
+            console.error('❌ Error: La librería Tippy.js no se ha cargado. Revisa tu plantilla base.html.');
+        }
+
+    });
+    // Archivo: templates/analytics/dashboard.html
+// ... dentro del bloque <script> y del DOMContentLoaded ...
+
+function openTab(evt, tabName) {
+    // Ocultar todo el contenido de las pestañas
+    const tabcontent = document.getElementsByClassName("tab-content");
+    for (let i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Quitar la clase 'active' de todos los botones
+    const tablinks = document.getElementsByClassName("tab-btn");
+    for (let i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Mostrar la pestaña actual y añadir la clase 'active' al botón
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+</script>
+
+{% endblock %}

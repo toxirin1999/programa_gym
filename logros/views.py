@@ -24,8 +24,28 @@ from .models import (
 )
 from .analysis import AnalisisGamificacionService
 
-
 # logros/views.py - Añadir nuevas vistas
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def dashboard_principal(request):
+    """
+    Vista principal del dashboard de gamificación
+    """
+    context = {
+        'logros_completados': 12,  # Reemplaza con datos reales de tu modelo
+        'total_logros': 25,
+        'puntos_totales': 1250,
+        'porcentaje_completado': 48,
+        'nivel_actual': 3,
+        'proxima_mision': 'Completar 5 entrenamientos esta semana',
+        'notificaciones_pendientes': 3,
+    }
+
+    return render(request, 'logros/base_template.html', context)
+
 
 @login_required
 def analisis_cliente(request, cliente_id=None):

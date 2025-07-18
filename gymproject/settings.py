@@ -22,9 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m^_f1+)gb!61wnzpvso)w7jhv1keu_o6@zs7yna@$$i1*2(&_z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = 'RENDER' not in os.environ
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
+
+# El nombre del host de Render se añade automáticamente si está disponible
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 
@@ -39,15 +44,16 @@ INSTALLED_APPS = [
     'clientes.apps.ClientesConfig',
     'rutinas',
     'dietas',
-    'anuncios',
     'entrenos',
     'widget_tweaks',
     'joi',
     'logros',
+    'analytics',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -55,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+
 ]
 USE_I18N = True
 ROOT_URLCONF = 'gymproject.urls'
@@ -83,10 +89,11 @@ WSGI_APPLICATION = 'gymproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # Reemplaza este valor por defecto con tu URL de SQLite local
+        default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -144,3 +151,123 @@ LOGIN_REDIRECT_URL = '/redirigir/'  # Ruta intermedia para decidir a dónde ir
 
 LOGIN_URL = '/login/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+ANALYTICS_CONFIG = {
+    'CACHE_TIMEOUT': 3600,  # 1 hora
+    'PREDICCION_DIAS_FUTURO': 30,
+    'MIN_DATOS_PREDICCION': 10,
+    'ALGORITMOS_HABILITADOS': [
+        'regresion_lineal',
+        'media_movil',
+        'tendencia_exponencial'
+    ]
+}
+# Configuración de cache para IA (opcional pero recomendado)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+# En settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file_ia': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/ia.log',
+        },
+    },
+    'loggers': {
+        'analytics.ia': {
+            'handlers': ['file_ia'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+# Configuración de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'gamificacion': {
+            'format': '🎮 {asctime} - {levelname} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'gamificacion_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'gamificacion.log'),
+            'formatter': 'gamificacion',
+            'encoding': 'utf-8',
+        },
+        'gamificacion_console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'gamificacion',
+        },
+        'gamificacion_debug': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'gamificacion_debug.log'),
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'gamificacion': {
+            'handlers': ['gamificacion_file', 'gamificacion_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'gamificacion.debug': {
+            'handlers': ['gamificacion_debug'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Mensaje de confirmación
+print("✅ Configuración de logging para gamificación cargada")
+print(f"📁 Logs se guardarán en: {LOGS_DIR}")
+
+# ============================================================================
+# CONFIGURACIÓN ADICIONAL PARA GAMIFICACIÓN
+# ============================================================================
+
+# Configuraciones específicas para el sistema de gamificación
+GAMIFICACION_CONFIG = {
+    'AUTO_PROCESS': True,  # Procesamiento automático activado
+    'LOG_LEVEL': 'INFO',  # Nivel de logging
+    'VALIDATE_INTEGRITY': True,  # Validación de integridad activada
+    'NOTIFICATION_ENABLED': True,  # Notificaciones activadas
+}

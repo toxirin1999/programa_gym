@@ -2,7 +2,7 @@
 {% load static %}
 {% load custom_tags %}
 {% load extra_filters %}
-
+{% load custom_filters %}
 
 {% block title %}Inicio – Nueva Gym{% endblock %}
 
@@ -60,6 +60,16 @@
         border: 1px solid rgba(77, 208, 225, 0.6) !important;
         box-shadow: 0 0 15px rgba(77, 208, 225, 0.4), inset 0 0 8px rgba(77, 208, 225, 0.2) !important;
     }
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.section {
+  margin-top: 2rem;
+}
 
 
     /* General Card/Box Styling */
@@ -296,131 +306,222 @@
 {% block content %}
 
 
-<!-- Efectos atmosféricos Blade Runner -->
+<!-- Efectos atmosféricos (se mantienen fuera de la estructura principal) -->
 <div class="blade-runner-atmosphere">
-    <!-- Niebla de fondo -->
     <div class="background-fog"></div>
-
-    <!-- Resplandor ambiental -->
     <div class="ambient-glow"></div>
-
-    <!-- Luces volumétricas -->
     <div class="volumetric-light volumetric-light-1"></div>
     <div class="volumetric-light volumetric-light-2"></div>
     <div class="volumetric-light volumetric-light-3"></div>
 </div>
 
-<!-- Controles de efectos atmosféricos
-<div class="atmosphere-controls">
-    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('low')">Bajo</button>
-    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('medium')">Medio</button>
-    <button class="atmosphere-btn" onclick="setAtmosphereIntensity('high')">Alto</button>
-    <button class="atmosphere-btn" onclick="toggleAtmosphereEffects()">Pausar</button>
-</div>-->
+<!-- Contenedor Principal -->
+<div class="container mx-auto px-4 py-8">
 
-<!-- Indicador de estado -->
+    <!-- ================================================================== -->
+    <!-- ENCABEZADO (Ocupa todo el ancho) -->
+    <!-- ================================================================== -->
+    <header class="text-center mb-8">
+        <h1 class="text-5xl font-extrabold leading-tight bg-gradient-to-r from-cyan-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg">
+            Hola, {{ cliente.nombre }}
+        </h1>
+        <p class="text-lg text-cyan-200 mt-2">{{ frase_bitacora|default:"¿Listo para analizar tu progreso?" }}</p>
+    </header>
 
+    <!-- ================================================================== -->
+    <!-- INICIO DEL LAYOUT DE 2 COLUMNAS -->
+    <!-- ================================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-<div class="w-full flex justify-center">
-    <div class="">
-        <div class="">
-            <!-- Ente flotante cyberpunk -->
+        <!-- ============================================= -->
+        <!-- COLUMNA IZQUIERDA (Principal) -->
+        <!-- ============================================= -->
+        <div class="lg:col-span-2 space-y-8">
 
-
-            <!-- Saludo -->
-            <div class="">
-                <div class="flex flex-col text-center">
-                    <h1 class="text-5xl font-extrabold leading-tight bg-gradient-to-r from-cyan-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg">
-                        Hola,<br>{{ cliente.nombre }}
-                    </h1>
-                </div>
-           <!-- <div class="background-image">
-                    {% if estado_visual_joi == "brillante" %}
-                    <img src="{% static 'images/joi_activa.jpg' %}" alt="Joi feliz" class="joi-flotante animate-pulse"/>
-                    {% elif estado_visual_joi == "apagada" %}
-                    <img src="{% static 'images/joi_glitch.png' %}" alt="Joi glitch" class="joi-flotante opacity-40 blur-sm grayscale"/>
-                    {% elif estado_visual_joi == "neutral" %}
-                    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi neutra" class="joi-flotante"/>
-                    {% else %}
-                    <img src="{% static 'images/mujer_cyberpunk.jpg' %}" alt="Joi" class="joi-flotante"/>
-                    {% endif %}
+            <!-- 1. Conclusión Semanal de Joi (antes burbuja de chat) -->
+            <div class="quote-box animate-fadeSlide">
+                <div class="flex items-center gap-4">
+                    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi" class="entity-image">
+                    <div>
+                        <p class="text-sm uppercase text-cyan-400 font-bold">Análisis Semanal</p>
+                        <p class="text-lg font-semibold mt-1 text-white">“{{ conclusion_joi }}”</p>
+                    </div>
                 </div>
             </div>
-            </header>-->
 
-            <!-- Burbuja de chat -->
-           <!-- <div class="chat-bubble bg-cyan-400/10 backdrop-blur-md border border-cyan-600 shadow-md rounded-xl p-3 max-w-sm animate-fadeSlide">
-                <div id="" class="">
+            <!-- 2. Acciones Rápidas -->
+            <div class="quote-box animate-fadeSlide" style="animation-delay: 0.1s;">
+                <h3 class="section-title text-center">Acciones Rápidas</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <a href="/entrenos/liftin/" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition">💪 Registrar Entreno</a>
+                    <a href="/clientes/bitacora/registrar/" class="block w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition">📓 Registrar Bitácora</a>
+                    <a href="{% url 'entrenos:registrar_whoop' %}" class="block w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition">📈 Registrar Datos
+                        Whoop</a>
+                    <a href="{% url 'analytics:dashboard_ia_principal' cliente.id %}" class="block w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition">🤖 Ir al
+                        Dashboard IA</a>
+                </div>
+            </div>
 
-                <p>
-                    {{ frase_bitacora|default:"¿Cómo dormiste esta semana?" }}
-                </p>
-                {% if frase_memoria_emocional %}
-                <p class="mt-2 text-red-300 italic">{{ frase_memoria_emocional }}</p>
+            <!-- 3. Entrenamientos Recientes -->
+            <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.2s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="section-title"><i class="fas fa-history"></i> Entrenamientos Recientes</h3>
+                    <a href="{% url 'entrenos:lista_entrenamientos' %}" class="text-sm text-cyan-400 hover:text-cyan-300">Ver todos</a>
+                </div>
+                {% if entrenamientos_recientes %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <table style="width: 100%; color: white; font-size: 0.9rem; border-collapse: collapse;">
+                            <thead>
+                            <tr style="color: #00ffff; text-align: left;">
+                                <th style="padding: 8px;">👤 Cliente</th>
+                                <th style="padding: 8px;">🏋️ Rutina</th>
+                                <th style="padding: 8px;">📅 Fecha</th>
+                                <th style="padding: 8px;">⏱ Duración</th>
+                                <th style="padding: 8px;">📦 Volumen</th>
+                                <th style="padding: 8px;">🔥 Calorías</th>
+                                <th style="padding: 8px;">⚙️ Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for entrenamiento in entrenamientos_recientes %}
+                            <tr style="background-color: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <td style="padding: 8px;">{{ entrenamiento.cliente.nombre }}</td>
+                                <td style="padding: 8px;">{{ entrenamiento.rutina.nombre }}</td>
+                                <td style="padding: 8px;">{{ entrenamiento.fecha|date:"d/m/Y" }}</td>
+                                <td style="padding: 8px;">{{ entrenamiento.duracion_minutos|default:"—" }} min</td>
+                                <td style="padding: 8px;">{{ entrenamiento.volumen_total_kg|default:"—" }} kg</td>
+                                <td style="padding: 8px;">{{ entrenamiento.calorias_quemadas|default:"—" }} kcal</td>
+                                <td style="padding: 8px;">
+                                    <a href="{% url 'entrenos:detalle_entrenamiento' entrenamiento.id %}" style="color: #00ffff; margin-right: 6px;" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if entrenamiento.fuente_datos == 'liftin' %}
+                                    <a href="{% url 'entrenos:editar_entrenamiento_liftin' entrenamiento.id %}" style="color: #ffaa00; margin-right: 6px;" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'entrenos:eliminar_entrenamiento_liftin' entrenamiento.id %}" onclick="return confirm('¿Eliminar este entrenamiento?')" style="color: #ff4444;" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-gray-400 py-4">No hay entrenamientos recientes. ¡Es hora de empezar!</p>
                 {% endif %}
-
-            </div>-->
-
             </div>
 
-            <!-- Recordatorio -->
-            <div class="quote-box glitch-border-subtle">
-                <h2 >Recuerdo del día</h2>
-                <p>{{ recuerdo.contenido }}</p>
+
+
+        <!-- En tu template principal, dentro de la columna izquierda, debajo de las Acciones Rápidas -->
+
+<!-- En tu template principal, por ejemplo, en la columna derecha debajo de los logros -->
+
+<!-- ================================================================== -->
+<!-- SECCIÓN DE RECOMENDACIONES APLICADAS - PÉGALA AQUÍ -->
+<!-- ================================================================== -->
+{% if recomendaciones_aplicadas %}
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.4s;">
+    <h3 class="section-title text-green-400"><i class="fas fa-check-circle"></i> Historial de Recomendaciones</h3>
+
+    <div class="space-y-3">
+        {% for rec in recomendaciones_aplicadas %}
+            <div class="p-4 rounded-lg border border-gray-700 bg-gray-900/50 opacity-80">
+
+                <!-- Título -->
+                <p class="font-bold text-white text-sm">{{ rec.titulo }}</p>
+
+                <!-- ✅ LÍNEA AÑADIDA: Párrafo para la descripción -->
+                <p class="text-sm text-gray-300 mt-2">{{ rec.descripcion }}</p>
+
+                <!-- Meta información (Tipo y Fecha) -->
+                <div class="flex justify-between items-center mt-3 text-xs text-gray-400">
+                    <span>Tipo: {{ rec.get_tipo_display }}</span>
+                    <span>Aplicada: {{ rec.fecha_aplicacion|date:"d/m/Y" }}</span>
+                </div>
+
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<!-- ================================================================== -->
+<!-- FIN DE LA SECCIÓN -->
+<!-- ================================================================== -->
+<!-- En tu template principal, por ejemplo, en la columna derecha -->
+
+<!-- ================================================================== -->
+<!-- SECCIÓN DE RATIOS DE FUERZA - PÉGALA AQUÍ -->
+<!-- ================================================================== -->
+{% if ratios_fuerza and ratios_fuerza.ratios %}
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.5s;">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="section-title mb-0"><i class="fas fa-balance-scale text-cyan-400"></i> Balance de Fuerza</h3>
+        <a href="{% url 'analytics:progresion_avanzado' cliente.id %}" class="text-sm text-cyan-400 hover:text-cyan-300">Ver análisis completo</a>
+    </div>
+
+    <!-- Contenedor del Gráfico Radar -->
+    <div class="relative h-64 w-full mx-auto mb-6">
+        <canvas id="radarChartInicio"></canvas>
+    </div>
+
+    <!-- Lista de Ratios -->
+    <div class="space-y-3">
+        {% for ratio in ratios_fuerza.ratios|slice:":3" %} {# Mostramos solo los 3 primeros #}
+        <div class="p-3 rounded-lg border border-gray-700 bg-gray-900/50">
+            <div class="flex justify-between items-center">
+                <span class="font-bold text-white text-sm">{{ ratio.nombre }}</span>
+                <span class="text-lg font-bold px-2 py-1 rounded
+                    {% if ratio.estado == 'optimo' %} text-green-300
+                    {% elif ratio.estado == 'bajo' %} text-yellow-300
+                    {% else %} text-red-300
+                    {% endif %}">
+                    {{ ratio.valor }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<!-- ================================================================== -->
+<!-- FIN DE LA SECCIÓN -->
+<!-- ================================================================== -->
+
+
+        </div>
+
+        <!-- ============================================= -->
+        <!-- COLUMNA DERECHA (Secundaria) -->
+        <!-- ============================================= -->
+        <div class="space-y-8">
+
+            <!-- 1. Métricas Rápidas -->
+            <div class="grid grid-cols-3 gap-4 animate-fadeSlide" style="animation-delay: 0.1s;">
+                <div class="metric-card text-center p-4">
+                    <h2 class="text-3xl font-bold">{{ entrenos_count }}</h2>
+                    <p class="text-xs text-gray-400">Entrenos</p>
+                </div>
+                <div class="metric-card text-center p-4">
+                    <h2 class="text-3xl font-bold">{{ carga_total|floatformat:0 }}</h2>
+                    <p class="text-xs text-gray-400">Carga Total (kg)</p>
+                </div>
+                <div class="metric-card text-center p-4">
+                    <h2 class="text-3xl font-bold">82</h2>
+                    <p class="text-xs text-gray-400">Consistencia</p>
+                </div>
             </div>
 
-            <!-- Métricas -->
-            <div class="metrics-container">
-                <div class="metric-card interactive-glow">
-                    <h2>{{ entrenos_count }}</h2>
-                    <p>Entrenos</p>
-                </div>
-                <div class="metric-card interactive-glow">
-                    <h2>{{ carga_total|floatformat:0 }} <span class="metric-unit">kg</span></h2>
-                    <p>Carga total</p>
-                </div>
-                <div class="metric-card interactive-glow">
-                    <h2>82</h2>
-                    <p>Consistencia</p>
-                </div>
-            </div>
-
-            <!-- Emojis -->
-            <!-- Emojis -->
-            <div class="quote-box">
-                <h3>¿Cómo te sientes hoy?</h3>
-
-                {% if alerta_fatiga %}
-                <div class="bg-[#1f1f1f] border border-red-500 p-4 rounded-xl mt-6 text-white shadow-md">
-                    <h3 class="text-red-400 font-semibold mb-2">🫧 Joi detecta fatiga acumulada</h3>
-                    <p class="text-sm mb-3">Tu sistema parece fatigado esta semana. Quizás sea buen momento para cuidarte con más suavidad.</p>
-                    <a href="{% url 'recomendacion_cuidado' %}" class="block w-full text-center bg-red-500 hover:bg-red-400 text-white font-bold py-2 rounded-xl transition">
-                        ¿Qué puedo hacer hoy para cuidarme?
-                    </a>
-                </div>
-                {% endif %}
-
-                <div class="w-full max-w-md mx-auto px-4">
-                    <a href="/clientes/bitacora/registrar/" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
-                        Registrar bitácora de hoy
-                    </a>
-                    <a href="{% url 'calendario_bitacoras' %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
-                        🗓 Ver calendario de bitácoras
-                    </a>
-                    <a href="/entrenos/liftin/" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
-                        💪 Registrar Entreno
-                    </a>
-                    <a href="{% url 'entrenos:registrar_whoop' %}" class="block w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
-                        📈 Registrar datos Whoop
-                    </a>
-                    <a href="/entrenos/whoop/tarjeta/" class="block w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
-                        🧾 Ver tarjeta Whoop completa
-                    </a>
-                </div>
-            </div>
-
+            <!-- 2. Datos de Whoop -->
             {% if registro_whoop %}
-            <div class="timeline-section">
+            <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.2s;">
+                <h3 class="section-title text-yellow-400"><i class="fas fa-heart-pulse"></i> Resumen Diario Whoop</h3>
+                <div class="timeline-section">
               <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-blue-400">📊 WHOOP Diario</h3>
                 <a href="{% url 'entrenos:tarjeta_whoop' %}" class="text-sm text-gray-400 hover:text-blue-300">Ver completo</a>
@@ -477,211 +578,16 @@
 
   </div>
 </div>
-{% endif %}
-            {% if registro_whoop %}
-<div class="bg-[#222] text-white rounded-xl p-6 shadow-xl mt-6 border-l-4 border-{{ color_entreno|default:'gray' }}-400">
-    <h3 class="text-xl font-bold text-{{ color_entreno|default:'gray' }}-400 mb-2">
-        🧠 Análisis Whoop
-    </h3>
-    <p class="text-lg leading-relaxed text-white">
-        {{ consejo_entreno }}
-    </p>
-
-    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-300">
-        <div class="bg-[#1b1b1b] p-4 rounded-md border border-gray-700">
-            <span class="block font-semibold text-white mb-1">💓 RHR - Ritmo Cardíaco en Reposo</span>
-            <span>Actual: <strong>{{ registro_whoop.rhr }} lpm</strong></span><br>
-            <span>
-                {% if registro_whoop.rhr > 60 %}
-                    🔴 Más alto de lo normal → fatiga, estrés o falta de sueño.
-                {% else %}
-                    🟢 En buen rango → buen estado físico.
-                {% endif %}
-            </span>
-        </div>
-        <div class="bg-[#1b1b1b] p-4 rounded-md border border-gray-700">
-            <span class="block font-semibold text-white mb-1">⚡ HRV - Variabilidad de Frecuencia Cardíaca</span>
-            <span>Actual: <strong>{{ registro_whoop.hrv }} ms</strong></span><br>
-            <span>
-                {% if registro_whoop.hrv > 69 %}
-                    🧠 Alta HRV → sistema nervioso relajado y listo.
-                {% else %}
-                    ⚠️ HRV baja → sistema exigido o estresado.
-                {% endif %}
-            </span>
-        </div>
-    </div>
-</div>
-{% endif %}
-<!-- 🧠 Conclusión semanal de Joi -->
-<div class="bg-[#1b1b1b] text-white rounded-2xl p-6 shadow-lg border-l-4 border-blue-500 mt-8">
-  <div class="flex items-center gap-4">
-    <!-- Joi avatar flotante -->
-    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi"
-         class="w-20 h-20 object-contain drop-shadow-md floating-joi">
-    <div>
-      <p class="text-sm uppercase text-blue-400 font-bold">Análisis semanal</p>
-      <p class="text-lg font-semibold mt-1">“{{ conclusion_joi }}”</p>
-    </div>
-  </div>
-</div>
-
-
-<!-- Entrenamientos Recientes -->
-<!-- 🧪 Entrenamientos Recientes (versión con diseño Joi/Neon) -->
-<<<<<<< HEAD
-<div class="entrenamientos-section fade-in" style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 16px; margin-top: 30px;">
-=======
-<div class="timeline-section" style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 16px; margin-top: 30px;">
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
-  <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h3 style="color: #00ffff; font-weight: bold; text-shadow: 0 0 10px #00ffff;">
-      <i class="fas fa-history"></i> Entrenamientos Recientes
-    </h3>
-    <a href="{% url 'entrenos:lista_entrenamientos' %}" style="color: #00ffff; font-weight: bold;">
-      Ver todos
-    </a>
-  </div>
-
-  {% if entrenamientos_recientes %}
-<<<<<<< HEAD
-  <p style="color: #32FF00; margin-top: 10px;">Cargando {{ entrenamientos_recientes|length }} entrenamientos recientes...</p>
-=======
-  <p class="timeline-number green" style="color: #32FF00; margin-top: 10px;">Cargando {{ entrenamientos_recientes|length }} entrenamientos recientes...</p>
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
-  <div style="overflow-x: auto; margin-top: 10px;">
-    <table style="width: 100%; color: white; font-size: 0.9rem; border-collapse: collapse;">
-      <thead>
-        <tr style="color: #00ffff; text-align: left;">
-          <th style="padding: 8px;">👤 Cliente</th>
-          <th style="padding: 8px;">🏋️ Rutina</th>
-          <th style="padding: 8px;">📅 Fecha</th>
-          <th style="padding: 8px;">🤖 Fuente</th>
-          <th style="padding: 8px;">⏱ Duración</th>
-          <th style="padding: 8px;">📦 Volumen</th>
-          <th style="padding: 8px;">🔥 Calorías</th>
-          <th style="padding: 8px;">⚙️ Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entrenamiento in entrenamientos_recientes %}
-        <tr style="background-color: rgba(255,255,255,0.05); border-radius: 8px;">
-          <td style="padding: 8px;">{{ entrenamiento.cliente.nombre }}</td>
-          <td style="padding: 8px;">{{ entrenamiento.rutina.nombre }}</td>
-          <td style="padding: 8px;">{{ entrenamiento.fecha|date:"d/m/Y" }}</td>
-          <td style="padding: 8px;">
-            {% if entrenamiento.fuente_datos == 'liftin' %}
-              <span style="color: #00ffff;"><i class="fas fa-mobile-alt"></i> Liftin</span>
-            {% else %}
-              <span style="color: #ffaa00;"><i class="fas fa-edit"></i> Manual</span>
+                <div class="mt-4 bg-[#1b1b1b] p-4 rounded-md border border-gray-700">
+                    <p class="text-sm text-white">{{ consejo_entreno }}</p>
+                </div>
+            </div>
             {% endif %}
-          </td>
-          <td style="padding: 8px;">{{ entrenamiento.duracion_minutos|default:"—" }} min</td>
-          <td style="padding: 8px;">{{ entrenamiento.volumen_total_kg|default:"—" }} kg</td>
-          <td style="padding: 8px;">{{ entrenamiento.calorias_quemadas|default:"—" }} kcal</td>
-          <td style="padding: 8px;">
-            <a href="{% url 'entrenos:detalle_entrenamiento' entrenamiento.id %}" style="color: #00ffff; margin-right: 6px;" title="Ver detalles">
-              <i class="fas fa-eye"></i>
-            </a>
-            {% if entrenamiento.fuente_datos == 'liftin' %}
-            <a href="{% url 'entrenos:editar_entrenamiento_liftin' entrenamiento.id %}" style="color: #ffaa00; margin-right: 6px;" title="Editar">
-              <i class="fas fa-edit"></i>
-            </a>
-            <a href="{% url 'entrenos:eliminar_entrenamiento_liftin' entrenamiento.id %}" onclick="return confirm('¿Eliminar este entrenamiento?')" style="color: #ff4444;" title="Eliminar">
-              <i class="fas fa-trash"></i>
-            </a>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
 
-  {% else %}
-  <div class="empty-state" style="text-align: center; margin-top: 20px; color: #ccc;">
-    <i class="fas fa-calendar-times" style="font-size: 2rem; color: #00ffff;"></i>
-    <h4 style="margin-top: 10px; color: #00ffff;">No hay entrenamientos recientes</h4>
-    <p>Los entrenamientos aparecerán aquí una vez que los registres o importes.</p>
-    <a href="{% url 'entrenos:importar_liftin_completo' %}" style="color: #00ffff; font-weight: bold;">
-      <i class="fas fa-plus"></i> Importar Entrenamiento
-    </a>
-  </div>
-  {% endif %}
-</div>
+            <!-- 3. Sistema de Logros -->
+            <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
 
-
-            <!-- Timeline -->
-            <div class="timeline-section">
-                <div class="timeline-header">
-                    <h3>Últimos entrenos</h3>
-                    <span>2 semana</span>
-                </div>
-                <ul class="timeline-list">
-                    <li class="timeline-item">
-                        <span class="timeline-number green">22</span>
-                        <span class="timeline-content">Cardio</span>
-                        <span class="timeline-date">Apr 21</span>
-                        <span class="timeline-type">Cardio</span>
-                    </li>
-                    <li class="timeline-item">
-                        <span class="timeline-number purple">21</span>
-                        <span class="timeline-content">Pull</span>
-                        <span class="timeline-date">Apr 19</span>
-                        <span class="timeline-type">Pull</span>
-                    </li>
-                    <li class="timeline-item">
-                        <span class="timeline-number yellow">19</span>
-                        <span class="timeline-content">Piernas</span>
-                        <span class="timeline-date">Apr 18</span>
-                        <span class="timeline-type">Piernas</span>
-                    </li>
-                </ul>
-            </div>
-
-
-<div class="timeline-section">
-    <h3 class="text-lg font-semibold mb-4 text-green-400">⚖ Evolución del peso</h3>
-    <canvas id="graficoPeso" height="150"></canvas>
-</div>
-
-<div class="timeline-section">
-                <h3 class="text-lg font-semibold mb-4 text-cyan-400">📊 Rendimiento por semana</h3>
-                <canvas id="graficoRendimiento" height="150"></canvas>
-            </div>
-
-
-
-            <div class="timeline-section">
-
-                <div class="bg-[#1a1a1a] p-6 rounded-xl shadow-md text-white mt-6 space-y-2 interactive-glow">
-                    <h2 class="text-xl font-bold text-[#32FF00]">📓 Resumen semanal con Joi</h2>
-                    <p>📅 Días registrados: <span class="text-cyan-300">{{ resumen_bitacora.dias_registrados }}/7</span></p>
-                    <p>💤 Sueño promedio: <span class="text-purple-300">{{ resumen_bitacora.promedio_sueno }} h</span></p>
-                    <p>🔥 RPE promedio: <span class="text-orange-300">{{ resumen_bitacora.promedio_rpe }}/10</span></p>
-                    <p>😊 Estado emocional dominante:
-                        {% if resumen_bitacora.humor == 'verde' %}
-                        <span class="text-green-400">😊 Bien</span>
-                        {% elif resumen_bitacora.humor == 'amarillo' %}
-                        <span class="text-yellow-400">😐 Neutro</span>
-                        {% else %}
-                        <span class="text-red-400">😞 Bajo</span>
-                        {% endif %}
-                    </p>
-                </div>
-
-
-                {% if estados and estados.0.sugerencia %}
-                <div class="bg-[#1a1a1a] p-4 rounded-xl mt-6 shadow-md border border-cyan-800 interactive-glow">
-                    <h3 class="text-[#31cff4] font-semibold mb-2">🔮 Recomendación inteligente de Joi</h3>
-                    <p class="text-white">{{ estados.0.sugerencia }}</p>
-                </div>
-                {% endif %}
-            </div>
-
-<!-- ⭐ SECCIÓN DE LOGROS -->
-<div class="timeline-section">
-    <div class="section-header">
+                <div class="section-header">
         <h3 class="section-title text-xl font-bold text-yellow-300 mb-4">
             🏆 Sistema de Logros
             {% if datos_logros.perfil %}
@@ -734,184 +640,109 @@
         </ul>
     </div>
     {% endif %}
+
+            </div>
+            <!-- En tu template principal, por ejemplo, en la columna derecha -->
+
+<!-- ================================================================== -->
+<!-- SECCIÓN DE FATIGA ACUMULADA - PÉGALA AQUÍ -->
+<!-- ================================================================== -->
+{% if fatiga_acumulada %}
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.2s;">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="section-title mb-0"><i class="fas fa-bolt text-cyan-400"></i> Fatiga Acumulada</h3>
+        <a href="{% url 'analytics:intensidad_avanzado' cliente.id %}" class="text-sm text-cyan-400 hover:text-cyan-300">Ver detalles</a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 items-center">
+        <!-- Medidor Gauge -->
+        <div class="relative w-32 h-32 mx-auto">
+            <canvas id="fatigaGaugeInicio"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-2xl font-bold text-white">{{ fatiga_acumulada.fatiga_actual|floatformat:1 }}</span>
+                <span class="text-xs text-gray-400">Índice</span>
+            </div>
+        </div>
+
+        <!-- Información y Recomendación -->
+        <div class="text-center">
+            <p class="text-xl font-bold
+                {% if fatiga_acumulada.nivel == 'baja' %} text-green-400
+                {% elif fatiga_acumulada.nivel == 'moderada' %} text-yellow-400
+                {% else %} text-red-400
+                {% endif %}">
+                {{ fatiga_acumulada.nivel|capfirst }}
+            </p>
+            <p class="text-xs text-gray-400 mt-2">{{ fatiga_acumulada.recomendacion_descanso }}</p>
+        </div>
+    </div>
 </div>
+{% endif %}
+<!-- ================================================================== -->
+<!-- FIN DE LA SECCIÓN -->
+<!-- ================================================================== -->
 
+    <!-- En tu template principal, por ejemplo, en la columna derecha -->
 
+<!-- ================================================================== -->
+<!-- SECCIÓN DE MESOCICLO ACTUAL - PÉGALA AQUÍ -->
+<!-- ================================================================== -->
+{% if mesociclo_actual %}
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="section-title mb-0"><i class="fas fa-calendar-check text-cyan-400"></i> Mesociclo Actual</h3>
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-cyan-500/50 text-white">
+            Ciclo {{ mesociclo_actual.numero }}
+        </span>
+    </div>
 
-            {% if recomendacion_carga %}
-            <div class="bg-[#111827] border border-cyan-700 p-4 rounded-xl mt-6 shadow interactive-glow">
-                <h3 class="text-cyan-300 font-semibold mb-2">📡 Sugerencia de Joi para esta semana</h3>
-                <p class="text-white text-sm">{{ recomendacion_carga }}</p>
-                <a href="{% url 'responder_sugerencia' %}" class="btn-fucsia mt-2 text-sm interactive-glow">
-                    Decidir si aplicar esta sugerencia
-                </a>
-            </div>
-            {% endif %}
-            <div class="mt-6 bg-[#1a1a1a] p-4 rounded-xl shadow-inner border border-cyan-700">
-                <h3 class="text-cyan-300 text-sm font-semibold mb-2">🔋 Mapa de energía (últimos 28 días)</h3>
-                <div class="grid grid-cols-7 gap-1">
-                    {% for dia in energia_dias %}
-                    <div class="h-3 rounded-full"
-                         style="background-color:
-             {% if dia.valor == None %} #2c2c2c
-             {% elif dia.valor >= 0.8 %} #32FF00
-             {% elif dia.valor >= 0.6 %} #90ee90
-             {% elif dia.valor >= 0.4 %} #facc15
-             {% elif dia.valor >= 0.2 %} #f87171
-             {% else %} #dc2626
-             {% endif %};">
-                    </div>
-                    {% endfor %}
-                </div>
-                <p class="text-[0.7rem] text-center text-gray-400 mt-2">🟢🟡🔴 energía diaria</p>
-            </div>
-            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
-            <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
-    <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Peso</h3>
+    <p class="text-sm text-gray-400 mb-4">
+        {{ mesociclo_actual.fecha_inicio|date:"d/m" }} - {{ mesociclo_actual.fecha_fin|date:"d/m/Y" }}
+    </p>
 
-    <div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
-    <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Peso</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-        {% for periodo in orden_peso %}
-        {% with cambio=cambios_peso|get_item:periodo %}
-        <div class="rounded-xl p-3 shadow-sm
-            {% if cambio is not None and cambio >= 0 %}
-                bg-green-100 text-green-600 border border-green-300
-            {% elif cambio is not None %}
-                bg-red-100 text-red-600 border border-red-300
-            {% else %}
-                bg-gray-200 text-gray-600 border border-gray-300
+    <!-- Métricas del Mesociclo -->
+    <div class="grid grid-cols-2 gap-4 text-center mb-4">
+        <div>
+            <p class="text-2xl font-bold text-white">{{ mesociclo_actual.datos.carga_total|floatformat:0 }}</p>
+            <p class="text-xs text-gray-400">Carga Total (kg)</p>
+        </div>
+        <div>
+            <p class="text-2xl font-bold text-white">{{ mesociclo_actual.datos.sesiones }}</p>
+            <p class="text-xs text-gray-400">Sesiones</p>
+        </div>
+    </div>
+
+    <!-- Badge de Efectividad -->
+    <div class="text-center mb-4">
+        <span class="text-sm font-bold px-4 py-2 rounded-full
+            {% if mesociclo_actual.efectividad == 'alta' %} bg-green-500/30 text-green-300
+            {% elif mesociclo_actual.efectividad == 'media' %} bg-yellow-500/30 text-yellow-300
+            {% else %} bg-red-500/30 text-red-300
             {% endif %}">
-            <p class="text-2xl font-bold">
-                {% if cambio is not None %}
-                    {% if cambio > 0 %}+{% endif %}{{ cambio|floatformat:1 }} kg
-                {% else %}
-                    — kg
-                {% endif %}
-            </p>
-            <p class="text-xs text-gray-700 mt-1">
-                {% if periodo == 'inicio' %}Ganado total
-                {% else %}{{ periodo|slice:":-1" }} días
-                {% endif %}
-            </p>
+            Efectividad: {{ mesociclo_actual.efectividad|capfirst }}
+        </span>
+    </div>
+
+    <!-- Recomendación del Mesociclo -->
+    {% if mesociclo_actual.recomendaciones %}
+    <div class="p-3 rounded-lg border border-gray-700 bg-gray-900/50 text-center">
+        <p class="text-sm text-gray-300">{{ mesociclo_actual.recomendaciones|first }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+<!-- ================================================================== -->
+<!-- FIN DE LA SECCIÓN -->
+<!-- ================================================================== -->
+
+
+
+
         </div>
-        {% endwith %}
-        {% endfor %}
+
     </div>
 </div>
 
-</div>
-
-            </div>
-
-<div class="bg-[#121212] p-4 rounded-xl mt-6 shadow-md border border-yellow-700 interactive-glow">
-    <h3 class="text-center text-cyan-300 font-bold text-lg mb-4">Tendencias de Bíceps</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-        {% for periodo in orden_biceps %}
-        {% with cambio=cambios_biceps|get_item:periodo %}
-        <div class="rounded-xl p-3 shadow-sm
-            {% if cambio is not None and cambio >= 0 %}
-                bg-green-100 text-green-600 border border-green-300
-            {% elif cambio is not None %}
-                bg-red-100 text-red-600 border border-red-300
-            {% else %}
-                bg-gray-200 text-gray-600 border border-gray-300
-            {% endif %}">
-            <p class="text-2xl font-bold">
-                {% if cambio is not None %}
-                    {% if cambio > 0 %}+{% endif %}{{ cambio|floatformat:1 }} cm
-                {% else %}
-                    — cm
-                {% endif %}
-            </p>
-            <p class="text-xs text-gray-700 mt-1">
-                {% if periodo == 'inicio' %}Ganado total
-                {% else %}{{ periodo|slice:":-1" }} días
-                {% endif %}
-            </p>
-        </div>
-        {% endwith %}
-        {% endfor %}
-    </div>
-</div>
-
-
-
-
-
-
-
-
-            <div class="metric-card interactive-glow">
-              <h3 class="text-yellow-300 font-semibold mb-2">🧠 Mapa emocional semanal</h3>
-
-            <div class="grid grid-cols-7 gap-2 text-xs text-center">
-                {% for dia in dias_emocionales %}
-                <div class="space-y-2 p-2 rounded-xl bg-[#1a1a1a] border border-slate-700 shadow-inner">
-                <div class="font-bold text-cyan-400">{{ dia.fecha }}</div>
-
-                <!-- Autoconciencia -->
-                <div class="rounded-full w-8 h-8 mx-auto flex items-center justify-center text-white font-bold
-                    {% if dia.autoconciencia <= 3 %} bg-red-500
-                    {% elif dia.autoconciencia <= 6 %} bg-yellow-400 text-black
-                    {% else %} bg-green-500
-                    {% endif %}">
-                    {{ dia.autoconciencia }}
-                </div>
-                <div class="text-slate-300">Autoconciencia</div>
-
-                <!-- Humor -->
-                <div class="italic text-sm text-emerald-300">
-                    {{ dia.humor }}
-                </div>
-                <div class="text-slate-300">Humor</div>
-
-                  <!-- Rumiación -->
-                <div class="{% if dia.rumiacion_baja %}text-green-400{% else %}text-red-500{% endif %} font-bold">
-                    {% if dia.rumiacion_baja %}✔{% else %}✖{% endif %}
-                </div>
-                <div class="text-slate-300">Rumiación</div>
-                </div>
-                {% endfor %}
-
-            </div>
-            <div class="mt-4 text-sm text-[#32FF00] italic text-center">
-                ✨ Joi: {{ comentario_joi }}
-                </div>
-            </div>
-
-            </div>
-            <div class="metric-card interactive-glow">
-                 <h2 class="text-lg text-[#32FF00] font-semibold mb-4">Informe emocional de la semana</h2>
-
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
-                    <div>
-                    <div class="text-slate-400">Sueño</div>
-                    <div class="text-xl font-bold text-cyan-400">{{ informe_joi.promedios.horas_sueno }} h</div>
-                    </div>
-                    <div>
-                    <div class="text-slate-400">Energía</div>
-                    <div class="text-xl font-bold text-yellow-300">{{ informe_joi.promedios.energia_subjetiva }}</div>
-                    </div>
-                    <div>
-                    <div class="text-slate-400">Dolor</div>
-                    <div class="text-xl font-bold text-red-400">{{ informe_joi.promedios.dolor_articular }}</div>
-                    </div>
-                    <div>
-                    <div class="text-slate-400">Autoconciencia</div>
-                    <div class="text-xl font-bold text-green-400">{{ informe_joi.promedios.autoconciencia }}</div>
-                    </div>
-                </div>
-
-
-
-                  <div class="mt-4 text-sm text-[#32FF00] italic text-center">
-                    ✨ Joi: {{ informe_joi.frase }}
-                </div>
-                </div>
-        </div>
-    </div>
-</div>
 
 {% endblock %}
 
@@ -1292,6 +1123,107 @@
         }
 
     }); // Cierre del único DOMContentLoaded
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... (tu código JS existente para los otros gráficos va aquí) ...
+
+    // --- CÓDIGO PARA EL NUEVO GRÁFICO DE RADAR ---
+    const ctxRadarInicio = document.getElementById('radarChartInicio');
+    const ratiosData = {{ ratios_fuerza.grafico_radar|safe }};
+
+    if (ctxRadarInicio && ratiosData && ratiosData.labels && ratiosData.labels.length > 0) {
+        new Chart(ctxRadarInicio, {
+            type: 'radar',
+            data: {
+                labels: ratiosData.labels,
+                datasets: [{
+                    label: 'Ratios Actuales',
+                    data: ratiosData.valores,
+                    borderColor: '#00ffff', // Cian
+                    backgroundColor: 'rgba(0, 255, 255, 0.2)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00ffff'
+                }, {
+                    label: 'Ratios Óptimos',
+                    data: ratiosData.optimos,
+                    borderColor: '#ff00ff', // Magenta
+                    backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#ff00ff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Ocultamos la leyenda para un look más limpio en el dashboard
+                    }
+                },
+                scales: {
+                  r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                        pointLabels: {
+                            color: '#e0e0e0',
+                            font: { size: 10 }
+                        },
+                        ticks: {
+                            color: '#aaa',
+                            backdropColor: 'transparent',
+                            stepSize: 0.2
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... (tu código JS existente para los otros gráficos va aquí) ...
+
+    // --- CÓDIGO PARA EL NUEVO GRÁFICO DE FATIGA ---
+    const ctxFatigaInicio = document.getElementById('fatigaGaugeInicio');
+    {% if fatiga_acumulada %}
+    const fatigaValor = parseFloat("{{ fatiga_acumulada.fatiga_actual|floatformat:2 }}".replace(",", "."));
+    const fatigaMax = 150; // Valor de referencia para el 100% del gauge
+
+    if (ctxFatigaInicio) {
+        // Determinar el color basado en el nivel de fatiga
+        let gaugeColor = '#10b981'; // Verde (Baja)
+        if (fatigaValor >= 100) {
+            gaugeColor = '#ef4444'; // Rojo (Alta)
+        } else if (fatigaValor >= 50) {
+            gaugeColor = '#f59e0b'; // Naranja (Moderada)
+        }
+
+        new Chart(ctxFatigaInicio, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [fatigaValor, Math.max(0, fatigaMax - fatigaValor)],
+                    backgroundColor: [gaugeColor, 'rgba(255, 255, 255, 0.1)'],
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    circumference: 270, // 3/4 de círculo
+                    rotation: 225
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+    {% endif %}
+});
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

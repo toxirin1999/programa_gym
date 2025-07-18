@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Programa, Rutina, Ejercicio
+from .models import Programa, Rutina, EjercicioBase
 
 admin.site.register(Programa)
 admin.site.register(Rutina)
-admin.site.register(Ejercicio)
+admin.site.register(EjercicioBase)

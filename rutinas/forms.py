@@ -1,14 +1,15 @@
 from django import forms
-from .models import Programa, Ejercicio, Rutina, RutinaEjercicio
-from django import forms
-from .models import Programa
+from .models import Programa, Rutina, RutinaEjercicio
+from entrenos.models import EjercicioBase
 
 
 class RutinaEjercicioForm(forms.ModelForm):
+    # Ahora el queryset usa el modelo que importamos de 'entrenos'
     ejercicio = forms.ModelChoiceField(
-        queryset=Ejercicio.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Selecciona un ejercicio"
+        queryset=EjercicioBase.objects.all().order_by('grupo_muscular', 'nombre'),
+        label="Selecciona un ejercicio",
+        empty_label="Elige un ejercicio de la lista...",
+        widget=forms.Select(attrs={'class': 'form-select'})  # O 'form-control'
     )
 
     class Meta:
@@ -34,13 +35,13 @@ class ProgramaForm(forms.ModelForm):
 
 class EjercicioForm(forms.ModelForm):
     class Meta:
-        model = Ejercicio
+        model = EjercicioBase
         fields = ['nombre', 'grupo_muscular', 'equipo']
 
 
 class RutinaForm(forms.ModelForm):
     ejercicios = forms.ModelMultipleChoiceField(
-        queryset=Ejercicio.objects.all(),
+        queryset=EjercicioBase.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=False,
         label="Ejercicios disponibles"

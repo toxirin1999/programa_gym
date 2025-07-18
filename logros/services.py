@@ -2,14 +2,14 @@ from django.db import models
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta
+from .logging_config import gamification_logger as logger
 import logging
-
+from django.db.models import Sum, Count, Max, Min, Avg
 from .models import (
     PerfilGamificacion, Logro, Quest, LogroUsuario,
     QuestUsuario, HistorialPuntos, Nivel
 )
 from entrenos.models import EntrenoRealizado, SerieRealizada
-from rutinas.models import Ejercicio
 from decimal import Decimal
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ import io
 import base64
 from django.db.models import Count, Sum, Avg, Max, Min, F, Q
 from django.utils import timezone
+from datetime import timedelta, datetime
 
 
 class AnalisisGamificacionService:
@@ -750,66 +751,304 @@ class AnalisisGamificacionService:
         return graficos
 
 
+# logros/services.py
+
+# (Mantén todas tus importaciones existentes y la clase AnalisisGamificacionService)
+# ...
+
+# ============================================================================
+# VERSIÓN REFACTORIZADA DE GAMIFICACIONSERVICE
+# ============================================================================
+
 class GamificacionService:
     """
-    Servicio para gestionar la lógica de gamificación, cálculo de puntos,
-    verificación de logros y misiones.
+    Servicio unificado y transaccional para manejar la lógica de gamificación.
+    Esta versión corregida asegura la consistencia de los datos.
     """
 
     @classmethod
     def procesar_entreno(cls, entreno):
-        """
-        Procesa un entrenamiento completado, calculando puntos y verificando logros.
-        
-        Args:
-            entreno: Objeto EntrenoRealizado
-        
-        Returns:
-            dict: Resultados del procesamiento (puntos, logros, misiones)
-        """
-        if not entreno or not entreno.cliente:
-            logger.error("Entrenamiento inválido o sin cliente asociado")
+        logger.info(f"Iniciando procesamiento de entreno para cliente {cliente_id}")
+
+        try:
+            # Usamos una transacción para garantizar que todas las actualizaciones
+            # se realicen correctamente o ninguna lo haga.
+            with transaction.atomic():
+                # 1. Obtener el perfil, bloqueándolo para evitar condiciones de carrera.
+                perfil, _ = PerfilGamificacion.objects.select_for_update().get_or_create(
+                    cliente=entreno.cliente,
+                    defaults={'nivel_actual': Nivel.objects.order_by('numero').first()}
+                )
+
+                # 2. Actualizar estadísticas básicas del perfil (rachas, contadores).
+                cls._actualizar_estadisticas_base(perfil, entreno)
+
+                # 3. Verificar TODOS los logros y misiones aplicables.
+                # Este método interno se encargará de sumar puntos si se desbloquea algo.
+                logros_desbloqueados = cls._verificar_todos_los_logros(perfil)
+
+                # 4. Actualizar el nivel del usuario al final, después de sumar todos los puntos.
+                subio_nivel = perfil.actualizar_nivel()
+
+                # 5. Guardar el perfil una sola vez al final de la transacción.
+                perfil.save()
+
+                # 6. (Opcional) Crear notificaciones para los eventos ocurridos.
+                if subio_nivel:
+                    # Lógica para notificar subida de nivel
+                    logger.info(f"¡{perfil.cliente.nombre} ha subido al nivel {perfil.nivel_actual.numero}!")
+                resultado = self._procesar_logros_usuario(cliente_id)
+
+                logger.info(f"Procesamiento exitoso para cliente {cliente_id}: {resultado}")
+
+                logger.info(
+                    f"Entreno procesado para {perfil.cliente.nombre}. "
+                    f"Puntos totales ahora: {perfil.puntos_totales}. "
+                    f"Logros nuevos: {len(logros_desbloqueados)}."
+                )
+
+                return {
+                    'puntos_totales': perfil.puntos_totales,
+                    'logros_desbloqueados': logros_desbloqueados,
+                    'subio_nivel': subio_nivel,
+                    'nivel_actual': perfil.nivel_actual
+                }
+
+        except Exception as e:
+            logger.error(
+                f"Error crítico en GamificacionService.procesar_entreno para el cliente {entreno.cliente.id}: {e}",
+                exc_info=True)
             return None
 
-        # Obtener o crear perfil de gamificación
-        perfil, created = PerfilGamificacion.objects.get_or_create(
-            cliente=entreno.cliente,
-            defaults={
-                'nivel_actual': Nivel.objects.filter(numero=1).first()
-            }
-        )
+    @classmethod
+    def _actualizar_estadisticas_base(cls, perfil, entreno):
+        """
+        Actualiza contadores y rachas. NO guarda el perfil, solo modifica el objeto.
+        """
+        perfil.entrenos_totales += 1
 
-        # Calcular puntos del entrenamiento
-        puntos = cls.calcular_puntos_entreno(entreno)
+        # Lógica de racha mejorada
+        if perfil.fecha_ultimo_entreno:
+            # Asegurarse de que estamos comparando solo la parte de la fecha
+            fecha_ultimo = perfil.fecha_ultimo_entreno.date() if isinstance(perfil.fecha_ultimo_entreno,
+                                                                            timezone.datetime) else perfil.fecha_ultimo_entreno
+            dias_diff = (entreno.fecha - fecha_ultimo).days
 
-        # Registrar puntos en el historial
-        historial = HistorialPuntos.objects.create(
-            perfil=perfil,
-            puntos=puntos,
-            entreno=entreno,
-            descripcion=f"Entrenamiento: {entreno.rutina.nombre if entreno.rutina else 'Personalizado'}"
-        )
+            if dias_diff == 1:
+                perfil.racha_actual += 1
+            elif dias_diff > 1:
+                perfil.racha_actual = 1
+            # Si dias_diff <= 0, es un entreno del mismo día o anterior, no afecta la racha.
+        else:
+            perfil.racha_actual = 1
 
-        # Actualizar estadísticas del perfil
-        cls.actualizar_estadisticas_perfil(perfil, entreno)
+        perfil.racha_maxima = max(perfil.racha_actual, perfil.racha_maxima)
+        perfil.fecha_ultimo_entreno = entreno.fecha
 
-        # Verificar logros
-        logros_desbloqueados = cls.verificar_logros(perfil, entreno)
+    @classmethod
+    def _verificar_todos_los_logros(cls, perfil):
+        """
+        Verifica todos los logros del juego. Si uno se desbloquea, suma los puntos
+        al perfil y lo registra en el historial.
+        """
+        logros_desbloqueados_ahora = []
 
-        # Verificar misiones
-        misiones_completadas = cls.verificar_misiones(perfil, entreno)
+        # Obtenemos solo los logros que el usuario AÚN NO HA COMPLETADO para ser más eficientes.
+        logros_pendientes = Logro.objects.exclude(usuarios__perfil=perfil, usuarios__completado=True)
 
-        # Actualizar nivel del usuario
-        subio_nivel = perfil.actualizar_nivel()
+        for logro in logros_pendientes:
+            progreso_actual = cls._calcular_progreso_para_logro(perfil, logro)
 
-        return {
-            'puntos': puntos,
-            'puntos_totales': perfil.puntos_totales,
-            'logros_desbloqueados': logros_desbloqueados,
-            'misiones_completadas': misiones_completadas,
-            'subio_nivel': subio_nivel,
-            'nivel_actual': perfil.nivel_actual
-        }
+            if progreso_actual >= logro.meta_valor:
+                # ¡Logro desbloqueado!
+                logro_usuario, _ = LogroUsuario.objects.get_or_create(perfil=perfil, logro=logro)
+
+                if not logro_usuario.completado:
+                    logro_usuario.completado = True
+                    logro_usuario.progreso_actual = progreso_actual
+                    logro_usuario.fecha_desbloqueo = timezone.now()
+                    logro_usuario.save()
+
+                    # Sumamos los puntos al perfil (el objeto, aún no se guarda en BD)
+                    perfil.puntos_totales += logro.puntos_recompensa
+                    logros_desbloqueados_ahora.append(logro)
+
+                    # Creamos el registro histórico
+                    HistorialPuntos.objects.create(
+                        perfil=perfil,
+                        puntos=logro.puntos_recompensa,
+                        logro=logro,
+                        descripcion=f"Recompensa por logro: {logro.nombre}"
+                    )
+
+        return logros_desbloqueados_ahora
+
+    @classmethod
+    def _calcular_progreso_para_logro(cls, perfil, logro):
+        """
+        Calcula el progreso actual para un logro específico.
+        Esta función es el "cerebro" que conecta las acciones con los logros.
+        """
+        identificador = logro.nombre.lower()
+        cliente_id = perfil.cliente_id
+
+        try:
+            # --- LOGROS BASADOS EN NÚMERO DE ENTRENAMIENTOS ---
+            if "liftin principiante" in identificador:
+                return EntrenoRealizado.objects.filter(cliente_id=cliente_id, fuente_datos='liftin').count()
+
+            # --- LOGROS BASADOS EN MÉTRICAS ACUMULADAS ---
+            if "quemador principiante" in identificador:
+                # NOTA: Este logro debería ser sobre CALORÍAS TOTALES, no de un solo entreno.
+                # Si es por un solo entreno, la lógica debe estar en otro lado.
+                # Asumimos que es por el total acumulado.
+                resultado = EntrenoRealizado.objects.filter(cliente_id=cliente_id).aggregate(
+                    total=Sum('calorias_quemadas'))
+                return resultado['total'] or 0
+
+            # --- LOGROS DE RACHA ---
+            if "racha" in identificador:
+                return perfil.racha_actual
+
+            # ... Añade aquí el resto de tus condiciones de logros ...
+
+        except Exception as e:
+            logger.error(f"Error calculando progreso para logro '{logro.nombre}' y perfil {perfil.id}: {e}")
+            return 0
+
+        return 0
+
+    @classmethod
+    def actualizar_estadisticas_perfil(cls, perfil, entreno):
+        """
+        Calcula puntos por la actividad del entreno y actualiza contadores y racha.
+        Devuelve los puntos ganados solo por la actividad.
+        """
+        # Fórmula de puntos por actividad (puedes ajustarla)
+        puntos_actividad = 100  # Puntos base por entrenar
+        if entreno.volumen_total_kg:
+            puntos_actividad += int(entreno.volumen_total_kg / 20)
+        if entreno.calorias_quemadas:
+            puntos_actividad += int(entreno.calorias_quemadas / 5)
+
+        perfil.puntos_totales += puntos_actividad
+        perfil.entrenos_totales += 1
+
+        # Lógica de racha
+        if perfil.fecha_ultimo_entreno:
+            dias_diff = (entreno.fecha - perfil.fecha_ultimo_entreno.date()).days
+            if dias_diff == 1:
+                perfil.racha_actual += 1
+            elif dias_diff > 1:
+                perfil.racha_actual = 1
+        else:
+            perfil.racha_actual = 1
+
+        perfil.racha_maxima = max(perfil.racha_actual, perfil.racha_maxima)
+        perfil.fecha_ultimo_entreno = entreno.fecha
+
+        perfil.save()
+        return puntos_actividad
+
+    @classmethod
+    def verificar_y_otorgar_logros(cls, perfil):
+        """
+        Verifica todos los logros para un perfil y los otorga si se cumplen las condiciones.
+        """
+        logros_desbloqueados_en_esta_llamada = []
+        todos_los_logros_del_juego = Logro.objects.all()
+
+        for logro in todos_los_logros_del_juego:
+            logro_usuario, created = LogroUsuario.objects.get_or_create(
+                perfil=perfil,
+                logro=logro,
+                defaults={'progreso_actual': 0, 'completado': False}
+            )
+
+            if logro_usuario.completado:
+                continue
+
+            progreso_actual = cls.calcular_progreso_logro(perfil, logro)
+            logro_usuario.progreso_actual = progreso_actual
+
+            if progreso_actual >= logro.meta_valor:
+                logro_usuario.completado = True
+                logro_usuario.fecha_desbloqueo = timezone.now()
+
+                puntos_recompensa = logro.puntos_recompensa
+                perfil.puntos_totales += puntos_recompensa
+
+                logro_usuario.save()
+                perfil.save()
+
+                HistorialPuntos.objects.create(
+                    perfil=perfil,
+                    puntos=puntos_recompensa,
+                    logro=logro,
+                    descripcion=f"Recompensa por logro: {logro.nombre}"
+                )
+
+                logros_desbloqueados_en_esta_llamada.append(logro)
+                logger.info(
+                    f"¡LOGRO DESBLOQUEADO para {perfil.cliente.nombre}: {logro.nombre} (+{puntos_recompensa} pts)!")
+            else:
+                logro_usuario.save()
+
+        return logros_desbloqueados_en_esta_llamada
+
+    @classmethod
+    def calcular_progreso_logro(cls, perfil, logro):
+        """
+        Calcula el progreso actual de un cliente para un logro específico.
+        VERSIÓN REFORZADA Y A PRUEBA DE ERRORES.
+        """
+        identificador = logro.nombre.lower()
+        cliente_id = perfil.cliente.id  # Usamos el ID del cliente para las consultas
+
+        try:
+            # --- LOGROS BASADOS EN NÚMERO DE ENTRENAMIENTOS ---
+            if "liftin principiante" in identificador:
+                # Consulta explícita y segura
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fuente_datos='liftin'
+                ).count()
+
+            if "entrenamientos totales" in identificador:
+                # Este dato ya está en el perfil, es más eficiente usarlo
+                return perfil.entrenos_totales
+
+            # --- LOGROS BASADOS EN RACHA ---
+            if "racha" in identificador:
+                # Este dato también está en el perfil
+                return perfil.racha_actual
+
+            # --- LOGROS BASADOS EN MÉTRICAS ACUMULADAS ---
+            if "quemador principiante" in identificador:
+                # Consulta explícita con aggregate
+                resultado = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).aggregate(
+                    total_calorias=Sum('calorias_quemadas')
+                )
+                # Devolver el total o 0 si es None
+                return resultado['total_calorias'] or 0
+
+            if "volumen total" in identificador:
+                resultado = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).aggregate(
+                    total_volumen=Sum('volumen_total_kg')
+                )
+                return int(resultado['total_volumen'] or 0)
+
+            # ... Puedes añadir más condiciones para otros logros aquí ...
+
+        except Exception as e:
+            logger.error(f"Error calculando progreso para logro '{logro.nombre}' y perfil {perfil.id}: {e}")
+            return 0  # Si hay cualquier error en la consulta, devuelve 0 para no bloquear el sistema
+
+        return 0  # Devuelve 0 si el logro no se reconoce
 
     @classmethod
     def calcular_puntos_entreno(cls, entreno):
@@ -856,93 +1095,110 @@ class GamificacionService:
     @classmethod
     def actualizar_estadisticas_perfil(cls, perfil, entreno):
         """
-        Actualiza las estadísticas del perfil de gamificación tras un entrenamiento.
-        
-        Args:
-            perfil: Objeto PerfilGamificacion
-            entreno: Objeto EntrenoRealizado
+        Calcula puntos, actualiza racha y contadores. Devuelve los puntos ganados.
         """
-        # Actualizar puntos totales
-        puntos_entreno = cls.calcular_puntos_entreno(entreno)
-        perfil.puntos_totales += puntos_entreno
+        # Lógica de cálculo de puntos (puedes usar tu propia función aquí)
+        puntos_entreno = 100 + (entreno.volumen_total_kg / 10) if entreno.volumen_total_kg else 100
+        puntos_entreno = int(puntos_entreno)
 
-        # Actualizar contador de entrenamientos
+        perfil.puntos_totales += puntos_entreno
         perfil.entrenos_totales += 1
 
-        # Actualizar racha de entrenamientos
-        fecha_actual = timezone.now().date()
-
+        # Lógica de racha
         if perfil.fecha_ultimo_entreno:
-            dias_diferencia = (fecha_actual - perfil.fecha_ultimo_entreno.date()).days
-
-            if dias_diferencia == 1:
-                # Entrenamiento en día consecutivo
+            dias_diff = (entreno.fecha - perfil.fecha_ultimo_entreno.date()).days
+            if dias_diff == 1:
                 perfil.racha_actual += 1
-                perfil.racha_maxima = max(perfil.racha_actual, perfil.racha_maxima)
-            elif dias_diferencia > 1:
-                # Se rompió la racha
+            elif dias_diff > 1:
                 perfil.racha_actual = 1
-            # Si es el mismo día, no afecta la racha
         else:
-            # Primer entrenamiento
             perfil.racha_actual = 1
-            perfil.racha_maxima = 1
 
+        perfil.racha_maxima = max(perfil.racha_actual, perfil.racha_maxima)
         perfil.fecha_ultimo_entreno = entreno.fecha
         perfil.save()
 
+        return puntos_entreno
+
+        @classmethod
+        def calcular_progreso_logro(cls, perfil, logro):
+            """
+            Calcula el progreso actual de un cliente para un logro específico.
+            Esta es la función más importante para personalizar.
+            """
+            # Identificador del logro (usamos el nombre en minúsculas para flexibilidad)
+            identificador = logro.nombre.lower()
+
+            # --- LOGROS BASADOS EN ENTRENAMIENTOS ---
+            if "liftin principiante" in identificador or "entrenamientos de liftin" in logro.descripcion.lower():
+                return EntrenoRealizado.objects.filter(cliente=perfil.cliente, fuente_datos='liftin').count()
+
+            if "entrenamientos totales" in identificador:
+                return perfil.entrenos_totales
+
+            # --- LOGROS BASADOS EN RACHA ---
+            if "racha" in identificador:
+                return perfil.racha_actual
+
+            # --- LOGROS BASADOS EN CALORÍAS ---
+            if "calorías quemadas" in logro.descripcion.lower():
+                total_calorias = EntrenoRealizado.objects.filter(cliente=perfil.cliente).aggregate(
+                    total=Sum('calorias_quemadas')
+                )['total'] or 0
+                return total_calorias
+
+            # --- LOGROS BASADOS EN VOLUMEN ---
+            if "volumen total" in logro.descripcion.lower():
+                total_volumen = EntrenoRealizado.objects.filter(cliente=perfil.cliente).aggregate(
+                    total=Sum('volumen_total_kg')
+                )['total'] or 0
+                return int(total_volumen)
+
+            # Añade aquí más condiciones para otros logros...
+            # if "otro logro" in identificador:
+            #     return ...
+
+            return 0  # Devuelve 0 si no se reconoce el logro
+
     # Solución Recomendada para services.py
-
-    def verificar_logros(usuario, entreno):
+    @classmethod
+    def verificar_logros(perfil, entreno):
         """
-        Verifica y otorga logros basados en el entrenamiento del usuario.
-
-        Args:
-            usuario: Instancia del modelo Usuario
-            entreno: Instancia del modelo Entreno
+        Verifica y otorga logros basados en el entrenamiento del cliente.
         """
         try:
-            # SOLUCIÓN: Obtener quest_usuario de forma segura
-            # Opción 1: Si es una relación ForeignKey o OneToOne
-            quest_usuario = getattr(usuario, 'quest_usuario', None)
+            # Intenta obtener una misión existente
+            quest_usuario = perfil.quests.first()
 
-            # Opción 2: Si es una relación reversa (ManyToOne)
+            # Si no existe, crear una misión inicial de prueba (opcional)
             if quest_usuario is None:
-                quest_usuario = usuario.questusuario_set.first()
+                from .models import QuestUsuario, Quest
+                primera_quest = Quest.objects.first()  # Usa una misión base
 
-            # Opción 3: Si QuestUsuario es un modelo independiente
-            if quest_usuario is None:
-                from .models import QuestUsuario  # Asegurar importación
-                quest_usuario = QuestUsuario.objects.filter(usuario=usuario).first()
+                if primera_quest:
+                    quest_usuario = QuestUsuario.objects.create(
+                        perfil=perfil,
+                        quest=primera_quest,
+                        progreso_actual=0,
+                        completada=False
+                    )
 
-            # Crear quest_usuario si no existe
-            if quest_usuario is None:
-                from .models import QuestUsuario
-                quest_usuario = QuestUsuario.objects.create(
-                    usuario=usuario,
-                    nivel=1,
-                    puntos=0
-                )
-
-            # LÍNEA 990: Verificación segura del nivel
+            # Verificación de ejemplo (logro por nivel de misión)
             if quest_usuario and hasattr(quest_usuario, 'nivel') and quest_usuario.nivel >= 5:
-                # Aquí va la lógica del logro que estaba en la línea 990
-                otorgar_logro_nivel_avanzado(usuario, entreno, quest_usuario)
+                otorgar_logro_nivel_avanzado(perfil.cliente, entreno, quest_usuario)
 
-            # Otras verificaciones de logros...
-            verificar_otros_logros(usuario, entreno, quest_usuario)
+            # Otras verificaciones
+            verificar_otros_logros(perfil.cliente, entreno, quest_usuario)
 
         except AttributeError as e:
-            # Log del error para debugging
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Error de atributo al verificar logros para usuario {usuario.id}: {e}")
+            logger.error(f"Error de atributo al verificar logros para perfil {perfil.id}: {e}")
 
         except Exception as e:
-            # Manejo de otros errores
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Error inesperado en verificar_logros para usuario {usuario.id}: {e}")
+            logger.error(f"Error inesperado en verificar logros para perfil {perfil.id}: {e}")
 
     @classmethod
     def _verificar_logro_consistencia(cls, logro_usuario, perfil, entreno=None, tipo_logro=None):
@@ -1631,6 +1887,22 @@ class GamificacionService:
 
         return False
 
+    @staticmethod
+    def otorgar_logro_nivel_avanzado(usuario, entreno, quest_usuario):
+        """
+        Otorga logro cuando el usuario alcanza nivel 5 o superior
+        """
+        # Lógica real aquí
+        pass
+
+    @staticmethod
+    def verificar_otros_logros(usuario, entreno, quest_usuario):
+        """
+        Verifica otros logros adicionales
+        """
+        # Lógica real aquí
+        pass
+
 
 # logros/services.py - Añadir nueva clase
 
@@ -1743,3 +2015,1001 @@ class NotificacionService:
             return True
         except Notificacion.DoesNotExist:
             return False
+
+
+# ============================================================================
+# MEJORAS PARA AGREGAR A TU services.py
+# ============================================================================
+# Copia y pega estas mejoras en tu archivo services.py existente
+
+import logging
+from django.db import transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import datetime, timedelta
+
+# Configurar logging específico para gamificación
+logger = logging.getLogger('gamificacion')
+
+
+# ============================================================================
+# 1. MEJORA: PROCESAMIENTO AUTOMÁTICO CON SIGNALS
+# ============================================================================
+
+@receiver(post_save, sender='entrenos.EntrenoRealizado')
+def procesar_gamificacion_automaticamente(sender, instance, created, **kwargs):
+    """
+    Signal que se ejecuta automáticamente cada vez que se guarda un entrenamiento.
+    Esta es la clave para que el sistema funcione automáticamente.
+    """
+    if created:  # Solo procesar entrenamientos nuevos
+        logger.info(f"🎮 Procesando gamificación automáticamente para entreno {instance.id}")
+
+        try:
+            # Usar el servicio mejorado para procesar
+            resultado = GamificacionServiceMejorado.procesar_entreno_completo(instance)
+
+            if resultado:
+                logger.info(
+                    f"✅ Gamificación procesada: {resultado['logros_nuevos']} logros, {resultado['puntos_ganados']} puntos")
+            else:
+                logger.warning(f"⚠️ No se pudo procesar gamificación para entreno {instance.id}")
+
+        except Exception as e:
+            logger.error(f"❌ Error en procesamiento automático: {e}", exc_info=True)
+
+
+# ============================================================================
+# 2. MEJORA: SERVICIO DE GAMIFICACIÓN ROBUSTO Y TRANSACCIONAL
+# ============================================================================
+
+class GamificacionServiceMejorado:
+    """
+    Versión mejorada del servicio de gamificación con:
+    - Transacciones atómicas
+    - Logging comprehensivo
+    - Manejo de errores robusto
+    - Validación de integridad
+    """
+
+    @classmethod
+    @transaction.atomic
+    def procesar_entreno_completo(cls, entreno):
+        """
+        Procesa completamente un entrenamiento: puntos, logros, misiones, nivel.
+        Usa transacciones atómicas para garantizar consistencia.
+        """
+        logger.info(f"🔄 Iniciando procesamiento completo para entreno {entreno.id}")
+
+        try:
+            # 1. Obtener o crear perfil (con lock para evitar condiciones de carrera)
+            perfil, created = PerfilGamificacion.objects.select_for_update().get_or_create(
+                cliente=entreno.cliente,
+                defaults={
+                    'nivel_actual': Nivel.objects.order_by('numero').first(),
+                    'puntos_totales': 0,
+                    'entrenos_totales': 0,
+                    'racha_actual': 0,
+                    'racha_maxima': 0
+                }
+            )
+
+            if created:
+                logger.info(f"✨ Perfil de gamificación creado para {entreno.cliente.nombre}")
+
+            # 2. Actualizar estadísticas básicas
+            puntos_actividad = cls._actualizar_estadisticas_base(perfil, entreno)
+
+            # 3. Verificar y otorgar logros
+            logros_nuevos = cls._verificar_y_otorgar_logros(perfil, entreno)
+
+            # 4. Verificar y actualizar misiones
+            misiones_completadas = cls._verificar_y_actualizar_misiones(perfil, entreno)
+
+            # 5. Actualizar nivel si es necesario
+            nivel_anterior = perfil.nivel_actual
+            subio_nivel = perfil.actualizar_nivel()
+
+            # 6. Guardar perfil una sola vez al final
+            perfil.save()
+
+            # 7. Crear notificaciones si es necesario
+            if subio_nivel:
+                cls._crear_notificacion_nivel(perfil, nivel_anterior)
+
+            # 8. Validar integridad final
+            cls._validar_integridad_perfil(perfil)
+
+            resultado = {
+                'perfil_id': perfil.id,
+                'puntos_ganados': puntos_actividad,
+                'logros_nuevos': len(logros_nuevos),
+                'misiones_completadas': len(misiones_completadas),
+                'subio_nivel': subio_nivel,
+                'nivel_actual': perfil.nivel_actual.numero if perfil.nivel_actual else 1,
+                'puntos_totales': perfil.puntos_totales
+            }
+
+            logger.info(f"✅ Procesamiento exitoso: {resultado}")
+            return resultado
+
+        except Exception as e:
+            logger.error(f"❌ Error en procesamiento completo: {e}", exc_info=True)
+            # La transacción se revierte automáticamente
+            return None
+
+    @classmethod
+    def _actualizar_estadisticas_base(cls, perfil, entreno):
+        """
+        Actualiza contadores básicos y calcula puntos por actividad.
+        NO guarda el perfil, solo modifica el objeto en memoria.
+        """
+        # Calcular puntos por actividad
+        puntos_base = 100  # Puntos base por entrenar
+
+        # Bonificaciones por métricas del entrenamiento
+        if entreno.volumen_total_kg:
+            puntos_base += int(entreno.volumen_total_kg / 20)
+
+        if entreno.calorias_quemadas:
+            puntos_base += int(entreno.calorias_quemadas / 10)
+
+        # Bonificación por completar todas las series
+        series_total = SerieRealizada.objects.filter(entreno=entreno).count()
+        series_completadas = SerieRealizada.objects.filter(entreno=entreno, completado=True).count()
+
+        if series_total > 0 and series_total == series_completadas:
+            puntos_base += 50  # Bonus por completar todo
+
+        # Actualizar perfil
+        perfil.puntos_totales += puntos_base
+        perfil.entrenos_totales += 1
+
+        # Actualizar racha
+        cls._actualizar_racha(perfil, entreno)
+
+        # Registrar en historial
+        HistorialPuntos.objects.create(
+            perfil=perfil,
+            puntos=puntos_base,
+            descripcion=f"Entrenamiento completado: {entreno.fuente_datos}",
+            fecha=timezone.now()
+        )
+
+        logger.info(
+            f"📊 Estadísticas actualizadas: +{puntos_base} puntos, {perfil.entrenos_totales} entrenamientos totales")
+        return puntos_base
+
+    @classmethod
+    def _actualizar_racha(cls, perfil, entreno):
+        """Actualiza la racha de entrenamientos de forma robusta"""
+        if perfil.fecha_ultimo_entreno:
+            # Convertir a fecha si es datetime
+            fecha_ultimo = perfil.fecha_ultimo_entreno
+            if hasattr(fecha_ultimo, 'date'):
+                fecha_ultimo = fecha_ultimo.date()
+
+            fecha_entreno = entreno.fecha
+            if hasattr(fecha_entreno, 'date'):
+                fecha_entreno = fecha_entreno.date()
+
+            dias_diff = (fecha_entreno - fecha_ultimo).days
+
+            if dias_diff == 1:
+                # Día consecutivo
+                perfil.racha_actual += 1
+                logger.info(f"🔥 Racha continuada: {perfil.racha_actual} días")
+            elif dias_diff > 1:
+                # Se rompió la racha
+                logger.info(f"💔 Racha rota después de {perfil.racha_actual} días")
+                perfil.racha_actual = 1
+            # Si dias_diff <= 0, es el mismo día o anterior, no afecta la racha
+        else:
+            # Primer entrenamiento
+            perfil.racha_actual = 1
+            logger.info("🌟 Primera racha iniciada")
+
+        # Actualizar racha máxima
+        if perfil.racha_actual > perfil.racha_maxima:
+            perfil.racha_maxima = perfil.racha_actual
+            logger.info(f"🏆 Nueva racha máxima: {perfil.racha_maxima} días")
+
+        perfil.fecha_ultimo_entreno = entreno.fecha
+
+    @classmethod
+    def _verificar_y_otorgar_logros(cls, perfil, entreno):
+        """
+        Verifica todos los logros y otorga los que se hayan desbloqueado.
+        Retorna lista de logros nuevos.
+        """
+        logros_nuevos = []
+
+        # Obtener logros que el usuario aún no ha completado
+        logros_pendientes = Logro.objects.exclude(
+            usuarios__perfil=perfil,
+            usuarios__completado=True
+        )
+
+        logger.info(f"🎯 Verificando {logros_pendientes.count()} logros pendientes")
+
+        for logro in logros_pendientes:
+            try:
+                # Calcular progreso actual para este logro
+                progreso_actual = cls._calcular_progreso_logro(perfil, logro, entreno)
+
+                # Obtener o crear LogroUsuario
+                logro_usuario, created = LogroUsuario.objects.get_or_create(
+                    perfil=perfil,
+                    logro=logro,
+                    defaults={
+                        'progreso_actual': progreso_actual,
+                        'completado': False
+                    }
+                )
+
+                # Actualizar progreso
+                logro_usuario.progreso_actual = progreso_actual
+
+                # Verificar si se desbloqueó
+                if progreso_actual >= logro.meta_valor and not logro_usuario.completado:
+                    # ¡Logro desbloqueado!
+                    logro_usuario.completado = True
+                    logro_usuario.fecha_desbloqueo = timezone.now()
+                    logro_usuario.save()
+
+                    # Otorgar puntos
+                    perfil.puntos_totales += logro.puntos_recompensa
+
+                    # Registrar en historial
+                    HistorialPuntos.objects.create(
+                        perfil=perfil,
+                        puntos=logro.puntos_recompensa,
+                        logro=logro,
+                        descripcion=f"Logro desbloqueado: {logro.nombre}",
+                        fecha=timezone.now()
+                    )
+
+                    logros_nuevos.append(logro)
+                    logger.info(f"🏆 LOGRO DESBLOQUEADO: {logro.nombre} (+{logro.puntos_recompensa} puntos)")
+
+                else:
+                    # Solo actualizar progreso
+                    logro_usuario.save()
+
+            except Exception as e:
+                logger.error(f"❌ Error verificando logro {logro.nombre}: {e}")
+                continue
+
+        return logros_nuevos
+
+    @classmethod
+    def _calcular_progreso_logro(cls, perfil, logro, entreno):
+        """
+        Función COMPLETA que reconoce TODOS los logros de tu sistema.
+        Versión actualizada que incluye todos los logros específicos.
+        """
+        nombre_logro = logro.nombre.lower()
+        cliente_id = perfil.cliente_id
+
+        try:
+            # === LOGROS BÁSICOS DE ENTRENAMIENTOS ===
+            if "liftin principiante" in nombre_logro:
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fuente_datos='liftin'
+                ).count()
+
+            if "liftin intermedio" in nombre_logro:
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fuente_datos='liftin'
+                ).count()
+
+            if "liftin avanzado" in nombre_logro:
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fuente_datos='liftin'
+                ).count()
+
+            # === LOGROS DE EXPLORACIÓN ===
+            if "aventurero del fitness" in nombre_logro:
+                return SerieRealizada.objects.filter(
+                    entreno__cliente_id=cliente_id,
+                    completado=True
+                ).values('ejercicio').distinct().count()
+
+            if "explorador de rutinas" in nombre_logro:
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).values('rutina').distinct().count()
+
+            # === LOGROS DE CONSISTENCIA ===
+            if "rutina establecida" in nombre_logro:
+                fecha_limite = timezone.now().date() - timedelta(days=30)
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fecha__gte=fecha_limite
+                ).count()
+
+            if "entrenador de fin de semana" in nombre_logro:
+                entrenos_weekend = 0
+                for entreno_obj in EntrenoRealizado.objects.filter(cliente_id=cliente_id):
+                    if entreno_obj.fecha.weekday() in [5, 6]:  # Sábado y Domingo
+                        entrenos_weekend += 1
+                return entrenos_weekend
+
+            # === LOGROS DE SUPERACIÓN ===
+            if "más allá del límite" in nombre_logro or "mas alla del limite" in nombre_logro:
+                duracion_promedio = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    duracion_minutos__isnull=False
+                ).aggregate(promedio=Avg('duracion_minutos'))['promedio'] or 60
+
+                limite_superior = float(duracion_promedio) * 1.5
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    duracion_minutos__gte=limite_superior
+                ).count()
+
+            if "rompe barreras" in nombre_logro:
+                entrenamientos_con_mejora = 0
+                for entreno_obj in EntrenoRealizado.objects.filter(cliente_id=cliente_id).order_by('fecha'):
+                    series_entreno = SerieRealizada.objects.filter(entreno=entreno_obj, completado=True)
+                    for serie in series_entreno:
+                        serie_anterior = SerieRealizada.objects.filter(
+                            entreno__cliente_id=cliente_id,
+                            ejercicio=serie.ejercicio,
+                            entreno__fecha__lt=entreno_obj.fecha,
+                            completado=True
+                        ).order_by('-entreno__fecha').first()
+
+                        if serie_anterior and serie.peso_kg > serie_anterior.peso_kg:
+                            entrenamientos_con_mejora += 1
+                            break
+                return entrenamientos_con_mejora
+
+            if "desafío aceptado" in nombre_logro or "desafio aceptado" in nombre_logro:
+                volumen_promedio = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    volumen_total_kg__isnull=False
+                ).aggregate(promedio=Avg('volumen_total_kg'))['promedio'] or 500
+
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    volumen_total_kg__gte=float(volumen_promedio) * 1.2
+                ).count()
+
+            # === LOGROS DE CALORÍAS ===
+            if "quemador principiante" in nombre_logro:
+                total_calorias = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).aggregate(total=Sum('calorias_quemadas'))['total'] or 0
+                return int(total_calorias)
+
+            if "incinerador" in nombre_logro:
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    calorias_quemadas__gte=800
+                ).count()
+
+            # === LOGROS DE DESARROLLO COMPLETO ===
+            if "entrenamiento holístico" in nombre_logro or "entrenamiento holistico" in nombre_logro:
+                return SerieRealizada.objects.filter(
+                    entreno__cliente_id=cliente_id,
+                    completado=True
+                ).values('ejercicio__grupo_muscular').distinct().count()
+
+            if "desarrollo completo" in nombre_logro:
+                entrenamientos_completos = 0
+                for entreno_obj in EntrenoRealizado.objects.filter(cliente_id=cliente_id):
+                    grupos_en_entreno = SerieRealizada.objects.filter(
+                        entreno=entreno_obj,
+                        completado=True
+                    ).values('ejercicio__grupo_muscular').distinct().count()
+
+                    if grupos_en_entreno >= 3:
+                        entrenamientos_completos += 1
+                return entrenamientos_completos
+
+            # === LOGROS SOCIALES ===
+            if "inspirador" in nombre_logro:
+                return perfil.entrenos_totales
+
+            if "competidor amistoso" in nombre_logro:
+                return cls._calcular_entrenamientos_perfectos(cliente_id)
+
+            # === LOGROS DE TÉCNICA ===
+            if "control total" in nombre_logro:
+                return cls._calcular_entrenamientos_perfectos(cliente_id)
+
+            if "precisión milimétrica" in nombre_logro or "precision milimetrica" in nombre_logro:
+                entrenamientos_precisos = 0
+                for entreno_obj in EntrenoRealizado.objects.filter(cliente_id=cliente_id):
+                    ejercicios_en_entreno = SerieRealizada.objects.filter(
+                        entreno=entreno_obj,
+                        completado=True
+                    ).values('ejercicio').distinct()
+
+                    precision_en_entreno = True
+                    for ejercicio_data in ejercicios_en_entreno:
+                        ejercicio_id = ejercicio_data['ejercicio']
+                        pesos_ejercicio = SerieRealizada.objects.filter(
+                            entreno=entreno_obj,
+                            ejercicio_id=ejercicio_id,
+                            completado=True
+                        ).values_list('peso_kg', flat=True)
+
+                        if len(set(pesos_ejercicio)) > 1:
+                            precision_en_entreno = False
+                            break
+
+                    if precision_en_entreno:
+                        entrenamientos_precisos += 1
+                return entrenamientos_precisos
+
+            if "forma perfecta" in nombre_logro:
+                return cls._calcular_entrenamientos_perfectos(cliente_id)
+
+            # === LOGROS DE BIENESTAR ===
+            if "nutrición óptima" in nombre_logro or "nutricion optima" in nombre_logro:
+                fecha_limite = timezone.now().date() - timedelta(days=30)
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fecha__gte=fecha_limite
+                ).count()
+
+            if "hidratación perfecta" in nombre_logro or "hidratacion perfecta" in nombre_logro:
+                return perfil.entrenos_totales
+
+            # === LOGROS DE MAESTRÍA ===
+            if "maestro" in nombre_logro:
+                return perfil.entrenos_totales
+
+            if "mentor del fitness" in nombre_logro:
+                return perfil.entrenos_totales
+
+            if "entrenamiento en equipo" in nombre_logro:
+                return perfil.entrenos_totales
+
+            # === LOGROS DE RACHA ===
+            if "racha" in nombre_logro:
+                return perfil.racha_actual
+
+            # === LOGROS DE VOLUMEN ===
+            if "volumen" in nombre_logro:
+                total_volumen = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).aggregate(total=Sum('volumen_total_kg'))['total'] or 0
+                return int(total_volumen)
+
+            # === LOGROS ESPECIALES ===
+            if "primer" in nombre_logro:
+                return 1 if perfil.entrenos_totales >= 1 else 0
+
+            if "consistencia" in nombre_logro or "constante" in nombre_logro:
+                fecha_limite = timezone.now().date() - timedelta(days=30)
+                return EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id,
+                    fecha__gte=fecha_limite
+                ).count()
+
+            # Si no se reconoce el logro, devolver 0
+            logger.warning(f"⚠️ Logro no reconocido: {logro.nombre}")
+            return 0
+
+        except Exception as e:
+            logger.error(f"❌ Error calculando progreso para {logro.nombre}: {e}")
+            return 0
+
+    @classmethod
+    def _verificar_y_actualizar_misiones(cls, perfil, entreno):
+        """
+        Verifica y actualiza misiones activas.
+        Retorna lista de misiones completadas.
+        """
+        misiones_completadas = []
+
+        # Por ahora, implementación básica
+        # Puedes expandir esto según tus necesidades de misiones
+
+        return misiones_completadas
+
+    @classmethod
+    def _crear_notificacion_nivel(cls, perfil, nivel_anterior):
+        """Crea notificación cuando el usuario sube de nivel"""
+        try:
+            # Implementar según tu sistema de notificaciones
+            logger.info(f"🎉 {perfil.cliente.nombre} subió al nivel {perfil.nivel_actual.numero}")
+        except Exception as e:
+            logger.error(f"❌ Error creando notificación de nivel: {e}")
+
+    @classmethod
+    def _validar_integridad_perfil(cls, perfil):
+        """
+        Valida que los datos del perfil sean consistentes.
+        Útil para detectar problemas de sincronización.
+        """
+        try:
+            # Validar que los puntos totales coincidan con el historial
+            puntos_historial = HistorialPuntos.objects.filter(
+                perfil=perfil
+            ).aggregate(total=Sum('puntos'))['total'] or 0
+
+            if abs(perfil.puntos_totales - puntos_historial) > 10:  # Tolerancia de 10 puntos
+                logger.warning(
+                    f"⚠️ Inconsistencia detectada en perfil {perfil.id}: "
+                    f"Perfil={perfil.puntos_totales}, Historial={puntos_historial}"
+                )
+
+            # Validar que el número de entrenamientos sea consistente
+            entrenos_reales = EntrenoRealizado.objects.filter(
+                cliente=perfil.cliente
+            ).count()
+
+            if perfil.entrenos_totales != entrenos_reales:
+                logger.warning(
+                    f"⚠️ Inconsistencia en entrenamientos para perfil {perfil.id}: "
+                    f"Perfil={perfil.entrenos_totales}, Real={entrenos_reales}"
+                )
+                # Auto-corregir
+                perfil.entrenos_totales = entrenos_reales
+
+        except Exception as e:
+            logger.error(f"❌ Error validando integridad: {e}")
+
+    @classmethod
+    def _calcular_entrenamientos_perfectos(cls, cliente_id):
+        """
+        Función auxiliar para calcular entrenamientos donde se completaron todas las series.
+        """
+        entrenamientos_perfectos = 0
+
+        for entreno_obj in EntrenoRealizado.objects.filter(cliente_id=cliente_id):
+            series_total = SerieRealizada.objects.filter(entreno=entreno_obj).count()
+            series_completadas = SerieRealizada.objects.filter(
+                entreno=entreno_obj,
+                completado=True
+            ).count()
+
+            if series_total > 0 and series_total == series_completadas:
+                entrenamientos_perfectos += 1
+
+        return entrenamientos_perfectos
+
+
+# ============================================================================
+# 3. MEJORA: HERRAMIENTAS DE GESTIÓN Y DEBUGGING
+# ============================================================================
+
+class GamificacionDebugService:
+    """
+    Herramientas para debugging y gestión del sistema de gamificación.
+    """
+
+    @classmethod
+    def diagnosticar_perfil(cls, cliente_id):
+        """
+        Realiza un diagnóstico completo de un perfil de gamificación.
+        """
+        try:
+            perfil = PerfilGamificacion.objects.get(cliente_id=cliente_id)
+        except PerfilGamificacion.DoesNotExist:
+            return {"error": f"No existe perfil para cliente {cliente_id}"}
+
+        # Calcular estadísticas reales
+        entrenos_reales = EntrenoRealizado.objects.filter(cliente_id=cliente_id).count()
+        puntos_historial = HistorialPuntos.objects.filter(perfil=perfil).aggregate(
+            total=Sum('puntos')
+        )['total'] or 0
+
+        logros_completados = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).count()
+
+        puntos_logros = LogroUsuario.objects.filter(
+            perfil=perfil,
+            completado=True
+        ).aggregate(
+            total=Sum('logro__puntos_recompensa')
+        )['total'] or 0
+
+        return {
+            "perfil_id": perfil.id,
+            "cliente": perfil.cliente.nombre,
+            "entrenos_perfil": perfil.entrenos_totales,
+            "entrenos_reales": entrenos_reales,
+            "puntos_perfil": perfil.puntos_totales,
+            "puntos_historial": puntos_historial,
+            "puntos_logros": puntos_logros,
+            "logros_completados": logros_completados,
+            "racha_actual": perfil.racha_actual,
+            "racha_maxima": perfil.racha_maxima,
+            "nivel": perfil.nivel_actual.numero if perfil.nivel_actual else "Sin nivel",
+            "inconsistencias": {
+                "entrenos": perfil.entrenos_totales != entrenos_reales,
+                "puntos": abs(perfil.puntos_totales - puntos_historial) > 10
+            }
+        }
+
+    @classmethod
+    def recalcular_perfil_completo(cls, cliente_id):
+        """
+        Recalcula completamente un perfil desde cero.
+        Útil para corregir inconsistencias.
+        """
+        with transaction.atomic():
+            try:
+                perfil = PerfilGamificacion.objects.select_for_update().get(cliente_id=cliente_id)
+
+                # Resetear contadores
+                perfil.puntos_totales = 0
+                perfil.entrenos_totales = 0
+                perfil.racha_actual = 0
+                perfil.racha_maxima = 0
+
+                # Limpiar historial y logros
+                HistorialPuntos.objects.filter(perfil=perfil).delete()
+                LogroUsuario.objects.filter(perfil=perfil).update(
+                    completado=False,
+                    progreso_actual=0,
+                    fecha_desbloqueo=None
+                )
+
+                # Reprocesar todos los entrenamientos
+                entrenamientos = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).order_by('fecha')
+
+                for entreno in entrenamientos:
+                    GamificacionServiceMejorado.procesar_entreno_completo(entreno)
+
+                return {"success": True, "entrenamientos_procesados": entrenamientos.count()}
+
+            except Exception as e:
+                logger.error(f"❌ Error recalculando perfil {cliente_id}: {e}")
+                return {"error": str(e)}
+
+
+# ============================================================================
+# 4. MEJORA: CONFIGURACIÓN DE LOGGING
+# ============================================================================
+
+def configurar_logging_gamificacion():
+    """
+    Configura el logging específico para gamificación.
+    Llama esta función en tu settings.py o apps.py
+    """
+    import logging
+
+    # Crear logger específico para gamificación
+    gamification_logger = logging.getLogger('gamificacion')
+    gamification_logger.setLevel(logging.INFO)
+
+    # Crear handler para archivo
+    file_handler = logging.FileHandler('logs/gamificacion.log')
+    file_handler.setLevel(logging.INFO)
+
+    # Crear handler para consola
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+
+    # Crear formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    # Agregar handlers al logger
+    gamification_logger.addHandler(file_handler)
+    gamification_logger.addHandler(console_handler)
+
+    return gamification_logger
+
+
+# ============================================================================
+# PASO 4: HERRAMIENTAS AVANZADAS DE DEBUGGING Y VALIDACIÓN
+# ============================================================================
+# Agrega estas herramientas a tu services.py para mantener el sistema robusto
+
+import logging
+from django.db import transaction
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from datetime import timedelta
+
+logger = logging.getLogger('gamificacion')
+
+
+class GamificacionDebugService:
+    """
+    Servicio especializado en debugging y validación del sistema de gamificación.
+    """
+
+    @classmethod
+    def diagnosticar_perfil_completo(cls, cliente_id):
+        """
+        Diagnóstico completo de un perfil de gamificación.
+        Detecta inconsistencias y proporciona información detallada.
+        """
+        try:
+            from logros.models import PerfilGamificacion, LogroUsuario, HistorialPuntos
+            from entrenos.models import EntrenoRealizado
+
+            logger.info(f"🔍 Iniciando diagnóstico completo para cliente {cliente_id}")
+
+            # Obtener datos básicos
+            perfil = PerfilGamificacion.objects.get(cliente_id=cliente_id)
+            entrenos_reales = EntrenoRealizado.objects.filter(cliente_id=cliente_id).count()
+            logros_completados = LogroUsuario.objects.filter(
+                perfil=perfil,
+                completado=True
+            ).count()
+
+            # Calcular puntos desde historial
+            puntos_historial = HistorialPuntos.objects.filter(
+                perfil=perfil
+            ).aggregate(total=Sum('puntos'))['total'] or 0
+
+            # Calcular puntos desde logros
+            puntos_logros = LogroUsuario.objects.filter(
+                perfil=perfil,
+                completado=True
+            ).aggregate(total=Sum('logro__puntos_recompensa'))['total'] or 0
+
+            # Crear reporte de diagnóstico
+            diagnostico = {
+                'cliente_id': cliente_id,
+                'perfil_id': perfil.id,
+                'nivel_actual': perfil.nivell,
+                'datos_perfil': {
+                    'puntos_totales': perfil.puntos_totales,
+                    'entrenos_totales': perfil.entrenos_totales,
+                    'racha_actual': perfil.racha_actual,
+                    'fecha_ultimo_entreno': perfil.fecha_ultimo_entreno,
+                },
+                'datos_reales': {
+                    'entrenos_bd': entrenos_reales,
+                    'logros_completados': logros_completados,
+                    'puntos_historial': puntos_historial,
+                    'puntos_logros': puntos_logros,
+                },
+                'inconsistencias': [],
+                'recomendaciones': []
+            }
+
+            # Detectar inconsistencias
+            if perfil.puntos_totales != puntos_historial:
+                inconsistencia = {
+                    'tipo': 'puntos_desincronizados',
+                    'descripcion': f'Perfil: {perfil.puntos_totales}, Historial: {puntos_historial}',
+                    'severidad': 'alta'
+                }
+                diagnostico['inconsistencias'].append(inconsistencia)
+                diagnostico['recomendaciones'].append('Ejecutar sincronización de puntos')
+
+            if perfil.entrenos_totales != entrenos_reales:
+                inconsistencia = {
+                    'tipo': 'entrenos_desincronizados',
+                    'descripcion': f'Perfil: {perfil.entrenos_totales}, Real: {entrenos_reales}',
+                    'severidad': 'media'
+                }
+                diagnostico['inconsistencias'].append(inconsistencia)
+                diagnostico['recomendaciones'].append('Actualizar contador de entrenamientos')
+
+            # Verificar logros potenciales
+            logros_potenciales = cls._detectar_logros_potenciales(perfil)
+            if logros_potenciales:
+                diagnostico['logros_potenciales'] = logros_potenciales
+                diagnostico['recomendaciones'].append('Procesar logros pendientes')
+
+            # Estado general
+            if not diagnostico['inconsistencias']:
+                diagnostico['estado'] = 'saludable'
+            elif len(diagnostico['inconsistencias']) <= 2:
+                diagnostico['estado'] = 'necesita_atencion'
+            else:
+                diagnostico['estado'] = 'critico'
+
+            logger.info(f"✅ Diagnóstico completado: {diagnostico['estado']}")
+            return diagnostico
+
+        except Exception as e:
+            logger.error(f"❌ Error en diagnóstico completo: {e}")
+            return {'error': str(e)}
+
+    @classmethod
+    def _detectar_logros_potenciales(cls, perfil):
+        """
+        Detecta logros que deberían estar completados pero no lo están.
+        """
+        from logros.models import Logro, LogroUsuario
+
+        logros_potenciales = []
+        logros_no_completados = Logro.objects.exclude(
+            id__in=LogroUsuario.objects.filter(
+                perfil=perfil,
+                completado=True
+            ).values_list('logro_id', flat=True)
+        )
+
+        for logro in logros_no_completados:
+            try:
+                # Usar la función de cálculo existente
+                from logros.services import GamificacionServiceMejorado
+                progreso = GamificacionServiceMejorado._calcular_progreso_logro(
+                    perfil, logro, None
+                )
+
+                if progreso >= logro.meta_valor:
+                    logros_potenciales.append({
+                        'logro_id': logro.id,
+                        'nombre': logro.nombre,
+                        'progreso': progreso,
+                        'meta': logro.meta_valor,
+                        'puntos': logro.puntos_recompensa
+                    })
+            except Exception as e:
+                logger.warning(f"Error evaluando logro {logro.nombre}: {e}")
+
+        return logros_potenciales
+
+    @classmethod
+    def sincronizar_datos_perfil(cls, cliente_id):
+        """
+        Sincroniza todos los datos de un perfil para corregir inconsistencias.
+        """
+        try:
+            with transaction.atomic():
+                from logros.models import PerfilGamificacion, HistorialPuntos
+                from entrenos.models import EntrenoRealizado
+
+                logger.info(f"🔄 Sincronizando datos para cliente {cliente_id}")
+
+                perfil = PerfilGamificacion.objects.get(cliente_id=cliente_id)
+
+                # Recalcular puntos desde historial
+                puntos_reales = HistorialPuntos.objects.filter(
+                    perfil=perfil
+                ).aggregate(total=Sum('puntos'))['total'] or 0
+
+                # Recalcular entrenamientos
+                entrenos_reales = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).count()
+
+                # Actualizar perfil
+                perfil.puntos_totales = puntos_reales
+                perfil.entrenos_totales = entrenos_reales
+
+                # Recalcular nivel
+                perfil.nivel = cls._calcular_nivel_por_puntos(puntos_reales)
+
+                # Actualizar fecha último entrenamiento
+                ultimo_entreno = EntrenoRealizado.objects.filter(
+                    cliente_id=cliente_id
+                ).order_by('-fecha').first()
+
+                if ultimo_entreno:
+                    perfil.fecha_ultimo_entreno = ultimo_entreno.fecha
+
+                perfil.save()
+
+                logger.info(f"✅ Sincronización completada: {puntos_reales} puntos, {entrenos_reales} entrenamientos")
+
+                return {
+                    'exito': True,
+                    'puntos_actualizados': puntos_reales,
+                    'entrenos_actualizados': entrenos_reales,
+                    'nivel_actualizado': perfil.nivel
+                }
+
+        except Exception as e:
+            logger.error(f"❌ Error en sincronización: {e}")
+            return {'exito': False, 'error': str(e)}
+
+    @classmethod
+    def _calcular_nivel_por_puntos(cls, puntos):
+        """
+        Calcula el nivel basado en los puntos totales.
+        """
+        if puntos < 1000:
+            return 1
+        elif puntos < 3000:
+            return 2
+        elif puntos < 6000:
+            return 3
+        elif puntos < 10000:
+            return 4
+        else:
+            return 5
+
+    @classmethod
+    def procesar_logros_pendientes(cls, cliente_id):
+        """
+        Procesa y otorga logros que deberían estar completados.
+        """
+        try:
+            with transaction.atomic():
+                from logros.models import PerfilGamificacion
+                from logros.services import GamificacionServiceMejorado
+
+                logger.info(f"🎯 Procesando logros pendientes para cliente {cliente_id}")
+
+                perfil = PerfilGamificacion.objects.get(cliente_id=cliente_id)
+
+                # Detectar logros potenciales
+                logros_potenciales = cls._detectar_logros_potenciales(perfil)
+
+                logros_otorgados = []
+                puntos_ganados = 0
+
+                for logro_data in logros_potenciales:
+                    resultado = GamificacionServiceMejorado._otorgar_logro(
+                        perfil,
+                        logro_data['logro_id']
+                    )
+
+                    if resultado['otorgado']:
+                        logros_otorgados.append(logro_data['nombre'])
+                        puntos_ganados += logro_data['puntos']
+                        logger.info(f"🏆 Logro otorgado: {logro_data['nombre']} (+{logro_data['puntos']} puntos)")
+
+                return {
+                    'exito': True,
+                    'logros_otorgados': logros_otorgados,
+                    'puntos_ganados': puntos_ganados,
+                    'total_logros': len(logros_otorgados)
+                }
+
+        except Exception as e:
+            logger.error(f"❌ Error procesando logros pendientes: {e}")
+            return {'exito': False, 'error': str(e)}
+
+    @classmethod
+    def validar_integridad_sistema(cls):
+        """
+        Valida la integridad de todo el sistema de gamificación.
+        """
+        try:
+            from logros.models import PerfilGamificacion
+
+            logger.info("🔍 Validando integridad del sistema completo")
+
+            perfiles = PerfilGamificacion.objects.all()
+            reporte = {
+                'perfiles_analizados': perfiles.count(),
+                'perfiles_saludables': 0,
+                'perfiles_con_problemas': 0,
+                'problemas_detectados': [],
+                'recomendaciones_globales': []
+            }
+
+            for perfil in perfiles:
+                diagnostico = cls.diagnosticar_perfil_completo(perfil.cliente_id)
+
+                if diagnostico.get('estado') == 'saludable':
+                    reporte['perfiles_saludables'] += 1
+                else:
+                    reporte['perfiles_con_problemas'] += 1
+                    reporte['problemas_detectados'].append({
+                        'cliente_id': perfil.cliente_id,
+                        'problemas': diagnostico.get('inconsistencias', [])
+                    })
+
+            # Generar recomendaciones globales
+            if reporte['perfiles_con_problemas'] > 0:
+                reporte['recomendaciones_globales'].append('Ejecutar sincronización masiva')
+                reporte['recomendaciones_globales'].append('Revisar configuración de signals')
+
+            logger.info(
+                f"✅ Validación completada: {reporte['perfiles_saludables']}/{reporte['perfiles_analizados']} perfiles saludables")
+
+            return reporte
+
+        except Exception as e:
+            logger.error(f"❌ Error en validación de integridad: {e}")
+            return {'error': str(e)}

@@ -37,7 +37,6 @@ urlpatterns = [
     path('rutinas/', include('rutinas.urls')),
     path('dietas/', include('dietas.urls')),
     path('entrenos/', include('entrenos.urls')),  # <-- añade esta línea
-    path('anuncios/', include('anuncios.urls')),
     path('panel/', clientes_views.dashboard, name='dashboard'),
     path('joi/', include('joi.urls')),
     path('register/', cliente_views.register_view, name='register'),
@@ -53,6 +52,7 @@ urlpatterns = [
     path('', include('entrenos.urls')),  # Redirigir a dashboard de entrenos
     # Admin
     path('admin/', admin.site.urls),
+    path('analytics/', include('analytics.urls')),
 ]
 # Servir archivos media en desarrollo
 if settings.DEBUG:

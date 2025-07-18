@@ -1,0 +1,392 @@
+<!-- 💡 SISTEMA DE RECOMENDACIONES -->
+<!-- Archivo: templates/analytics/recomendaciones.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recomendaciones - {{ cliente.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #3b82f6;
+        --secondary-color: #1e40af;
+        --accent-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --dark-bg: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --border-color: #334155;
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+        color: var(--text-primary);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        min-height: 100vh;
+    }
+
+    .analytics-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .analytics-header {
+        background: linear-gradient(135deg, var(--warning-color), var(--primary-color));
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .generate-section {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+
+    .generate-btn {
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .generate-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .recommendations-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .recommendations-section {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .recommendation-item {
+        background: rgba(59, 130, 246, 0.05);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .recommendation-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .recommendation-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .recommendation-priority {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .priority-alta {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+    }
+
+    .priority-media {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning-color);
+    }
+
+    .priority-baja {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+    }
+
+    .recommendation-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+        padding-right: 4rem;
+    }
+
+    .recommendation-description {
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+
+    .recommendation-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .recommendation-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-apply {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .btn-dismiss {
+        background: var(--danger-color);
+        color: white;
+    }
+
+    .btn-apply:hover,
+    .btn-dismiss:hover {
+        transform: translateY(-1px);
+    }
+
+    .automatic-recommendations {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .auto-rec-item {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .auto-rec-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .message-success {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .recommendations-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <div class="analytics-header">
+        <h1>💡 Sistema de Recomendaciones</h1>
+        <p>Recomendaciones personalizadas para optimizar tu entrenamiento</p>
+    </div>
+
+    <!-- Mensaje de éxito -->
+    {% if mensaje %}
+    <div class="message-success">
+        {{ mensaje }}
+    </div>
+    {% endif %}
+
+    <!-- Generar Nuevas Recomendaciones -->
+    <div class="generate-section">
+        <h3 style="margin: 0 0 1rem 0;">🤖 Generar Nuevas Recomendaciones</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Analiza tus datos actuales y genera recomendaciones personalizadas
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="generar" class="generate-btn">
+                🚀 Generar Recomendaciones
+            </button>
+        </form>
+    </div>
+
+    <!-- Recomendaciones Automáticas -->
+    {% if recomendaciones_automaticas %}
+    <div class="automatic-recommendations">
+        <div class="section-title">
+            🎯 Recomendaciones Automáticas
+        </div>
+        {% for rec in recomendaciones_automaticas %}
+        <div class="auto-rec-item">
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">{{ rec.titulo }}</div>
+            <div style="color: var(--text-secondary);">{{ rec.descripcion }}</div>
+            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                Tipo: {{ rec.tipo|title }} | Prioridad: {{ rec.prioridad|title }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Recomendaciones Activas y Aplicadas -->
+    <div class="recommendations-grid">
+        <!-- Recomendaciones Activas -->
+        <div class="recommendations-section">
+            <div class="section-title">
+                ⚡ Recomendaciones Activas
+            </div>
+            {% for recomendacion in recomendaciones_activas %}
+            <div class="recommendation-item">
+                <div class="recommendation-priority priority-{{ recomendacion.get_prioridad_display|lower }}">
+                    {{ recomendacion.get_prioridad_display }}
+                </div>
+
+                <div class="recommendation-title">
+                    {{ recomendacion.titulo }}
+                </div>
+
+                <div class="recommendation-description">
+                    {{ recomendacion.descripcion }}
+                </div>
+
+                <div class="recommendation-meta">
+                    <span>{{ recomendacion.get_tipo_display }}</span>
+                    <span>Expira: {{ recomendacion.expires_at|date:"d/m/Y" }}</span>
+                </div>
+
+                <div class="recommendation-actions">
+                    <button class="action-btn btn-apply" onclick="aplicarRecomendacion({{ recomendacion.id }})">
+                        ✅ Aplicar
+                    </button>
+                    <button class="action-btn btn-dismiss" onclick="descartarRecomendacion({{ recomendacion.id }})">
+                        ❌ Descartar
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                🎉 ¡Excelente! No hay recomendaciones pendientes.
+                <br><br>
+                <small>Genera nuevas recomendaciones para obtener insights actualizados.</small>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Recomendaciones Aplicadas -->
+        <div class="recommendations-section">
+            <div class="section-title">
+                ✅ Recomendaciones Aplicadas
+            </div>
+            {% for recomendacion in recomendaciones_aplicadas %}
+            <div class="recommendation-item" style="opacity: 0.7;">
+                <div class="recommendation-title">
+                    {{ recomendacion.titulo }}
+                </div>
+
+                <div class="recommendation-description">
+                    {{ recomendacion.descripcion|truncatewords:15 }}
+                </div>
+
+                <div class="recommendation-meta">
+                    <span>{{ recomendacion.get_tipo_display }}</span>
+                    <span>Aplicada: {{ recomendacion.fecha_aplicacion|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                📝 No hay recomendaciones aplicadas recientemente.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Navegación -->
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{% url 'analytics:dashboard_cliente' cliente.id %}"
+           style="background: var(--primary-color); color: white; padding: 1rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">
+            ← Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function aplicarRecomendacion(id) {
+        if (confirm('¿Estás seguro de que quieres marcar esta recomendación como aplicada?')) {
+            fetch(`/analytics/recomendacion/${id}/aplicar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al aplicar la recomendación');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al aplicar la recomendación');
+            });
+        }
+    }
+
+    function descartarRecomendacion(id) {
+        if (confirm('¿Estás seguro de que quieres descartar esta recomendación?')) {
+            // Implementar lógica para descartar recomendación
+            alert('Funcionalidad de descartar en desarrollo');
+        }
+    }
+</script>
+{% endblock %}

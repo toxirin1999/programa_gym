@@ -6,9 +6,15 @@ from django.forms import formset_factory
 from .models import EntrenoRealizado, EjercicioLiftinDetallado, DatosLiftinDetallados, DetalleEjercicioRealizado, \
     SerieRealizada
 from clientes.models import Cliente
-from rutinas.models import Rutina, Ejercicio
+from rutinas.models import Rutina, EjercicioBase
 import re
 from decimal import Decimal
+
+
+class EjercicioForm(forms.ModelForm):
+    class Meta:
+        model = EjercicioBase
+        fields = ['nombre', 'grupo_muscular', 'equipo']
 
 
 # ============================================================================

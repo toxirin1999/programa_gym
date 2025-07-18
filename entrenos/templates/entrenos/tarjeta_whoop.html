@@ -106,7 +106,7 @@
 
     <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-300">
         <div class="bg-[#1b1b1b] p-4 rounded-md border border-gray-700">
-            <span class="block font-semibold text-white mb-1">💓 RHR - Ritmo Cardíaco en Reposo</span>
+            <span class="block font-semibold text-white mb-1">💓 FCR - Frecuencia Cardíaca en Reposo</span>
             <span>Actual: <strong>{{ registro.rhr }} lpm</strong></span><br>
             <span>
                 {% if registro.rhr > 60 %}
@@ -117,13 +117,13 @@
             </span>
         </div>
         <div class="bg-[#1b1b1b] p-4 rounded-md border border-gray-700">
-            <span class="block font-semibold text-white mb-1">⚡ HRV - Variabilidad de Frecuencia Cardíaca</span>
+            <span class="block font-semibold text-white mb-1">⚡ VFC - Variabilidad de Frecuencia Cardíaca</span>
             <span>Actual: <strong>{{ registro.hrv }} ms</strong></span><br>
             <span>
                 {% if registro.hrv > 69 %}
-                    🧠 Alta HRV → sistema nervioso relajado y listo.
+                    🧠 Alta VFC → sistema nervioso relajado y listo.
                 {% else %}
-                    ⚠️ HRV baja → sistema exigido o estresado.
+                    ⚠️ VFC baja → sistema exigido o estresado.
                 {% endif %}
             </span>
         </div>
@@ -143,8 +143,8 @@
           <th scope="col" class="px-4 py-2">Sleep %</th>
           <th scope="col" class="px-4 py-2">Horas</th>
           <th scope="col" class="px-4 py-2">Necesarias</th>
-          <th scope="col" class="px-4 py-2">RHR</th>
-          <th scope="col" class="px-4 py-2">HRV</th>
+          <th scope="col" class="px-4 py-2">FCR</th>
+          <th scope="col" class="px-4 py-2">VFC</th>
           <th scope="col" class="px-4 py-2">Acciones</th>
 
         </tr>

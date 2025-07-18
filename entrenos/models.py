@@ -2,168 +2,44 @@
 
 from django.db import models
 from clientes.models import Cliente
-from rutinas.models import Ejercicio, Rutina
+from rutinas.models import Rutina
 from django.contrib.auth.models import User
 from django.utils import timezone
 from decimal import Decimal
+from django.utils import timezone
+from rutinas.models import EjercicioBase
 
 
-class EntrenoRealizado(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    rutina = models.ForeignKey(Rutina, on_delete=models.CASCADE)
-    fecha = models.DateField(auto_now_add=True)
-    procesado_gamificacion = models.BooleanField(default=False)
-
-    # ⭐ CAMPOS BÁSICOS DE LIFTIN ⭐
-    fuente_datos = models.CharField(
-        max_length=20,
-        choices=[
-            ('manual', 'Manual'),
-            ('liftin', 'Liftin'),
-        ],
-        default='manual',
-        help_text="Origen de los datos del entrenamiento"
-    )
-
-    liftin_workout_id = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        help_text="ID único del entrenamiento en Liftin"
-    )
-
-    # ⭐ CAMPOS DETALLADOS DE TIEMPO ⭐
-    hora_inicio = models.TimeField(
-        null=True,
-        blank=True,
-        help_text="Hora de inicio del entrenamiento (ej: 09:43)"
-    )
-
-    hora_fin = models.TimeField(
-        null=True,
-        blank=True,
-        help_text="Hora de finalización del entrenamiento (ej: 10:46)"
-    )
-
-    duracion_minutos = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Duración total del entrenamiento en minutos"
-    )
-
-    tiempo_total_formateado = models.CharField(
-        max_length=20,
-        null=True,
-        blank=True,
-        help_text="Tiempo total como aparece en Liftin (ej: 1:02:23)"
-    )
-
-    # ⭐ CAMPOS DE EJERCICIOS Y VOLUMEN ⭐
-    numero_ejercicios = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Número total de ejercicios realizados"
-    )
-
-    volumen_total_kg = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Volumen total levantado en kg (ej: 19000.00 para 19K KG)"
-    )
-
-    volumen_total_formateado = models.CharField(
-        max_length=20,
-        null=True,
-        blank=True,
-        help_text="Volumen como aparece en Liftin (ej: 19K KG)"
-    )
-
-    # ⭐ CAMPOS DE SALUD Y RENDIMIENTO ⭐
-    calorias_quemadas = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Calorías quemadas durante el entrenamiento"
-    )
-
-    frecuencia_cardiaca_promedio = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Frecuencia cardíaca promedio en BPM"
-    )
-
-    frecuencia_cardiaca_maxima = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Frecuencia cardíaca máxima en BPM"
-    )
-
-    # ⭐ CAMPOS DE METADATOS ⭐
-    nombre_rutina_liftin = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True,
-        help_text="Nombre de la rutina como aparece en Liftin (ej: Día 6 - Full Body)"
-    )
-
-    notas_liftin = models.TextField(
-        null=True,
-        blank=True,
-        help_text="Notas adicionales importadas de Liftin"
-    )
-
-    fecha_importacion = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Fecha y hora de importación desde Liftin"
-    )
+class GrupoMuscular(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        fuente = "📱 Liftin" if self.fuente_datos == 'liftin' else "✏️ Manual"
-        rutina_nombre = self.nombre_rutina_liftin or self.rutina.nombre
-        return f"{fuente} - {self.cliente.nombre} - {rutina_nombre} ({self.fecha})"
+        return self.nombre
 
-    @property
-    def es_de_liftin(self):
-        """Método para verificar si el entrenamiento viene de Liftin"""
-        return self.fuente_datos == 'liftin'
 
-    @property
-    def duracion_formateada(self):
-        """Devuelve la duración en formato legible"""
-        if self.tiempo_total_formateado:
-            return self.tiempo_total_formateado
-        elif self.duracion_minutos:
-            horas = self.duracion_minutos // 60
-            minutos = self.duracion_minutos % 60
-            if horas > 0:
-                return f"{horas}h {minutos}m"
-            return f"{minutos}m"
-        return "No especificada"
+class EjercicioRealizado(models.Model):
+    entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='ejercicios_realizados')
 
-    @property
-    def horario_entrenamiento(self):
-        """Devuelve el horario del entrenamiento"""
-        if self.hora_inicio and self.hora_fin:
-            return f"{self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')}"
-        return "No especificado"
+    nombre_ejercicio = models.CharField(max_length=100)
+    grupo_muscular = models.CharField(max_length=50, blank=True, null=True)
 
-    @property
-    def volumen_formateado(self):
-        """Devuelve el volumen en formato legible"""
-        if self.volumen_total_formateado:
-            return self.volumen_total_formateado
-        elif self.volumen_total_kg:
-            if self.volumen_total_kg >= 1000:
-                return f"{self.volumen_total_kg / 1000:.1f}K KG"
-            return f"{self.volumen_total_kg} KG"
-        return "No especificado"
+    peso_kg = models.FloatField(default=0)
+    series = models.PositiveIntegerField(default=1)
+    repeticiones = models.PositiveIntegerField(default=1)
+    tempo = models.CharField(max_length=10, blank=True, null=True)  # ej: "3-1-1"
+    rpe = models.PositiveIntegerField(blank=True, null=True)  # 1-10
+    rir = models.PositiveIntegerField(blank=True, null=True)  # 0-5
+    fallo_muscular = models.BooleanField(default=False)
 
-    class Meta:
-        ordering = ['-fecha', '-hora_inicio']
-        verbose_name = "Entrenamiento Realizado"
-        verbose_name_plural = "Entrenamientos Realizados"
+    orden = models.PositiveIntegerField(default=0)
+    completado = models.BooleanField(default=True)
+    nuevo_record = models.BooleanField(default=False)
+
+    fuente_datos = models.CharField(max_length=20, default='manual')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def volumen(self):
+        return self.peso_kg * self.series * self.repeticiones
 
 
 class EjercicioLiftinDetallado(models.Model):
@@ -276,10 +152,34 @@ class EjercicioLiftinDetallado(models.Model):
         verbose_name_plural = "Ejercicios Detallados de Liftin"
 
 
+class EjercicioBase(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    grupo_muscular = models.CharField(
+        max_length=50,
+        choices=[
+            ('Pecho', 'Pecho'),
+            ('Espalda', 'Espalda'),
+            ('Piernas', 'Piernas'),
+            ('Hombros', 'Hombros'),
+            ('Bíceps', 'Bíceps'),
+            ('Tríceps', 'Tríceps'),
+            ('Glúteos', 'Glúteos'),
+            ('Core', 'Core'),
+            ('Cardio', 'Cardio'),
+            ('Otros', 'Otros'),
+        ]
+    )
+    equipo = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.grupo_muscular})"
+
+
 # Mantener modelos existentes para compatibilidad
 class DetalleEjercicioRealizado(models.Model):
-    entreno = models.ForeignKey(EntrenoRealizado, on_delete=models.CASCADE, related_name='detalles')
-    ejercicio = models.ForeignKey(Ejercicio, on_delete=models.CASCADE)
+    entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='detalles_ejercicio')
+
+    ejercicio = models.ForeignKey(EjercicioBase, on_delete=models.CASCADE)
     series = models.PositiveIntegerField()
     repeticiones = models.PositiveIntegerField()
     peso_kg = models.DecimalField(max_digits=5, decimal_places=2)
@@ -291,7 +191,7 @@ class DetalleEjercicioRealizado(models.Model):
 
 class SerieRealizada(models.Model):
     entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='series')
-    ejercicio = models.ForeignKey('rutinas.Ejercicio', on_delete=models.CASCADE)
+    ejercicio = models.ForeignKey('rutinas.EjercicioBase', on_delete=models.CASCADE)
     serie_numero = models.PositiveIntegerField()
     repeticiones = models.PositiveIntegerField()
     completado = models.BooleanField(default=False)
@@ -318,7 +218,7 @@ class Programa(models.Model):
 
 class PlanPersonalizado(models.Model):
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
-    ejercicio = models.ForeignKey('rutinas.Ejercicio', on_delete=models.CASCADE)
+    ejercicio = models.ForeignKey('rutinas.EjercicioBase', on_delete=models.CASCADE)
     rutina = models.ForeignKey('rutinas.Rutina', on_delete=models.CASCADE, null=True, blank=True)
     repeticiones_objetivo = models.PositiveIntegerField(default=10)
     peso_objetivo = models.FloatField(default=0)
@@ -341,17 +241,97 @@ class LogroDesbloqueado(models.Model):
         return f"{self.cliente.nombre} - {self.nombre}"
 
 
+class EntrenoRealizado(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
+    rutina = models.ForeignKey('rutinas.Rutina', on_delete=models.CASCADE)
+    fecha = models.DateField(default=timezone.now)
+    procesado_gamificacion = models.BooleanField(default=False)
+
+    # Campos adicionales opcionales
+    fuente_datos = models.CharField(
+        max_length=20,
+        choices=[('manual', 'Manual'), ('liftin', 'Liftin')],
+        default='manual'
+    )
+    liftin_workout_id = models.CharField(max_length=100, null=True, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fin = models.TimeField(null=True, blank=True)
+    duracion_minutos = models.PositiveIntegerField(null=True, blank=True)
+    numero_ejercicios = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Número total de ejercicios realizados"
+    )
+
+    tiempo_total_formateado = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Duración total en texto (ej: 1:10:23)"
+    )
+
+    calorias_quemadas = models.PositiveIntegerField(null=True, blank=True)
+    frecuencia_cardiaca_promedio = models.PositiveIntegerField(null=True, blank=True)
+    frecuencia_cardiaca_maxima = models.PositiveIntegerField(null=True, blank=True)
+    volumen_total_kg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    nombre_rutina_liftin = models.CharField(max_length=200, null=True, blank=True)
+    notas_liftin = models.TextField(null=True, blank=True)
+    fecha_importacion = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def detalles(self):
+        """
+        Compatibilidad: permite usar entreno.detalles.all() devolviendo ejercicios_realizados.
+        Puedes modificar este método si deseas que devuelva otra cosa.
+        """
+        return self.ejercicios_realizados.all()
+
+    def __str__(self):
+        return f"{self.cliente} - {self.rutina} ({self.fecha})"
+
+    @property
+    def duracion_formateada(self):
+        if self.tiempo_total_formateado:
+            return self.tiempo_total_formateado
+        elif self.duracion_minutos is not None:
+            horas = self.duracion_minutos // 60
+            minutos = self.duracion_minutos % 60
+            return f"{horas}h {minutos}m" if horas else f"{minutos}m"
+        return "No especificado"
+
+    @property
+    def horario_entrenamiento(self):
+        if self.hora_inicio and self.hora_fin:
+            return f"{self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')}"
+        return "No especificado"
+
+    @property
+    def volumen_formateado(self):
+        if self.volumen_total_kg is not None:
+            if self.volumen_total_kg >= 1000:
+                return f"{self.volumen_total_kg / 1000:.1f}K KG"
+            return f"{self.volumen_total_kg:.0f} KG"
+        return "No disponible"
+
+    @property
+    def fuente_icono(self):
+        return "📱 Liftin" if self.fuente_datos == 'liftin' else "✏️ Manual"
+
+    @property
+    def resumen_rutina(self):
+        return self.nombre_rutina_liftin or (self.rutina.nombre if self.rutina else "Sin rutina")
+
+    class Meta:
+        ordering = ['-fecha']
+
+
 # ⭐ MODELO PARA DATOS ESPECÍFICOS DE LIFTIN ⭐
 class DatosLiftinDetallados(models.Model):
     """
     Modelo para almacenar datos específicos de Liftin que no encajan
     en la estructura estándar de entrenamientos
     """
-    entreno = models.OneToOneField(
-        EntrenoRealizado,
-        on_delete=models.CASCADE,
-        related_name='datos_liftin'
-    )
+    entreno = models.ForeignKey('EntrenoRealizado', on_delete=models.CASCADE, related_name='datos_liftin')
 
     # Datos de frecuencia cardíaca detallados
     datos_frecuencia_cardiaca = models.JSONField(

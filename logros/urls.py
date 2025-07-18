@@ -7,7 +7,7 @@ urlpatterns = [
     # Perfil de gamificación
     path('perfil/', views.perfil_gamificacion, name='perfil_gamificacion'),
     path('perfil/<int:cliente_id>/', views.perfil_gamificacion, name='perfil_gamificacion'),
-
+    path('', views.dashboard_principal, name='dashboard_principal'),
     # Logros
     path('logros/', views.lista_logros, name='lista_logros'),
     path('logros/<int:logro_id>/', views.detalle_logro, name='detalle_logro'),
@@ -17,7 +17,7 @@ urlpatterns = [
     path('misiones/<int:quest_id>/', views.detalle_mision, name='detalle_mision'),
 
     # Ranking
-    path('ranking/', views.ranking_clientes, name='ranking_clientes'),
+    # path('ranking/', views.ranking_clientes, name='ranking_clientes'),
 
     # Procesamiento de entrenamientos
     path('procesar-entreno/<int:entreno_id>/', views.procesar_entreno, name='procesar_entreno'),

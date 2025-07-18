@@ -1,45 +1,47 @@
 # Archivo: entrenos/admin.py - VERSIÓN CORREGIDA
+from .models import EntrenoRealizado, EjercicioRealizado  # 👈 Asegúrate de incluir EjercicioRealizado
 
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import (
-    EntrenoRealizado,
-    DetalleEjercicioRealizado,
-    SerieRealizada,
-    DatosLiftinDetallados,
-    LogroDesbloqueado
-)
+from django.apps import apps
+
+EntrenoRealizado = apps.get_model('entrenos', 'EntrenoRealizado')
+DetalleEjercicioRealizado = apps.get_model('entrenos', 'DetalleEjercicioRealizado')
+SerieRealizada = apps.get_model('entrenos', 'SerieRealizada')
+DatosLiftinDetallados = apps.get_model('entrenos', 'DatosLiftinDetallados')
+LogroDesbloqueado = apps.get_model('entrenos', 'LogroDesbloqueado')
+
+from .models import EjercicioBase
+
+
+@admin.register(EjercicioBase)
+class EjercicioBaseAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'grupo_muscular')
+    search_fields = ('nombre',)
+    list_filter = ('grupo_muscular',)
+
+
+class EjercicioRealizadoInline(admin.TabularInline):
+    model = EjercicioRealizado
+    extra = 0
 
 
 @admin.register(EntrenoRealizado)
 class EntrenoRealizadoAdmin(admin.ModelAdmin):
+    inlines = [EjercicioRealizadoInline]
     list_display = [
         'cliente',
-        'rutina',
         'fecha',
-        'fuente_datos_badge',
+        'resumen_rutina',
+        'fuente_icono',
         'duracion_formateada',
-        'calorias_quemadas',
-        'frecuencia_cardiaca_promedio',
-        'procesado_gamificacion'
+        'volumen_formateado',
+        'horario_entrenamiento',
     ]
-
-    list_filter = [
-        'fuente_datos',
-        'fecha',
-        'procesado_gamificacion',
-        'cliente',
-        'rutina'
-    ]
-
-    search_fields = [
-        'cliente__nombre',
-        'rutina__nombre',
-        'liftin_workout_id',
-        'notas_liftin'
-    ]
+    list_filter = ['fuente_datos', 'fecha']
+    search_fields = ['cliente__nombre', 'nombre_rutina_liftin', 'rutina__nombre']
 
     fieldsets = (
         ('Información Básica', {

@@ -6,8 +6,7 @@ from django.core.validators import MinValueValidator
 
 # Asumimos que estos modelos existen en la aplicación
 from clientes.models import Cliente
-from rutinas.models import Ejercicio
-from entrenos.models import EntrenoRealizado, SerieRealizada
+from rutinas.models import EjercicioBase
 
 
 class Nivel(models.Model):
@@ -215,7 +214,7 @@ class Quest(models.Model):
         help_text=_("Valor numérico que se debe alcanzar para completar la misión")
     )
     ejercicio = models.ForeignKey(
-        Ejercicio,
+        'rutinas.EjercicioBase',
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -444,7 +443,7 @@ class HistorialPuntos(models.Model):
         verbose_name=_("Puntos")
     )
     entreno = models.ForeignKey(
-        EntrenoRealizado,
+        'entrenos.EntrenoRealizado',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

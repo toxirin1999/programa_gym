@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from rutinas.models import Programa
 from rutinas.models import Rutina
 from dietas.models import Dieta  # asegúrate de tener esto importado
 from django import forms
@@ -9,6 +8,8 @@ from django.db import models
 
 # from models import Cliente  # Asegúrate de que tu modelo Cliente esté importado
 
+from django.db import models
+from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -164,20 +165,24 @@ class RevisionProgreso(models.Model):
         return f"{self.cliente.nombre} - {self.fecha}"
 
 
+# Archivo: clientes/models.py
+
+from django.db import models
+from django.conf import settings  # Es una buena práctica importar settings
+
+
 class Cliente(models.Model):
-    # --- AÑADE ESTA LÍNEA para vincular Cliente con el usuario de Django ---
+    # --- Tus campos existentes ---
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cliente_perfil',
                                 null=True, blank=True)
-    # ---------------------------------------------------------------------
-
     nombre = models.CharField(max_length=100)
     email = models.EmailField()
     telefono = models.CharField(max_length=20)
     fecha_nacimiento = models.DateField(null=True, blank=True)
     direccion = models.CharField(max_length=255, blank=True)
     genero = models.CharField(max_length=10, choices=[('M', 'Masculino'), ('F', 'Femenino')], blank=True)
-    programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)  # ✅ nuevo campo
-    rutina_actual = models.ForeignKey(Rutina, on_delete=models.SET_NULL, null=True, blank=True)
+    programa = models.ForeignKey('rutinas.Programa', on_delete=models.SET_NULL, null=True, blank=True)
+    rutina_actual = models.ForeignKey('rutinas.Rutina', on_delete=models.SET_NULL, null=True, blank=True)
     fecha_registro = models.DateField(auto_now_add=True)
     membresia_activa = models.BooleanField(default=True)
     fecha_vencimiento_membresia = models.DateField(null=True, blank=True)
@@ -197,8 +202,27 @@ class Cliente(models.Model):
     gemelos = models.FloatField(null=True, blank=True, help_text="cm")
     entrenos_perfectos = models.PositiveIntegerField(default=0)
 
-    # Foto
-    foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True)
+    # --- CAMPOS DE PERSONALIZACIÓN (MODIFICADOS Y AÑADIDOS) ---
+
+    # Foto (usamos tu campo 'foto' existente y le añadimos un default)
+    foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True, default='clientes_fotos/default.png')
+
+    # Campo para el objetivo principal del cliente (NUEVO)
+    OBJETIVO_CHOICES = [
+        ('hipertrofia', 'Hipertrofia Muscular'),
+        ('fuerza', 'Ganancia de Fuerza'),
+        ('perdida_peso', 'Pérdida de Peso'),
+        ('resistencia', 'Mejora de Resistencia'),
+        ('general', 'Salud General'),
+    ]
+    objetivo_principal = models.CharField(
+        max_length=50,
+        choices=OBJETIVO_CHOICES,
+        default='general',
+        help_text="El objetivo principal del cliente para personalizar su experiencia."
+    )
+
+    # -----------------------------------------------------------
 
     def __str__(self):
         return f"{self.id} - {self.nombre}"

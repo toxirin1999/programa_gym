@@ -3,6 +3,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="cache-control" content="no-cache">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Dashboard – Nueva Gym{% endblock %}</title>
     <!-- En el <head> -->
@@ -679,7 +681,7 @@
   <a href="{% url 'calendario_bitacoras' %}">🗓 <span>Ver calendario de bitácoras</span></a>
  <a href="/liftin/importar-completo/">📥 <span>Importar rutina Liftin</span></a>
 <a href="/entrenos/liftin/">💪 <span>Dashboard Liftin</span></a>
-
+  <a href="{% url 'analytics:dashboard' %}">📊 Centro de Análisis</a>
   <div class="border-t border-cyan-400/20 my-3"></div>
 
   <!-- Joi y análisis -->

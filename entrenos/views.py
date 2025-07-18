@@ -26,6 +26,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import EntrenoRealizado, SerieRealizada
 from django.db.models import Count, Avg, Sum
 import json
+from .forms import EjercicioForm
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from decimal import Decimal, getcontext
@@ -38,7 +39,7 @@ from django.contrib import messages
 from django import forms
 from django.db.models import Avg, Sum
 from django.db import transaction
-from rutinas.models import Rutina, RutinaEjercicio, Ejercicio
+from rutinas.models import Rutina, RutinaEjercicio
 from clientes.models import Cliente
 from .models import EntrenoRealizado, SerieRealizada, PlanPersonalizado
 from .forms import SeleccionClienteForm, DetalleEjercicioForm, FiltroClienteForm
@@ -68,10 +69,6 @@ from .models import EntrenoRealizado, DatosLiftinDetallados
 from clientes.models import Cliente
 
 from django.db.models import Avg
-
-<<<<<<< HEAD
-=======
-# entrenos/views.py
 
 from django.shortcuts import render
 from entrenos.models import DetalleEjercicioRealizado
@@ -193,7 +190,6 @@ def ejercicios_realizados_view(request):
         'mayores_por_ejercicio': mayores_list,
     })
 
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
 
 @login_required
 def dashboard_liftin(request):
@@ -2213,7 +2209,8 @@ from django.utils.dateformat import DateFormat
 
 from clientes.models import Cliente
 from .models import EntrenoRealizado, PlanPersonalizado, SerieRealizada
-from rutinas.models import Ejercicio, Rutina, RutinaEjercicio
+from rutinas.models import Rutina, RutinaEjercicio
+from .models import EjercicioBase
 
 logger = logging.getLogger(__name__)
 
@@ -2471,44 +2468,238 @@ from clientes.models import Cliente
 @login_required
 def importar_liftin_completo(request):
     """
-    Vista para importar entrenamiento completo de Liftin con todos los campos
+    Vista definitiva basada en la estructura real de la base de datos
     """
-    if request.method == 'POST':
-        form = ImportarLiftinCompletoForm(request.POST)
-        formset = EjercicioLiftinFormSet(request.POST)
+    try:
+        # ============================================================================
+        # MÉTODO GET - MOSTRAR FORMULARIO
+        # ============================================================================
+        from datetime import date
 
-        if form.is_valid() and formset.is_valid():
-            # Guardar entrenamiento principal
-            entrenamiento = form.save()
+        if request.method == 'GET':
+            logger.info("Mostrando formulario de importación Liftin")
 
-            # Guardar ejercicios asociados
-            ejercicios_guardados = 0
-            for ejercicio_form in formset:
-                if ejercicio_form.cleaned_data and not ejercicio_form.cleaned_data.get('DELETE', False):
-                    ejercicio = ejercicio_form.save(commit=False)
-                    ejercicio.entreno = entrenamiento
-                    ejercicio.save()
-                    ejercicios_guardados += 1
+            try:
+                from entrenos.models import Cliente
+                from rutinas.models import Rutina  # Rutina está en app rutinas, no entrenos
 
-            messages.success(
-                request,
-                f'✅ Entrenamiento de Liftin importado exitosamente con {ejercicios_guardados} ejercicios!'
-            )
-            return redirect('entrenos:dashboard_liftin')
-        else:
-            messages.error(request, '❌ Error en el formulario. Revisa los datos ingresados.')
-    else:
-        form = ImportarLiftinCompletoForm()
-        formset = EjercicioLiftinFormSet()
+                clientes = Cliente.objects.all().order_by('nombre')
+                rutinas = Rutina.objects.all().order_by('nombre')
 
-    context = {
-        'form': form,
-        'formset': formset,
-        'title': 'Importar Entrenamiento Completo de Liftin',
-        'clientes': Cliente.objects.all().order_by('nombre'),
-    }
+                context = {
+                    'clientes': clientes,
+                    'rutinas': rutinas,
+                    'hoy': date.today(),  # ✅ Esta línea permite que el campo <input type="date"> funcione correctamente
+                }
 
-    return render(request, 'entrenos/importar_liftin_completo.html', context)
+                return render(request, 'entrenos/importar_liftin_completo.html', context)
+
+            except Exception as e:
+                logger.error(f"Error al obtener datos para formulario: {str(e)}")
+                messages.error(request, f"Error al cargar el formulario: {str(e)}")
+                return redirect('entrenos:dashboard_liftin')
+        # ============================================================================
+        # MÉTODO POST - PROCESAR FORMULARIO
+        # ============================================================================
+        elif request.method == 'POST':
+            logger.info("Procesando formulario de importación Liftin")
+
+            try:
+                # ============================================================================
+                # VALIDAR DATOS ESENCIALES
+                # ============================================================================
+                cliente_id = request.POST.get('cliente')
+                from datetime import datetime
+
+                fecha_str = request.POST.get('fecha')
+                try:
+                    fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    messages.error(request, "Fecha inválida")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                rutina_id = request.POST.get('rutina')
+
+                if not cliente_id:
+                    messages.error(request, "Debe seleccionar un cliente")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                if not fecha:
+                    messages.error(request, "Debe proporcionar una fecha")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # OBTENER CLIENTE
+                # ============================================================================
+                from entrenos.models import Cliente, EntrenoRealizado
+                from rutinas.models import Rutina
+
+                try:
+                    cliente = Cliente.objects.get(id=cliente_id)
+                    logger.info(f"Cliente encontrado: {cliente.nombre}")
+                except Cliente.DoesNotExist:
+                    messages.error(request, "Cliente seleccionado no válido")
+                    return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # MANEJAR RUTINA OBLIGATORIA - USAR ESTRUCTURA REAL
+                # ============================================================================
+                rutina = None
+
+                if rutina_id:
+                    # Si se seleccionó una rutina, usarla
+                    try:
+                        rutina = Rutina.objects.get(id=rutina_id)
+                        logger.info(f"Rutina seleccionada: {rutina.nombre}")
+                    except Rutina.DoesNotExist:
+                        logger.warning(f"Rutina con ID {rutina_id} no existe")
+                        rutina = None
+
+                if not rutina:
+                    # Si no hay rutina seleccionada, usar la primera disponible (ID=1)
+                    try:
+                        rutina = Rutina.objects.get(id=1)  # "Dia1 - torso" que existe en la DB
+                        logger.info(f"Usando rutina por defecto: {rutina.nombre}")
+                    except Rutina.DoesNotExist:
+                        # Si no existe ID=1, usar la primera disponible
+                        rutina = Rutina.objects.first()
+                        if rutina:
+                            logger.info(f"Usando primera rutina disponible: {rutina.nombre}")
+                        else:
+                            messages.error(request, "No hay rutinas disponibles en el sistema")
+                            return redirect('entrenos:importar_liftin_completo')
+
+                # ============================================================================
+                # PROCESAR EJERCICIOS
+                # ============================================================================
+                ejercicios_texto = []
+
+                for i in range(1, 9):  # 8 ejercicios
+                    nombre = request.POST.get(f'ejercicio_{i}_nombre', '').strip()
+
+                    if nombre:
+                        estado = request.POST.get(f'ejercicio_{i}_estado', '')
+                        peso = request.POST.get(f'ejercicio_{i}_peso', '').strip()
+                        series = request.POST.get(f'ejercicio_{i}_series', '').strip()
+
+                        # Formatear ejercicio
+                        estado_simbolo = ''
+                        if estado == 'completado':
+                            estado_simbolo = '✓ '
+                        elif estado == 'fallado':
+                            estado_simbolo = '✗ '
+                        elif estado == 'nuevo':
+                            estado_simbolo = 'N '
+
+                        linea = f"{estado_simbolo}{nombre}"
+                        if peso:
+                            linea += f": {peso}"
+                        if series:
+                            linea += f", {series}"
+
+                        ejercicios_texto.append(linea)
+
+                # ============================================================================
+                # PREPARAR NOTAS COMPLETAS
+                # ============================================================================
+                notas_generales = request.POST.get('notas', '').strip()
+                texto_completo = []
+
+                if notas_generales:
+                    texto_completo.append(notas_generales)
+
+                if ejercicios_texto:
+                    texto_completo.append("\\n\\nEjercicios Detallados:")
+                    texto_completo.extend(ejercicios_texto)
+
+                notas_liftin_completas = "\\n".join(texto_completo)
+
+                # ============================================================================
+                # PREPARAR DATOS DEL ENTRENAMIENTO - ESTRUCTURA REAL
+                # ============================================================================
+
+                # Datos básicos obligatorios según estructura real
+                datos_entrenamiento = {
+                    'cliente': cliente,
+                    'rutina': rutina,  # ✅ OBLIGATORIO según DB
+                    'fecha': fecha,
+                    'fuente_datos': 'liftin',
+                    'procesado_gamificacion': False,  # ✅ Campo obligatorio según DB
+                    'notas_liftin': notas_liftin_completas,  # ✅ Campo correcto para notas
+                }
+
+                # Campos opcionales según estructura real
+                hora_inicio = request.POST.get('hora_inicio')
+                if hora_inicio:
+                    datos_entrenamiento['hora_inicio'] = hora_inicio
+
+                duracion_minutos = request.POST.get('duracion_minutos')
+                if duracion_minutos:
+                    try:
+                        datos_entrenamiento['duracion_minutos'] = int(duracion_minutos)
+                    except ValueError:
+                        pass
+
+                calorias_quemadas = request.POST.get('calorias_quemadas')
+                if calorias_quemadas:
+                    try:
+                        datos_entrenamiento['calorias_quemadas'] = int(calorias_quemadas)
+                    except ValueError:
+                        pass
+
+                volumen_total_kg = request.POST.get('volumen_total_kg')
+                if volumen_total_kg:
+                    try:
+                        datos_entrenamiento['volumen_total_kg'] = float(volumen_total_kg)
+                    except ValueError:
+                        pass
+
+                # Campos adicionales específicos de Liftin según estructura real
+                if ejercicios_texto:
+                    datos_entrenamiento['numero_ejercicios'] = len(ejercicios_texto)
+
+                # ============================================================================
+                # CREAR ENTRENAMIENTO
+                # ============================================================================
+                logger.info(f"Creando entrenamiento con datos: {datos_entrenamiento}")
+                entrenamiento = EntrenoRealizado.objects.create(**datos_entrenamiento)
+                logger.info(f"Entrenamiento creado exitosamente con ID: {entrenamiento.id}")
+
+                # ============================================================================
+                # ACTIVAR LOGROS (SI EXISTE EL SISTEMA)
+                # ============================================================================
+                try:
+                    # Intentar activar logros si el sistema existe
+                    activar_logros_liftin(cliente, entrenamiento)
+                    logger.info("Logros activados correctamente")
+                except Exception as e:
+                    logger.warning(f"No se pudieron activar logros: {str(e)}")
+
+                # ============================================================================
+                # ÉXITO - REDIRECCIONAR
+                # ============================================================================
+                mensaje_exito = f"Entrenamiento de Liftin importado exitosamente para {cliente.nombre}"
+                if rutina:
+                    mensaje_exito += f" (Rutina: {rutina.nombre})"
+                if ejercicios_texto:
+                    mensaje_exito += f" con {len(ejercicios_texto)} ejercicios"
+
+                messages.success(request, mensaje_exito)
+                logger.info("Importación exitosa - Redirigiendo al dashboard")
+
+                return redirect('entrenos:dashboard_liftin')
+
+            except Exception as e:
+                logger.error(f"Error al procesar formulario: {str(e)}")
+                logger.exception("Traceback completo:")
+                messages.error(request, f"Error al importar entrenamiento: {str(e)}")
+                return redirect('entrenos:importar_liftin_completo')
+
+    except Exception as e:
+        logger.error(f"Error general: {str(e)}")
+        logger.exception("Traceback completo:")
+        messages.error(request, f"Error inesperado: {str(e)}")
+        return redirect('entrenos:dashboard_liftin')
 
 
 @login_required
@@ -2968,10 +3159,7 @@ from .forms import RegistroWhoopForm
 
 from django.shortcuts import redirect
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
 @login_required
 def registrar_whoop(request):
     if request.method == 'POST':
@@ -3250,3 +3438,54 @@ def analizar_entreno_whoop(registro):
     # Junta todo
     consejo_detallado = f"{consejo}\n\n{explicacion_rhr}\n{explicacion_hrv}\n{mensaje_cruce}"
     return consejo_detallado, color
+
+
+def gestionar_ejercicios_base(request):
+    # Lógica para AÑADIR un nuevo ejercicio
+    # Usamos un nombre único para el botón de submit para diferenciar acciones
+    if request.method == 'POST' and 'add_exercise' in request.POST:
+        form = EjercicioForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '¡Ejercicio añadido a la base de datos correctamente!')
+            return redirect('gestionar_ejercicios_base')  # Redirigimos a la misma página
+        else:
+            # Si el formulario no es válido, los errores se mostrarán en el template
+            messages.error(request, 'Hubo un error. Por favor, revisa los campos del formulario.')
+
+    # Lógica para ELIMINAR los ejercicios seleccionados
+    if request.method == 'POST' and 'delete_selected' in request.POST:
+        ejercicio_ids_a_eliminar = request.POST.getlist('ejercicio_ids')
+        if not ejercicio_ids_a_eliminar:
+            messages.warning(request, 'No has seleccionado ningún ejercicio para eliminar.')
+        else:
+            # Eliminamos los ejercicios de la BD que coincidan con los IDs seleccionados
+            EjercicioBase.objects.filter(id__in=ejercicio_ids_a_eliminar).delete()
+            count = len(ejercicio_ids_a_eliminar)
+            messages.success(request, f'Se han eliminado {count} ejercicio(s) correctamente.')
+        return redirect('gestionar_ejercicios_base')
+
+    # Lógica para MOSTRAR la lista (método GET o después de una acción)
+
+    # Búsqueda
+    query = request.GET.get('buscar', '')
+    ejercicios_list = EjercicioBase.objects.all().order_by('grupo_muscular', 'nombre')
+    if query:
+        ejercicios_list = ejercicios_list.filter(nombre__icontains=query)
+
+    # Paginación
+    paginator = Paginator(ejercicios_list, 15)  # 15 ejercicios por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Creamos una instancia vacía del formulario para el panel de "Añadir Ejercicio"
+    form_para_anadir = EjercicioForm()
+
+    context = {
+        'page_obj': page_obj,
+        'form_para_anadir': form_para_anadir,
+        'total_ejercicios': paginator.count,
+        'query': query,
+    }
+    # Asegúrate de que la ruta al template sea correcta
+    return render(request, 'entrenos/gestionar_ejercicios_base.html', context)

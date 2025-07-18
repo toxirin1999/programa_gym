@@ -2,454 +2,234 @@
 {% load filtros %}
 {% load static %}
 
-{% block title %}Detalle Cliente{% endblock %}
+{% block title %}Detalle de {{ cliente.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Estilos opcionales para mantener la consistencia si no están en base.css */
+    .main-wrapper {
+        /* max-w-6xl mx-auto etc. ya vienen de Tailwind */
+    }
+    .card-halo {
+        background-color: #1E1E1E; /* Un gris oscuro, similar al de detalle_rutina */
+        border-radius: 1rem; /* 16px */
+        padding: 1.5rem; /* 24px */
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1 ), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    .table-header-gradient {
+        background: linear-gradient(to right, #31cff4, #160f29);
+    }
+    .table-body-bg {
+        background-color: #121212;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-{% if cliente.user %}
-<tr>
-    <th>Usuario de acceso</th>
-    <td>
-        <code>{{ cliente.user.username }}</code>
-    </td>
-</tr>
-{% endif %}
+<div class="main-wrapper space-y-6 max-w-6xl mx-auto px-4 py-8">
 
-<div class="main-wrapper space-y-6 max-w-6xl mx-auto">
-    <div class="text-center space-y-3 bg-[#1a1a1a] p-6 rounded-2xl shadow-lg">
-        <div>
-            {% if cliente.foto %}
-            <img src="{{ cliente.foto.url }}" alt="{{ cliente.nombre }}"
-                 class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover mx-auto shadow-md">
-            {% else %}
-            <div class="w-32 h-32 rounded-full bg-gray-700 text-white flex items-center justify-center text-4xl mx-auto shadow-md border border-cyan-400">
-                <i class="bi bi-person-fill"></i>
+    <!-- TARJETA DE PERFIL PRINCIPAL -->
+    <div class="card-halo flex flex-col md:flex-row items-center gap-6">
+        <!-- Foto o Avatar -->
+        {% if cliente.foto %}
+        <img src="{{ cliente.foto.url }}" alt="{{ cliente.nombre }}" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover shadow-md">
+        {% else %}
+        <div class="w-32 h-32 rounded-full bg-gray-700 text-white flex items-center justify-center text-4xl shadow-md border-2 border-gray-600">
+            <i class="fas fa-user"></i>
+        </div>
+        {% endif %}
+
+        <!-- Información y Acciones -->
+        <div class="flex-grow text-center md:text-left">
+            <h1 class="title text-3xl font-bold text-white">{{ cliente.nombre }}</h1>
+            <p class="text-cyan-400">{{ cliente.email }}</p>
+
+            {% if cliente.perfil_gamificacion %}
+            <div class="mt-2 inline-block">
+                <span class="bg-blue-900/70 text-blue-300 px-3 py-1 rounded-full text-xs font-semibold">
+                    Nivel {{ cliente.perfil_gamificacion.nivel_actual.numero }} — {{ cliente.perfil_gamificacion.puntos_totales }} XP
+                </span>
             </div>
             {% endif %}
         </div>
-        <h2 class="text-xl font-bold text-white">{{ cliente.nombre }}</h2>
-        <p class="text-sm text-gray-400">{{ cliente.email }}</p>
 
-        {% if ultima_revision and ultima_revision.check_alerts %}
-        <div>
-        <span class="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs shadow" title="{{ ultima_revision.check_alerts }}">
-            ⚠ Riesgo
-        </span>
-        </div>
-        {% endif %}
-
-        {% if cliente.perfil_gamificacion %}
-        <div class="bg-[#2a2a2a] text-cyan-300 text-sm rounded-xl px-4 py-2 inline-block shadow-inner">
-            Nivel {{ cliente.perfil_gamificacion.nivel_actual.numero }} — {{ cliente.perfil_gamificacion.puntos_totales }} XP
-        </div>
-        {% endif %}
-
-        <div class="pt-2">
-            <a href="{% url 'editar_cliente' cliente.id %}" class="btn-verde text-xs"><i class="bi bi-pencil-square"></i> Editar</a>
+        <!-- Botón de Editar -->
+        <div class="flex-shrink-0">
+            <a href="{% url 'editar_cliente' cliente.id %}" class="bg-gradient-to-r from-yellow-400 to-orange-500 hover:scale-105 transition text-black font-semibold px-4 py-2 rounded-xl shadow-md flex items-center gap-2">
+                <i class="fas fa-pencil-alt"></i> Editar Perfil
+            </a>
         </div>
     </div>
 
+    <!-- GRID DE TARJETAS DE INFORMACIÓN -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-    {% with alertas=ultima_revision.check_alerts %}
-    {% if alertas %}
-    <div class="af-card" style="border-left: 4px solid var(--af-accent-yellow);">
-        <strong>Alertas detectadas:</strong>
-        <ul class="mb-0">
-            {% for alerta in alertas %}
-            <li>{{ alerta }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-    {% endwith %}
-
-    {% if cliente.proximo_registro_peso %}
-    {% if cliente.proximo_registro_peso <= today %}
-    <div class="af-card" style="border-left: 4px solid var(--af-accent-yellow);">
-        <i class="bi bi-clock me-2" style="color: var(--af-accent-yellow);"></i> ¡Este cliente debería registrar su peso
-        hoy o lo tiene atrasado!
-    </div>
-    {% else %}
-    <div class="af-card" style="border-left: 4px solid var(--af-ring-blue);">
-        <i class="bi bi-calendar-event me-2" style="color: var(--af-ring-blue);"></i> Próximo registro de peso
-        programado para: {{ cliente.proximo_registro_peso }}
-    </div>
-    {% endif %}
-    {% endif %}
-
-    <div class="timeline-section space-y-4 mt-6">
-        <h3 class="text-cyan-300 text-lg font-semibold">📋 Datos personales</h3>
-        <div class="bg-[#121212] rounded-2xl shadow-md overflow-hidden">
-            <table class="w-full text-sm text-white divide-y divide-gray-700">
-                <tbody>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">ID</th>
-                    <td class="px-4 py-2">{{ cliente.id }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Nombre</th>
-                    <td class="px-4 py-2">{{ cliente.nombre }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Email</th>
-                    <td class="px-4 py-2">{{ cliente.email }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Teléfono</th>
-                    <td class="px-4 py-2">{{ cliente.telefono }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Fecha nacimiento</th>
-                    <td class="px-4 py-2">{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Dirección</th>
-                    <td class="px-4 py-2">{{ cliente.direccion }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Género</th>
-                    <td class="px-4 py-2">{{ cliente.get_genero_display }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Membresía</th>
-                    <td class="px-4 py-2">
+        <!-- Columna Izquierda -->
+        <div class="space-y-6">
+            <!-- DATOS PERSONALES -->
+            <div class="card-halo">
+                <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-id-card mr-2 text-cyan-400"></i>Datos Personales</h3>
+                <div class="text-sm space-y-2">
+                    <div class="flex justify-between"><span class="text-gray-400">Teléfono:</span> <span>{{ cliente.telefono }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Fecha Nacimiento:</span> <span>{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-400">Género:</span> <span>{{ cliente.get_genero_display }}</span></div>
+                    <div class="flex justify-between items-center"><span class="text-gray-400">Membresía:</span>
                         {% if cliente.membresia_activa %}
                         <span class="bg-green-600 text-white px-3 py-1 rounded-full text-xs">Activa</span>
                         {% else %}
                         <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs">Inactiva</span>
                         {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Vencimiento</th>
-                    <td class="px-4 py-2">{{ cliente.fecha_vencimiento_membresia|date:"d/m/Y" }}</td>
-                </tr>
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Programa</th>
-                    <td class="px-4 py-2 space-y-2">
-                        <div class="flex items-center gap-3">
-                            {% if cliente.programa.icono %}
-                            <img src="{% static 'img/programas/' %}{{ cliente.programa.icono }}" alt="{{ cliente.programa.nombre }}"
-                                 class="w-10 h-10 rounded-full border border-cyan-500">
-                            {% endif %}
-                            <span class="text-white">{{ cliente.programa.nombre }}</span>
-                        </div>
-                        <div class="flex flex-wrap gap-2 pt-2">
-                            <a href="{% url 'editar_cliente' cliente.id %}" class="btn-verde text-xs">Cambiar programa</a>
-                            <a href="{% url 'historial_cliente' cliente.id %}" class="btn-azul text-xs">📋 Ver historial</a>
-                        </div>
-                    </td>
-                </tr>
-                {% with cliente.dietas_asignadas.last as ultima_dieta %}
-                {% if ultima_dieta %}
-                <tr>
-                    <th class="px-4 py-2 text-left text-gray-400">Dieta</th>
-                    <td class="px-4 py-2 space-y-1">
-                        <div>{{ ultima_dieta.dieta.nombre }}</div>
-                        <div class="flex flex-wrap gap-2">
-                            <a href="{% url 'ver_dieta' ultima_dieta.dieta.id %}" class="btn-azul text-xs">Ver dieta</a>
-                            <a href="{% url 'asignar_dieta_directo' cliente.id %}" class="btn-verde text-xs">Asignar nueva</a>
-                        </div>
-                        <small class="text-gray-500 block">Desde {{ ultima_dieta.fecha_inicio }}</small>
-                    </td>
-                </tr>
-                {% endif %}
-                {% endwith %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    </div>
+                    <div class="flex justify-between"><span class="text-gray-400">Vencimiento:</span> <span>{{ cliente.fecha_vencimiento_membresia|date:"d/m/Y" }}</span></div>
+                </div>
+            </div>
 
-
-    <div class="timeline-section space-y-4 mt-6">
-        <h3 class="text-green-400 text-lg font-semibold">🎯 Objetivos definidos</h3>
-
-        {% if objetivos %}
-        <div class="bg-[#121212] rounded-2xl shadow-md overflow-x-auto">
-            <table class="w-full text-sm text-white divide-y divide-gray-700">
-                <thead class="bg-[#1e1e1e] text-cyan-300">
-                <tr>
-                    <th class="px-4 py-2 text-left">Medida</th>
-                    <th class="px-4 py-2 text-left">Valor objetivo</th>
-                    <th class="px-4 py-2 text-left">Fecha</th>
-                    <th class="px-4 py-2 text-left">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for obj in objetivos %}
-                <tr class="hover:bg-[#1f1f1f] transition">
-                    <td class="px-4 py-2">{{ obj.get_medida_display }}</td>
-                    <td class="px-4 py-2 text-green-400 font-semibold">{{ obj.valor }}</td>
-                    <td class="px-4 py-2">{{ obj.fecha }}</td>
-                    <td class="px-4 py-2">
+            <!-- OBJETIVOS -->
+            <div class="card-halo">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-white"><i class="fas fa-bullseye mr-2 text-cyan-400"></i>Objetivos</h3>
+                    <a href="{% url 'definir_objetivo' cliente.id %}" class="bg-gradient-to-r from-green-400 to-lime-500 text-black text-xs font-semibold px-3 py-1 rounded-lg shadow-md hover:scale-105 transition">
+                        <i class="fas fa-plus"></i> Nuevo
+                    </a>
+                </div>
+                {% if objetivos %}
+                <ul class="space-y-2 text-sm">
+                    {% for obj in objetivos %}
+                    <li class="flex justify-between items-center p-2 rounded-lg bg-[#121212]">
+                        <span>{{ obj.get_medida_display }}: <span class="font-bold text-green-400">{{ obj.valor }}</span></span>
                         <div class="flex gap-2">
-                            <a href="{% url 'editar_objetivo' obj.id %}" class="btn-fucsia text-xs">✏️</a>
-                            <a href="{% url 'eliminar_objetivo' obj.id %}" class="btn-rojo text-xs"
-                               onclick="return confirm('¿Eliminar este objetivo?');">🗑️</a>
+                            <a href="{% url 'editar_objetivo' obj.id %}" class="text-yellow-400 hover:text-yellow-300"><i class="fas fa-pencil-alt"></i></a>
+                            <a href="{% url 'eliminar_objetivo' obj.id %}" class="text-red-500 hover:text-red-400" onclick="return confirm('¿Eliminar este objetivo?');"><i class="fas fa-trash"></i></a>
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-gray-400 italic">No hay objetivos registrados.</p>
-        {% endif %}
-
-        <div class="pt-2 text-right">
-            <a href="{% url 'definir_objetivo' cliente.id %}" class="btn-verde text-xs">
-                ➕ Definir nuevo objetivo
-            </a>
-        </div>
-    </div>
-
-    <h4 class="timeline-section space-y-4 mt-6" style="color: var(--af-ring-blue);">Comparativa de Medidas Corporales</h4>
-    {% if ultima_revision %}
-    <div class="af-table-container">
-        <table class="w-full table-auto text-sm text-left text-white shadow-lg rounded-xl overflow-hidden">
-            <thead class="bg-gradient-to-r from-[#31cff4] to-[#160f29] text-black uppercase text-xs tracking-wider">
-            <tr>
-                <th class="px-4 py-3">Medida</th>
-                <th class="px-4 py-3">Inicial</th>
-                <th class="px-4 py-3">Última Revisión ({{ ultima_revision.fecha }})</th>
-            </tr>
-            </thead>
-            <tbody class="bg-[#121212] divide-y divide-gray-700">
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Peso (kg)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.peso_corporal }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.peso_corporal revision=ultima_revision.peso_corporal %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Grasa corporal (%)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.grasa_corporal }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.grasa_corporal revision=ultima_revision.grasa_corporal %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Cintura (cm)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.cintura }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.cintura revision=ultima_revision.cintura %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Pecho (cm)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.pecho }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.pecho revision=ultima_revision.pecho %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Bíceps (cm)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.biceps }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.biceps revision=ultima_revision.biceps %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            <tr class="hover:bg-[#1f1f1f] transition">
-                <td class="px-4 py-3">Muslos (cm)</td>
-                <td class="px-4 py-3 font-bold text-green-400">{{ cliente.muslos }}</td>
-                <td class="px-4 py-3 font-bold text-pink-400">{% with inicial=cliente.muslos revision=ultima_revision.muslos %}{% include "clientes/partials/comparador.html" %}{% endwith %}</td>
-            </tr>
-            </tbody>
-        </table>
-
-    </div>
-    <div class="flex flex-col items-end space-y-2 mt-6 mb-3">
-        <div class="flex gap-3">
-            <a href="{% url 'agregar_revision' cliente.id %}" class="btn-verde text-xs shadow hover:scale-105 transition">
-                <i class="bi bi-plus-circle"></i> Añadir revisión
-            </a>
-            <a href="{% url 'lista_revisiones' cliente.id %}" class="btn-azul text-xs shadow hover:scale-105 transition">
-                📋 Ver historial completo
-            </a>
-            <button class="btn-azul text-xs shadow hover:scale-105 transition" data-bs-toggle="modal" data-bs-target="#modalRecordatorioPeso">
-                <i class="bi bi-calendar-event"></i> Editar recordatorio de peso
-            </button>
-        </div>
-
-        {% if cliente.proximo_registro_peso %}
-        <div class="text-cyan-300 text-sm">
-            🔔 Próximo recordatorio: <strong>{{ cliente.proximo_registro_peso|date:"d/m/Y" }}</strong>
-        </div>
-        {% endif %}
-    </div>
-
-
-    <div class="mt-6 space-y-4">
-        <h3 class="text-center text-xl text-cyan-300 font-semibold tracking-wide">📈 Tendencias de Peso</h3>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div class="rounded-2xl bg-[#1c2b1c] p-4 border-l-4 border-green-400 shadow">
-                <div class="text-green-400 text-2xl font-bold">{{ peso_7d }}</div>
-                <p class="text-gray-300 text-sm mt-1">Ganado<br>en 7 días</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-400 italic text-sm">No hay objetivos registrados.</p>
+                {% endif %}
             </div>
-            <div class="rounded-2xl bg-[#2b1c1c] p-4 border-l-4 border-red-400 shadow">
-                <div class="text-red-400 text-2xl font-bold">{{ peso_30d }}</div>
-                <p class="text-gray-300 text-sm mt-1">Perdido<br>en 30 días</p>
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="space-y-6">
+            <!-- PLANIFICACIÓN ACTIVA -->
+            <div class="card-halo">
+                <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-clipboard-list mr-2 text-cyan-400"></i>Planificación Activa</h3>
+                <div class="space-y-4">
+                    <!-- Formulario para Programa -->
+                    <form action="{% url 'asignar_programa' cliente.id %}" method="POST">
+                        {% csrf_token %}
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Programa Actual</label>
+                        <div class="flex items-center gap-2">
+                            <select name="programa_id" class="w-full bg-[#121212] border border-gray-600 rounded-md p-2 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="">-- Ningún Programa --</option>
+                                {% for programa in todos_los_programas %}
+                                <option value="{{ programa.id }}" {% if cliente.programa.id == programa.id %}selected{% endif %}>{{ programa.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-md transition">Guardar</button>
+                        </div>
+                    </form>
+                    <!-- Formulario para Rutina -->
+                    <form action="{% url 'asignar_rutina' cliente.id %}" method="POST">
+                        {% csrf_token %}
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Rutina Activa</label>
+                        <div class="flex items-center gap-2">
+                            <select name="rutina_id" class="w-full bg-[#121212] border border-gray-600 rounded-md p-2 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="">-- Ninguna Rutina --</option>
+                                {% for rutina in todas_las_rutinas %}
+                                <option value="{{ rutina.id }}" {% if cliente.rutina_activa.id == rutina.id %}selected{% endif %}>{{ rutina.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-md transition">Guardar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="rounded-2xl bg-[#2b1c1c] p-4 border-l-4 border-red-400 shadow">
-                <div class="text-red-400 text-2xl font-bold">{{ peso_90d }}</div>
-                <p class="text-gray-300 text-sm mt-1">Perdido<br>en 90 días</p>
-            </div>
-            <div class="rounded-2xl bg-[#1c2b1c] p-4 border-l-4 border-green-400 shadow">
-                <div class="text-green-400 text-2xl font-bold">{{ peso_total }}</div>
-                <p class="text-gray-300 text-sm mt-1">Ganado<br>Total</p>
+
+            <!-- GRÁFICO DE EVOLUCIÓN -->
+            <div class="card-halo">
+                <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-chart-line mr-2 text-cyan-400"></i>Evolución de Métricas</h3>
+                <div class="h-80">
+                    <canvas id="progresoGrafico"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
-    {% else %}
-    <div class="text-end mb-3">
-        <a href="{% url 'agregar_revision' cliente.id %}" class="af-action-btn af-action-btn-success">
-            <i class="bi bi-plus-circle"></i> Añadir revisión
-        </a>
-        <a href="{% url 'lista_revisiones' cliente.id %}" class="af-action-btn af-action-btn-primary">
-            📋 Ver historial completo
-        </a>
-    </div>
-    <p style="color: var(--af-text-secondary);">Sin revisiones registradas.</p>
-    {% endif %}
-
-    <div class="mt-10 space-y-4">
-        <h3 class="text-yellow-300 text-lg font-semibold tracking-wide">📊 Progreso en Gráficas</h3>
-
-        <!-- Selector de medidas -->
-        <div>
-            <label for="medidasSelect" class="block text-sm text-white mb-1">Selecciona medidas a mostrar:</label>
-            <select id="medidasSelect" class="bg-[#1f1f1f] border border-cyan-500 rounded-xl text-sm p-2 w-full text-white" multiple size="6">
-                <option value="pesos" selected>Peso (kg)</option>
-                <option value="grasas" selected>Grasa corporal (%)</option>
-                <option value="cinturas">Cintura (cm)</option>
-                <option value="pechos">Pecho (cm)</option>
-                <option value="biceps">Bíceps (cm)</option>
-                <option value="muslos">Muslos (cm)</option>
-            </select>
-        </div>
-
-        <!-- Filtro de fechas -->
-        <div class="flex flex-wrap gap-4 items-center text-white text-sm">
-            <label for="fechaInicio">📆 Desde:</label>
-            <input type="date" id="fechaInicio" class="bg-[#1f1f1f] border border-gray-700 rounded-lg p-1 text-white">
-            <label for="fechaFin">📆 Hasta:</label>
-            <input type="date" id="fechaFin" class="bg-[#1f1f1f] border border-gray-700 rounded-lg p-1 text-white">
-            <button id="filtrarFechas" class="btn-azul text-xs shadow hover:scale-105 transition">Aplicar</button>
-        </div>
-
-        <!-- Gráfica -->
-        <div class="bg-[#121212] p-4 rounded-2xl shadow-md">
-            <canvas id="graficaProgreso" height="160"></canvas>
+    <!-- HISTORIAL COMPLETO DE ENTRENAMIENTOS -->
+    <div class="card-halo">
+        <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-history mr-2 text-cyan-400"></i>Historial Completo</h3>
+        <div class="space-y-2">
+            {% for semana, entrenos_semana in historial_agrupado.items %}
+            <div class="semana-acordeon rounded-lg bg-[#121212] border border-gray-700">
+                <div class="semana-header p-3 cursor-pointer flex justify-between items-center">
+                    <h4 class="font-bold">Semana del {{ semana|date:"d \d\e F, Y" }}</h4>
+                    <span class="text-xs font-mono bg-blue-900/70 text-blue-300 px-2 py-1 rounded">{{ entrenos_semana|length }} entreno(s)</span>
+                </div>
+                <div class="semana-contenido p-4 border-t border-gray-700 space-y-2" style="display: none;">
+                    {% for entreno in entrenos_semana %}
+                    <div class="p-2 rounded-md bg-gray-800/50">
+                        <p class="font-semibold">{{ entreno.rutina.nombre }} - <span class="font-normal text-gray-400">{{ entreno.fecha|date:"l, d M" }}</span></p>
+                        <ul class="list-disc list-inside text-sm space-y-1 text-gray-300 pl-4 mt-1">
+                            {% for detalle in entreno.detalles_ejercicio.all %}
+                            <li><span class="font-semibold text-white">{{ detalle.ejercicio.nombre }}:</span> {{ detalle.series }}x{{ detalle.repeticiones }} @ {{ detalle.peso_kg }} kg</li>
+                            {% empty %}
+                            <li class="list-none italic">No hay detalles registrados.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-400 italic text-sm">No hay historial de entrenamientos.</p>
+            {% endfor %}
         </div>
     </div>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar tema oscuro para Chart.js
-            Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
-            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-
-            const clienteId = "{{ cliente.id }}";
-
-            const colores = {
-                pesos: 'rgb(0, 122, 255)', // azul
-                grasas: 'rgb(255, 59, 48)', // rojo
-                cinturas: 'rgb(52, 199, 89)', // verde
-                pechos: 'rgb(255, 149, 0)', // naranja
-                biceps: 'rgb(175, 82, 222)', // morado
-                muslos: 'rgb(255, 204, 0)' // amarillo
-            };
-
-            const etiquetas = {
-                pesos: 'Peso (kg)',
-                grasas: 'Grasa corporal (%)',
-                cinturas: 'Cintura (cm)',
-                pechos: 'Pecho (cm)',
-                biceps: 'Bíceps (cm)',
-                muslos: 'Muslos (cm)'
-            };
-
-            let datosGlobales = {};
-            let chart = null;
-
-            function construirURL(clienteId) {
-                const inicio = document.getElementById('fechaInicio').value;
-                const fin = document.getElementById('fechaFin').value;
-                let url = `/clientes/datos-graficas/${clienteId}/`;
-                if (inicio && fin) {
-                    url += `?start=${inicio}&end=${fin}`;
-                }
-                return url;
-            }
-
-            function cargarGrafica() {
-                fetch(construirURL(clienteId))
-                    .then(response => response.json())
-                    .then(data => {
-                        datosGlobales = data;
-                        const ctx = document.getElementById('graficaProgreso').getContext('2d');
-
-                        const seleccionadas = Array.from(document.getElementById('medidasSelect').selectedOptions).map(opt => opt.value);
-                        const datasets = seleccionadas.map(key => ({
-                            label: etiquetas[key],
-                            data: data[key],
-                            borderColor: colores[key],
-                            backgroundColor: colores[key].replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                            tension: 0.2
-                        }));
-
-                        if (chart) {
-                            chart.destroy();
-                        }
-
-                        chart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: data.fechas,
-                                datasets: datasets
-                            },
-                            options: {
-                                responsive: true,
-                                plugins: {
-                                    legend: {
-                                        position: 'top',
-                                        labels: {
-                                            usePointStyle: true,
-                                            padding: 15
-                                        }
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(28, 28, 30, 0.9)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                                        borderWidth: 1,
-                                        padding: 10,
-                                        displayColors: true,
-                                        usePointStyle: true
-                                    }
-                                },
-                                scales: {
-                                    x: {
-                                        grid: {
-                                            color: 'rgba(255, 255, 255, 0.1)'
-                                        }
-                                    },
-                                    y: {
-                                        grid: {
-                                            color: 'rgba(255, 255, 255, 0.1)'
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    });
-            }
-
-            // Cargar la gráfica inicial
-            cargarGrafica();
-
-            // Actualizar la gráfica cuando cambie la selección de medidas
-            document.getElementById('medidasSelect').addEventListener('change', cargarGrafica);
-
-            // Actualizar la gráfica cuando se aplique el filtro de fechas
-            document.getElementById('filtrarFechas').addEventListener('click', cargarGrafica);
-        });
-    </script>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function( ) {
+        // Lógica del gráfico (sin cambios, ya es compatible)
+        const ctx = document.getElementById('progresoGrafico');
+        if (ctx) {
+            const labels = {{ labels_grafico|safe }};
+            const pesosData = {{ pesos_grafico|safe }};
+            const grasasData = {{ grasas_grafico|safe }};
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Peso (kg)', data: pesosData, borderColor: '#31cff4', tension: 0.3, yAxisID: 'y' },
+                        { label: 'Grasa (%)', data: grasasData, borderColor: '#34D399', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#ffffff' } } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Peso (kg)', color: '#31cff4' }, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Grasa (%)', color: '#34D399' }, ticks: { color: '#9ca3af' }, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        // Lógica del acordeón (sin cambios)
+        document.querySelectorAll('.semana-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const contenido = header.nextElementSibling;
+                contenido.style.display = contenido.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+    });
+</script>
 {% endblock %}

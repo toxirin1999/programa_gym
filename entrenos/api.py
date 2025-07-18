@@ -13,7 +13,7 @@ from datetime import datetime
 
 from .models import EntrenoRealizado, DatosLiftinDetallados, DetalleEjercicioRealizado
 from clientes.models import Cliente
-from rutinas.models import Rutina, Ejercicio
+from rutinas.models import Rutina, EjercicioBase
 
 
 class LiftinAPIView(View):

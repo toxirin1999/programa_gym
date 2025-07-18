@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Avg, Max
+from analytics.views import CalculadoraEjerciciosTabla
 
 from .models import Cliente
 from .forms import BitacoraDiariaForm
@@ -28,7 +29,8 @@ from datetime import date
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .models import Programa
+from rutinas.models import Programa  # ✅ Correcto
+
 from collections import defaultdict
 import json
 from joi.utils import frase_motivadora_entrenador
@@ -142,6 +144,8 @@ from datetime import timedelta, date
 from clientes.models import BitacoraDiaria
 from logros.utils import obtener_datos_logros  # o como se llame tu función
 from entrenos.views import analizar_entreno_whoop
+from .models import Cliente, RevisionProgreso  # Tu importación existente
+from rutinas.models import Programa, Rutina
 
 
 @login_required
@@ -619,6 +623,9 @@ from django.shortcuts import render, get_object_or_404
 from clientes.models import Cliente
 from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento
 from joi.utils import obtener_estado_joi, frase_cambio_forma_joi, recuperar_frase_de_recaida
+from analytics.analisis_intensidad import AnalisisIntensidadAvanzado
+from analytics.models import RecomendacionEntrenamiento
+from analytics.analisis_progresion import AnalisisProgresionAvanzado
 
 
 @login_required
@@ -811,6 +818,77 @@ def panel_cliente(request):
         except Exception:
             return "–:–"
 
+    from analytics.utils import parse_reps
+
+    def calcular_top_1rm(cliente):
+        calculadora = CalculadoraEjerciciosTabla(cliente)
+        ejercicios = calculadora.obtener_ejercicios_tabla()
+
+        ejercicios_por_nombre = {}
+        for e in ejercicios:
+            nombre = e['nombre'].strip().lower()
+            if nombre not in ejercicios_por_nombre:
+                ejercicios_por_nombre[nombre] = []
+            ejercicios_por_nombre[nombre].append(e)
+
+        resumen = []
+        for nombre, lista in ejercicios_por_nombre.items():
+            nombre_mostrado = lista[0]['nombre'].strip().title()
+            entrenos_validos = []
+            for e in lista:
+                try:
+                    peso = float(e['peso']) if e['peso'] != 'PC' else 0
+                    series, reps = parse_reps(e.get('repeticiones'))
+                    if peso > 0 and reps > 0:
+                        rm = round(peso * (1 + reps / 30), 2)
+                        entrenos_validos.append({'fecha': e['fecha'], '1rm': rm})
+                except:
+                    continue
+
+            entrenos_validos = sorted(entrenos_validos, key=lambda x: x['fecha'])
+
+            if len(entrenos_validos) >= 2:
+                rm_actual = entrenos_validos[-1]['1rm']
+                rm_anterior = entrenos_validos[-2]['1rm']
+                progreso = round(((rm_actual - rm_anterior) / rm_anterior) * 100, 2)
+                resumen.append({
+                    'nombre': nombre_mostrado,
+                    'rm': rm_actual,
+                    'progreso': progreso
+                })
+
+        top = sorted(resumen, key=lambda x: x['progreso'], reverse=True)[:5]
+        return top
+
+    analizador_ia = AnalisisIntensidadAvanzado(cliente)
+
+    # --- BLOQUE MEJORADO Y A PRUEBA DE ERRORES ---
+    if sugerencia_carga_joi:
+        # Forzamos la conversión a una cadena de texto limpia y eliminamos espacios extra.
+        texto_limpio = str(sugerencia_carga_joi).strip()
+
+        recomendaciones_principales = [{
+            'titulo': 'Sugerencia de Carga Semanal',
+            'descripcion': texto_limpio,
+            'prioridad': 'media'
+        }]
+    else:
+        recomendaciones_principales = []
+    # Dentro de la función panel_cliente, después de obtener el cliente
+    recomendaciones_aplicadas = RecomendacionEntrenamiento.objects.filter(
+        cliente=cliente,
+        aplicada=True
+    ).order_by('-fecha_aplicacion')[:3]  # Obtenemos las 3 más recientes
+    analizador_progresion = AnalisisProgresionAvanzado(cliente)
+    ratios_fuerza = analizador_progresion.calcular_ratios_fuerza()
+    analizador_intensidad = AnalisisIntensidadAvanzado(cliente)
+    fatiga_acumulada = analizador_intensidad.calcular_fatiga_acumulada(periodo_dias=14)
+    analisis_mesociclos = analizador_progresion.analisis_mesociclos()
+    mesociclo_actual = None
+    if analisis_mesociclos and analisis_mesociclos.get('mesociclos'):
+        # El mesociclo actual es el último de la lista
+        mesociclo_actual = analisis_mesociclos['mesociclos'][-1]
+
     informe_joi = {
         'promedios': {k: round(v or 0, 1) for k, v in promedios.items()},
         'reflexion_destacada': reflexion_destacada or "—",
@@ -825,6 +903,7 @@ def panel_cliente(request):
         'emociones_lista': emociones_lista,
         'recuerdo': recuerdo,
         'logros': logros,
+        'top_ejercicios': calcular_top_1rm(cliente),
         'conclusion_joi': conclusion_joi,
         'datos_logros': datos_logros,
         'frase_bitacora': request._messages._queued_messages[0].message if request._messages._queued_messages else None,
@@ -859,6 +938,11 @@ def panel_cliente(request):
         'datos_biceps': datos_biceps,
         'cambios_biceps': cambios_biceps,
         'orden_biceps': ['7d', '30d', '90d', 'inicio'],
+        'recomendaciones_principales': recomendaciones_principales,
+        'recomendaciones_aplicadas': recomendaciones_aplicadas,
+        'ratios_fuerza': ratios_fuerza,
+        'mesociclo_actual': mesociclo_actual,
+        'fatiga_acumulada': fatiga_acumulada,
     })
 
 
@@ -881,13 +965,14 @@ def analizar_tendencia_peso(cliente):
 
     for clave, fecha_ref in rangos.items():
         peso_pasado = next((r.peso_kg for r in reversed(registros) if r.fecha <= fecha_ref), None)
-        if peso_pasado:
+        if peso_pasado is not None and peso_actual is not None:
+            # ✅ CORRECCIÓN: Aseguramos que ambos valores sean float.
             diff = float(peso_actual) - float(peso_pasado)
             resumen[clave] = round(diff, 2)
         else:
             resumen[clave] = 0.0
 
-    return float(peso_actual), datos, resumen
+    return float(peso_actual) if peso_actual is not None else None, datos, resumen
 
 
 def analizar_tendencia_biceps(cliente):
@@ -914,13 +999,14 @@ def analizar_tendencia_biceps(cliente):
 
     for clave, fecha_ref in rangos.items():
         valor_pasado = next((r.circunferencia_biceps for r in reversed(registros) if r.fecha <= fecha_ref), None)
-        if valor_pasado is not None:
+        if valor_pasado is not None and valor_actual is not None:
+            # ✅ CORRECCIÓN: Aseguramos que ambos valores sean float antes de operar.
             diff = float(valor_actual) - float(valor_pasado)
             resumen[clave] = round(diff, 2)
         else:
-            resumen[clave] = 0.0  # ✅ valor por defecto
+            resumen[clave] = 0.0
 
-    return float(valor_actual), datos, resumen
+    return float(valor_actual) if valor_actual is not None else None, datos, resumen
 
 
 @login_required
@@ -1126,8 +1212,8 @@ def generar_retos_semanales(cliente):
 
 def historial_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    historial = EntrenoRealizado.objects.filter(cliente=cliente).prefetch_related('detalles__ejercicio').order_by(
-        '-fecha')
+    historial = EntrenoRealizado.objects.filter(cliente=cliente).prefetch_related(
+        'detalles_ejercicio__ejercicio').order_by('-fecha')
 
     # Agrupar entrenamientos por semana
     historial_semanal = defaultdict(list)
@@ -1557,54 +1643,123 @@ def dashboard(request):
 
 
 # Vista detalle cliente
+# En tu archivo: clientes/views.py
+
+# Asegúrate de tener estas importaciones
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+
+
+@login_required
+def api_lista_clientes(request):
+    """
+    API que devuelve la lista de clientes en formato JSON o como un fragmento HTML.
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Acceso no autorizado'}, status=403)
+
+    search_query = request.GET.get('q', '')
+    filtro_estado = request.GET.get('filtro', 'todos')
+
+    clientes_qs = Cliente.objects.all()
+    if search_query:
+        clientes_qs = clientes_qs.filter(nombre__icontains=search_query)
+
+    lista_clientes_enriquecida = []
+    hoy = timezone.now().date()
+
+    for cliente in clientes_qs:
+        ultimo_entreno = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha').first()
+        dias_inactivo = (hoy - ultimo_entreno.fecha).days if ultimo_entreno else 999
+
+        estado_fatiga = "N/A"
+        nivel_fatiga_raw = "bajo"
+        try:
+            analizador = AnalisisIntensidadAvanzado(cliente)
+            fatiga = analizador.calcular_fatiga_acumulada()
+            if fatiga:
+                estado_fatiga = fatiga.get('nivel', 'N/A').capitalize()
+                nivel_fatiga_raw = fatiga.get('nivel', 'bajo')
+        except Exception:
+            pass
+
+        if (filtro_estado == 'inactivos' and dias_inactivo < 10) or \
+                (filtro_estado == 'fatiga_alta' and nivel_fatiga_raw not in ['alta', 'critica']):
+            continue
+
+        lista_clientes_enriquecida.append({
+            'cliente': cliente,
+            'ultimo_entreno_fecha': ultimo_entreno.fecha if ultimo_entreno else None,
+            'estado_fatiga': estado_fatiga,
+            'alertas_count': 0
+        })
+
+    # Renderizamos solo la parte de la tabla como un string HTML
+    html = render_to_string(
+        'clientes/partials/tabla_clientes_rows.html',
+        {'lista_clientes': lista_clientes_enriquecida}
+    )
+
+    return JsonResponse({'html': html})
+
+
+# En tu archivo: clientes/views.py
+
+# ... (asegúrate de tener todas tus importaciones al principio del archivo)
+from collections import defaultdict
+from decimal import Decimal, ROUND_HALF_UP
+
+
+# ... etc.
 
 def detalle_cliente(request, cliente_id):
+    # --- 1. OBTENCIÓN DE DATOS PRINCIPALES ---
     cliente = get_object_or_404(Cliente, pk=cliente_id)
-    revisiones = cliente.revisiones.order_by('fecha')
+    revisiones = RevisionProgreso.objects.filter(cliente=cliente).order_by('fecha')
     ultima_revision = revisiones.last()
-    historial = EntrenoRealizado.objects.filter(cliente=cliente).prefetch_related('detalles__ejercicio').order_by(
-        '-fecha')
 
+    # Obtenemos todos los entrenamientos de una vez para reutilizarlos
+    historial_completo = EntrenoRealizado.objects.filter(cliente=cliente).prefetch_related(
+        'detalles_ejercicio').order_by('-fecha')
+
+    # --- 2. LÓGICA PARA GRÁFICOS Y MÉTRICAS SEMANALES ---
     historial_semanal = defaultdict(list)
-    # Prepara datos para Chart.js
+    for entreno in historial_completo:
+        lunes_semana = entreno.fecha - timedelta(days=entreno.fecha.weekday())
+        historial_semanal[lunes_semana].append(entreno)
+
     labels = []
     entrenos_por_semana = []
     volumen_por_semana = []
 
-    for semana_inicio, entrenos in historial_semanal.items():
-        label = f"{semana_inicio.strftime('%d %b')}"
-        labels.append(label)
+    # Ahora que historial_semanal tiene datos, iteramos para los gráficos
+    for semana_inicio, entrenos in sorted(historial_semanal.items()):
+        labels.append(semana_inicio.strftime('%d %b'))
         entrenos_por_semana.append(len(entrenos))
 
         volumen = 0
         for entreno in entrenos:
-            for detalle in entreno.detalles.all():
-                volumen += detalle.series * detalle.repeticiones * float(detalle.peso_kg)
+            volumen += sum(
+                float(d.series or 1) * float(d.repeticiones or 1) * float(d.peso_kg or 0)
+                for d in entreno.detalles_ejercicio.all()
+            )
         volumen_por_semana.append(round(volumen, 2))
 
-    # Serializar para JS
     grafico_data = {
         'labels': labels,
         'entrenos': entrenos_por_semana,
         'volumen': volumen_por_semana,
     }
-    from decimal import Decimal, ROUND_HALF_UP
 
-    # total entrenos
-    total_entrenos = historial.count()
+    total_entrenos = historial_completo.count()
     total_semanas = len(historial_semanal)
 
-    # evitar división por 0
     if total_semanas > 0:
-        promedio_semanal = Decimal(total_entrenos / total_semanas).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        promedio_semanal = round(float(total_entrenos) / float(total_semanas), 1)
     else:
-        promedio_semanal = Decimal("0.0")
-    for entreno in historial:
-        lunes = entreno.fecha - timedelta(days=entreno.fecha.weekday())  # inicio de semana
-        historial_semanal[lunes].append(entreno)
+        promedio_semanal = 0.0
 
-    historial_semanal = dict(sorted(historial_semanal.items(), reverse=True))  # ordenar por semana
-
+    # --- 3. LÓGICA PARA TENDENCIAS DE PESO Y MEDIDAS ---
     fechas = [rev.fecha.strftime("%d/%m/%Y") for rev in revisiones]
     pesos = [float(rev.peso_corporal or 0) for rev in revisiones]
     grasas = [float(rev.grasa_corporal or 0) for rev in revisiones]
@@ -1612,41 +1767,116 @@ def detalle_cliente(request, cliente_id):
 
     objetivos = cliente.objetivos.all()
     hoy = date.today()
-    revisiones = RevisionProgreso.objects.filter(cliente=cliente).order_by('fecha')
 
     def delta_peso(dias):
         desde = hoy - timedelta(days=dias)
-        recientes = revisiones.filter(fecha__gte=desde)
-        if recientes.count() >= 2:
-            return round(recientes.last().peso_corporal - recientes.first().peso_corporal, 1)
+        revisiones_periodo = revisiones.filter(fecha__gte=desde)
+        if revisiones_periodo.count() >= 2:
+            # Aseguramos que ambos valores sean float antes de restar
+            return round(
+                float(revisiones_periodo.last().peso_corporal) - float(revisiones_periodo.first().peso_corporal), 1)
         return 0
 
     peso_7d = delta_peso(7)
     peso_30d = delta_peso(30)
     peso_90d = delta_peso(90)
-
     peso_total = 0
     if revisiones.count() >= 2:
-        peso_total = round(revisiones.last().peso_corporal - revisiones.first().peso_corporal, 1)
-    return render(request, 'clientes/detalle.html', {
+        peso_total = round(float(revisiones.last().peso_corporal) - float(revisiones.first().peso_corporal), 1)
+
+    # --- 4. LÓGICA PARA EL DASHBOARD RÁPIDO Y JOI ---
+    historial_reciente = historial_completo[:3]
+    ultimo_entreno = historial_completo.first()
+    inicio_semana_actual = hoy - timedelta(days=hoy.weekday())
+    entrenos_esta_semana = historial_completo.filter(fecha__gte=inicio_semana_actual).count()
+
+    labels_grafico = [rev.fecha.strftime("%d %b") for rev in revisiones]
+    pesos_grafico = [float(rev.peso_corporal) if rev.peso_corporal is not None else None for rev in revisiones]
+    grasas_grafico = [float(rev.grasa_corporal) if rev.grasa_corporal is not None else None for rev in revisiones]
+    cinturas_grafico = [float(rev.cintura) if rev.cintura is not None else None for rev in revisiones]
+
+    alertas_joi = []
+    observaciones_joi = []
+    # ... (tu lógica para llenar alertas_joi y observaciones_joi va aquí) ...
+
+    # --- 5. OBTENER PLANES DISPONIBLES ---
+    todos_los_programas = Programa.objects.all()
+    todas_las_rutinas = Rutina.objects.all()
+
+    # --- 6. CONSTRUIR EL CONTEXTO FINAL ---
+    context = {
         'cliente': cliente,
         'ultima_revision': ultima_revision,
+        'historial_semanal': dict(sorted(historial_semanal.items(), reverse=True)),
+        'total_entrenos': total_entrenos,
+        'promedio_semanal': promedio_semanal,
+        'grafico_data': json.dumps(grafico_data),
         'fechas': json.dumps(fechas),
         'pesos': json.dumps(pesos),
         'grasas': json.dumps(grasas),
         'cinturas': json.dumps(cinturas),
         'objetivos': objetivos,
-        'cliente': cliente,
-        'today': date.today(),
+        'today': hoy,
         'peso_7d': peso_7d,
         'peso_30d': peso_30d,
         'peso_90d': peso_90d,
-        'historial_semanal': historial_semanal,
-        'total_entrenos': total_entrenos,
-        'promedio_semanal': promedio_semanal,
-        'grafico_data': json.dumps(grafico_data),
         'peso_total': peso_total,
-    })
+        'historial_reciente': historial_reciente,
+        'ultimo_entreno': ultimo_entreno,
+        'entrenos_esta_semana': entrenos_esta_semana,
+        'labels_grafico': json.dumps(labels_grafico),
+        'pesos_grafico': json.dumps(pesos_grafico),
+        'grasas_grafico': json.dumps(grasas_grafico),
+        'cinturas_grafico': json.dumps(cinturas_grafico),
+        'alertas_joi': alertas_joi,
+        'observaciones_joi': observaciones_joi,
+        'historial_agrupado': dict(sorted(historial_semanal.items(), reverse=True)),
+        'todos_los_programas': todos_los_programas,
+        'todas_las_rutinas': todas_las_rutinas,
+    }
+
+    return render(request, 'clientes/detalle.html', context)
+
+
+# clientes/views.py
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+
+
+@require_POST  # Solo permite peticiones POST
+def asignar_programa(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    programa_id = request.POST.get('programa_id')
+
+    if programa_id:
+        programa = get_object_or_404(Programa, pk=programa_id)
+        cliente.programa = programa
+        cliente.save()
+        messages.success(request, f"Programa '{programa.nombre}' asignado correctamente.")
+    else:  # Si se selecciona "Ninguno"
+        cliente.programa = None
+        cliente.save()
+        messages.info(request, "Se ha quitado el programa del cliente.")
+
+    return redirect('detalle_cliente', cliente_id=cliente.id)
+
+
+@require_POST
+def asignar_rutina(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    rutina_id = request.POST.get('rutina_id')
+
+    if rutina_id:
+        rutina = get_object_or_404(Rutina, pk=rutina_id)
+        cliente.rutina_activa = rutina  # Asumiendo que el campo se llama 'rutina_activa'
+        cliente.save()
+        messages.success(request, f"Rutina '{rutina.nombre}' asignada como activa.")
+    else:
+        cliente.rutina_activa = None
+        cliente.save()
+        messages.info(request, "Se ha quitado la rutina activa del cliente.")
+
+    return redirect('detalle_cliente', cliente_id=cliente.id)
 
 
 # Vista agregar cliente
@@ -1757,6 +1987,25 @@ from joi.utils import (
     obtener_estado_joi,
     frase_cambio_forma_joi
 )
+# En tu archivo: clientes/views.py
+# En tu archivo: clientes/views.py
+
+# --- Asegúrate de tener estas importaciones al principio de tu archivo ---
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.utils import timezone
+from datetime import timedelta, date, datetime
+from django.db.models import Count, Avg, F, ExpressionWrapper, FloatField, Q
+from django.db.models.functions import Cast  # <-- ¡IMPORTANTE!
+import json
+import logging
+
+from .models import Cliente, RevisionProgreso
+from entrenos.models import EntrenoRealizado, EjercicioRealizado
+from analytics.analisis_intensidad import AnalisisIntensidadAvanzado
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -1764,85 +2013,141 @@ def panel_entrenador(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("Acceso solo para entrenadores.")
 
-    clientes = Cliente.objects.all()
-    total_clientes = clientes.count()
+    # --- 1. OBTENER PARÁMETROS ---
+    search_query = request.GET.get('q', '')
+    filtro_estado = request.GET.get('filtro', 'todos')
+
+    # --- 2. FILTRAR CLIENTES ---
+    clientes_qs = Cliente.objects.all()
+    if search_query:
+        clientes_qs = clientes_qs.filter(nombre__icontains=search_query)
+
+    # --- 3. CÁLCULOS GENERALES ---
+    total_clientes_activos = clientes_qs.count()
     total_revisiones = RevisionProgreso.objects.count()
+    hoy = timezone.now().date()
+    entrenos_hoy_count = EntrenoRealizado.objects.filter(fecha=hoy).count()
+    entrenos_semana_count = EntrenoRealizado.objects.filter(fecha__gte=hoy - timedelta(days=7)).count()
 
-    # Alertas
-    alertas = []
-    for cliente in clientes:
-        ultima = cliente.revisiones.order_by('-fecha').first()
-        if ultima and ultima.check_alerts():
-            alertas.append((cliente, ultima.check_alerts()))
-    total_alertas = len(alertas)
+    # --- 4. LÓGICA ENRIQUECIDA PARA LISTAS Y MÓDULOS ---
+    lista_clientes_enriquecida = []
+    clientes_atencion = []
 
-    # Actividad reciente
-    hoy = now().date()
-    entrenos_semana = RevisionProgreso.objects.filter(fecha__gte=hoy - timedelta(days=7)).count()
+    clientes_con_entrenos = clientes_qs.prefetch_related('entrenorealizado_set')
 
-    # Estado Joi global
-    if total_alertas >= 4:
-        estado_joi = "glitch"
-    elif entrenos_semana == 0:
-        estado_joi = "triste"
-    else:
-        estado_joi = "presente"
+    for cliente in clientes_con_entrenos:
+        entrenos_cliente = cliente.entrenorealizado_set.all()
+        entrenos_cliente_ordenados = sorted(entrenos_cliente, key=lambda e: e.fecha, reverse=True)
 
-    from datetime import datetime
+        ultimo_entreno = entrenos_cliente_ordenados[0] if entrenos_cliente_ordenados else None
+        dias_inactivo = (hoy - ultimo_entreno.fecha).days if ultimo_entreno else 999
 
-    # Hora actual
-    hora_actual = datetime.now().hour
-    if 5 <= hora_actual < 12:
-        joi_momento = "mañana"
-    elif 12 <= hora_actual < 18:
-        joi_momento = "tarde"
-    elif 18 <= hora_actual < 22:
-        joi_momento = "noche"
-    else:
-        joi_momento = "madrugada"
+        hace_30_dias = hoy - timedelta(days=30)
+        entrenos_mes = [e for e in entrenos_cliente_ordenados if e.fecha >= hace_30_dias]
 
-    # Estación según mes
-    mes = datetime.now().month
-    if mes in [12, 1, 2]:
-        joi_estacion = "invierno"
-    elif mes in [3, 4, 5]:
-        joi_estacion = "primavera"
-    elif mes in [6, 7, 8]:
-        joi_estacion = "verano"
-    else:
-        joi_estacion = "otoño"
-    from joi.utils import frase_estacion_momento
-    from joi.utils import frase_emocional_recaida
+        progreso_reciente = "Estable"
+        progreso_color = "text-gray-400"
+        if len(entrenos_mes) >= 2:
+            primer_volumen = entrenos_mes[-1].volumen_total_kg or 0
+            ultimo_volumen = entrenos_mes[0].volumen_total_kg or 0
 
-    if estado_joi in ["glitch", "triste"]:
-        frase_recaida = frase_emocional_recaida(estado_joi)
-    else:
-        frase_recaida = None
+            if float(ultimo_volumen or 0) > float(primer_volumen or 0) * 1.05:
 
-    frase_estacional_joi = frase_estacion_momento(joi_estacion, joi_momento)
-    frase_forma_joi = frase_cambio_forma_joi(estado_joi)
-    frase_extra_joi = "Estoy observando tu impacto..." if estado_joi == "presente" else "Las señales se están acumulando..."
-    frase_recaida = recuperar_frase_de_recaida(request.user) if estado_joi in ["glitch", "triste"] else None
+                progreso_reciente = "Positivo"
+                progreso_color = "text-green-400"
+            elif ultimo_volumen < (primer_volumen or 0) * 0.95:
+                progreso_reciente = "Negativo"
+                progreso_color = "text-red-400"
 
-    return render(request, 'clientes/panel_entrenador.html', {
-        'clientes': clientes,
-        'total_clientes': total_clientes,
-        'total_revisiones': total_revisiones,
-        'entrenos_hoy': RevisionProgreso.objects.filter(fecha=hoy).count(),
-        'entrenos_semana': entrenos_semana,
-        'alertas': alertas,
+        consistencia = 0
+        if entrenos_mes:
+            consistencia = min(int((float(len(entrenos_mes)) / 4.0) * 100), 100)
 
-        # Joi flotante
-        'estado_joi': estado_joi,
-        'frase_forma_joi': frase_forma_joi,
-        'frase_extra_joi': frase_extra_joi,
-        'frase_recaida': frase_recaida,
-        'joi_momento': joi_momento,
-        'joi_estacion': joi_estacion,
-        'frase_estacional_joi': frase_estacional_joi,
-        'frase_recaida': frase_recaida,
+        estado_fatiga = "N/A"
+        nivel_fatiga_raw = "bajo"
+        try:
+            analizador = AnalisisIntensidadAvanzado(cliente)
+            fatiga = analizador.calcular_fatiga_acumulada()
+            if fatiga:
+                estado_fatiga = fatiga.get('nivel', 'N/A').capitalize()
+                nivel_fatiga_raw = fatiga.get('nivel', 'bajo')
+        except Exception:
+            pass
 
-    })
+        if dias_inactivo >= 10:
+            clientes_atencion.append(
+                {'cliente': cliente, 'motivo': f'Inactivo ({dias_inactivo} días)', 'severidad': 'alta'})
+        elif nivel_fatiga_raw in ['alta', 'critica']:
+            clientes_atencion.append({'cliente': cliente, 'motivo': f'Fatiga {estado_fatiga}', 'severidad': 'media'})
+        elif progreso_reciente == "Negativo":
+            clientes_atencion.append({'cliente': cliente, 'motivo': 'Regresión en el último mes', 'severidad': 'media'})
+
+        if (filtro_estado == 'inactivos' and dias_inactivo < 10) or \
+                (filtro_estado == 'fatiga_alta' and nivel_fatiga_raw not in ['alta', 'critica']):
+            continue
+
+        lista_clientes_enriquecida.append({
+            'cliente': cliente,
+            'ultimo_entreno_fecha': ultimo_entreno.fecha if ultimo_entreno else None,
+            'estado_fatiga': estado_fatiga,
+            'progreso_reciente': progreso_reciente,
+            'progreso_color': progreso_color,
+            'consistencia': consistencia,
+            'alertas_count': 0
+        })
+
+    # --- 5. LÓGICA DE GRÁFICOS ---
+    inicio_ultimos_30_dias = hoy - timedelta(days=30)
+    entrenos_recientes = EntrenoRealizado.objects.filter(fecha__gte=inicio_ultimos_30_dias)
+    actividad_por_dia = entrenos_recientes.values('fecha__week_day').annotate(count=Count('id')).order_by(
+        'fecha__week_day')
+    dias_semana_map = {2: 0, 3: 1, 4: 2, 5: 3, 6: 4, 7: 5, 1: 6}
+    datos_actividad = [0] * 7
+    for item in actividad_por_dia:
+        dia_django = item['fecha__week_day']
+        if dia_django in dias_semana_map:
+            datos_actividad[dias_semana_map[dia_django]] = item['count']
+    grafico_actividad_data = {'labels': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], 'data': datos_actividad}
+
+    meses_labels = []
+    progreso_1rm_data = []
+    for i in range(5, -1, -1):
+        mes_actual_inicio = (hoy.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+        fin_mes = (mes_actual_inicio + timedelta(days=35)).replace(day=1) - timedelta(days=1)
+
+        meses_labels.append(mes_actual_inicio.strftime("%b %Y"))
+
+        ejercicios_del_mes = EjercicioRealizado.objects.filter(
+            entreno__fecha__range=[mes_actual_inicio, fin_mes],
+            peso_kg__gt=0, repeticiones__gt=0, repeticiones__lte=12
+        )
+
+        # ✅ CORRECCIÓN DEFINITIVA USANDO Cast
+        rm_promedio_mes = ejercicios_del_mes.annotate(
+            rm_estimado=ExpressionWrapper(
+                Cast('peso_kg', FloatField()) * (1.0 + Cast('repeticiones', FloatField()) / 30.0),
+                output_field=FloatField()
+            )
+        ).aggregate(avg_rm=Avg('rm_estimado'))['avg_rm']
+
+        progreso_1rm_data.append(round(rm_promedio_mes, 1) if rm_promedio_mes else 0)
+    grafico_progreso_data = {'labels': meses_labels, 'data': progreso_1rm_data}
+
+    # --- 6. CONSTRUCCIÓN DEL CONTEXTO FINAL ---
+    context = {
+        'total_clientes': total_clientes_activos,
+        'revisiones_totales': total_revisiones,
+        'entrenos_hoy': entrenos_hoy_count,
+        'entrenos_semana': entrenos_semana_count,
+        'clientes_atencion': sorted(clientes_atencion, key=lambda x: x['severidad'])[:3],
+        'lista_clientes': lista_clientes_enriquecida,
+        'search_query': search_query,
+        'filtro_actual': filtro_estado,
+        'grafico_actividad_data': json.dumps(grafico_actividad_data),
+        'grafico_progreso_data': json.dumps(grafico_progreso_data),
+    }
+
+    return render(request, 'clientes/panel_entrenador.html', context)
 
 
 @login_required

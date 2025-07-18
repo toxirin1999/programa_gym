@@ -728,7 +728,7 @@
                     <span style="font-size: 0.7em; color: var(--neon-green);">- {{ cliente_seleccionado.nombre }}</span>
                     {% endif %}
                 </h1>
-               
+
             </div>
         </div>
     </div>
@@ -742,282 +742,174 @@
         <a href="{% url 'entrenos:importar_liftin_completo' %}" class="btn-cyber">
             <i class="fas fa-plus"></i> Importar Entrenamiento
         </a>
-        <a href="{% url 'entrenos:estadisticas_liftin' %}" class="btn-cyber btn-secondary">
-            <i class="fas fa-chart-bar"></i> Estadísticas
-        </a>
-        
+
+
         <a href="{% url 'entrenos:exportar_datos_liftin' %}" class="btn-cyber btn-secondary">
             <i class="fas fa-download"></i> Exportar Datos
         </a>
-        
-    </div>
+        <a href="http://127.0.0.1:8000/analytics/" class="btn-cyber">
+            <i class="fas fa-brain"></i> Ver Análisis IA
+        </a>
 
+    </div>
 
 
     <!-- Estadísticas principales mejoradas -->
     <div class="stats-grid fade-in">
         <div class="stat-card">
-            <i class="fas fa-calendar-check stat-icon" style="color: var(--neon-cyan);"></i>
-            <span class="stat-number" data-target="{{ total_entrenamientos|default:0 }}">0</span>
+            <i class="fas fa-calendar-check stat-icon" style="color: var(--neon-cyan );"></i>
+            <span class="stat-number" data-target="{{ estadisticas.total_entrenamientos|default:0 }}">0</span>
             <p class="stat-label">Total Entrenamientos</p>
         </div>
-<<<<<<< HEAD
-        <div class="stat-card liftin">
-            <i class="fas fa-mobile-alt stat-icon" style="color: #007bff;"></i>
-            <span class="stat-number" data-target="{{ entrenamientos_liftin|default:0 }}">0</span>
-            <p class="stat-label">De Liftin</p>
+        <div class="stat-card calories">
+            <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
+            <span class="stat-number" data-target="{{ estadisticas.calorias_totales|default:0 }}">0</span>
+            <p class="stat-label">Calorías (Liftin)</p>
         </div>
         <div class="stat-card manual">
-            <i class="fas fa-edit stat-icon" style="color: #28a745;"></i>
-            <span class="stat-number" data-target="{{ entrenamientos_manual|default:0 }}">0</span>
-            <p class="stat-label">Manuales</p>
+            <i class="fas fa-weight-hanging stat-icon" style="color: #28a745;"></i>
+            <span class="stat-number" data-target="{{ estadisticas.volumen_total|default:0 }}">0</span>
+            <p class="stat-label">Volumen Total (kg)</p>
         </div>
         <div class="stat-card calories">
-            <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
-            <span class="stat-number" data-target="{{ calorias_totales|default:0 }}">0</span>
-            <p class="stat-label">Calorías (Liftin)</p>
-=======
-        
-        <div class="stat-card calories">
-            <i class="fas fa-fire stat-icon" style="color: #dc3545;"></i>
-            <span class="stat-number" data-target="{{ calorias_totales|default:0 }}">0</span>
-            <p class="stat-label">Calorías (Liftin)</p>
+            <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
+            <span class="stat-number" data-target="{{ estadisticas.duracion_promedio|default:0 }}">0</span>
+            <p class="stat-label">Duración Promedio (min)</p>
         </div>
-        
+
         <div class="stat-card">
-            <i class="fas fa-calendar-check stat-icon" style="color: var(--neon-cyan);"></i>
-            <span class="stat-number" data-target="{{ duracion_total|default:0 }}">0</span>
-            <p class="stat-label">Duracion Total</p>
+            <i class="fas fa-star stat-icon" style="color: #FFD700;"></i>
+            <span class="stat-number" data-target="{{ logros.puntos_totales|default:0 }}">0</span>
+            <p class="stat-label">Puntos Totales</p>
         </div>
-        <div class="stat-card liftin">
-            <i class="fas fa-mobile-alt stat-icon" style="color: #007bff;"></i>
-            <span class="stat-number" data-target="{{ nivel_actual|default:0 }}">0</span>
-            <p class="stat-label">Nivel Actual</p>
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
+        <div class="stat-card">
+            <i class="fas fa-medal stat-icon" style="color: #e67e22;"></i>
+            <span class="stat-number" data-target="{{ logros.logros_desbloqueados|default:0 }}">0</span>
+            <p class="stat-label">Logros</p>
         </div>
-        <!-- Volumen Total -->
-<div class="stat-card manual">
-  <i class="fas fa-weight-hanging stat-icon" style="color: #28a745;"></i>
-<<<<<<< HEAD
-  <span class="stat-number" data-target="{{ stats_liftin.volumen_total|default:0 }}">0</span>
-=======
-  <span class="stat-number" data-target="{{ volumen_total|default:0 }}">0</span>
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
-  <p class="stat-label">Volumen Total (kg)</p>
-</div>
-
-<!-- Duración Promedio -->
-<div class="stat-card calories">
-  <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
-<<<<<<< HEAD
-  <span class="stat-number" data-target="{{ stats_liftin.duracion_promedio|default:0 }}">0</span>
-=======
-  <span class="stat-number" data-target="{{ duracion_promedio|default:0 }}">0</span>
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
-  <p class="stat-label">Duración Promedio (min)</p>
-</div>
-
-<!-- Ejercicios por Sesión -->
-<div class="stat-card">
-  <i class="fas fa-dumbbell stat-icon" style="color: #17a2b8;"></i>
-<<<<<<< HEAD
-  <span class="stat-number" data-target="{{ stats_liftin.ejercicios_promedio|default:0 }}">0</span>
-  <p class="stat-label">Ejercicios por Sesión</p>
-=======
-  <span class="stat-number" data-target="{{ ejercicios_total|default:0 }}">0</span>
-  <p class="stat-label">Ejercicios Total</p>
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
-</div>
-
-<!-- FC Promedio -->
-<div class="stat-card">
-  <i class="fas fa-heartbeat stat-icon" style="color: #dc3545;"></i>
-<<<<<<< HEAD
-  <span class="stat-number" data-target="{{ stats_liftin.fc_promedio|default:0 }}">0</span>
-  <p class="stat-label">FC Promedio (BPM)</p>
-</div>
-
-=======
-  <span class="stat-number" data-target="{{ fc_promedio|default:0 }}">0</span>
-  <p class="stat-label">FC Promedio (BPM)</p>
-</div>
-
-
-<div class="stat-card calories">
-  <i class="fas fa-clock stat-icon" style="color: #ffc107;"></i>
-  <span class="stat-number" data-target="{{ puntos_siguiente_nivel|default:0 }}">0</span>
-  <p class="stat-label">Puntos Siguiente Nivel (min)</p>
-</div>
-
-
-
-
-
-
-
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
+        <div class="stat-card">
+            <i class="fas fa-fire stat-icon" style="color: #ff6347;"></i>
+            <span class="stat-number" data-target="{{ logros.racha_actual|default:0 }}">0</span>
+            <p class="stat-label">Racha Actual</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-crown stat-icon" style="color: #8e44ad;"></i>
+            <span class="stat-number" data-target="{{ logros.racha_maxima|default:0 }}">0</span>
+            <p class="stat-label">Racha Máxima</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-level-up-alt stat-icon" style="color: #32ff00;"></i>
+            <span class="stat-number" data-target="{{ logros.nivel_actual|default:1 }}">0</span>
+            <p class="stat-label">Nivel: {{ logros.nivel_nombre|default:"Principiante" }}</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-tachometer-alt stat-icon" style="color: #00ff99;"></i>
+            <span class="stat-number" data-target="{{ logros.progreso_nivel|default:0 }}">0</span>
+            <p class="stat-label">Progreso de Nivel (%)</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-battery-half stat-icon" style="color: #9999ff;"></i>
+            <span class="stat-number" data-target="{{ logros.puntos_nivel_actual|default:0 }}">0</span>
+            <p class="stat-label">Puntos Nivel Actual</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-flag-checkered stat-icon" style="color: #ffffff;"></i>
+            <span class="stat-number" data-target="{{ logros.puntos_siguiente_nivel|default:1000 }}">0</span>
+            <p class="stat-label">Meta Siguiente Nivel</p>
+        </div>
     </div>
 
-    <!-- Sección de logros mejorada -->
+    <!-- Sección de Logros -->
     <div class="logros-section fade-in">
         <h3 class="logros-title">
-            <span>
-                <i class="fas fa-trophy"></i>
-                Sistema de Logros
-            </span>
-            <span class="nivel-badge">
-                Nivel {{ nivel_actual|default:1 }} - {{ nivel_nombre|default:"Principiante" }}
-            </span>
+            <span><i class="fas fa-trophy"></i> Sistema de Logros</span>
+            <span class="nivel-badge">Nivel {{ logros.nivel_actual|default:1 }} - {{ logros.nivel_nombre|default:"Principiante" }}</span>
         </h3>
-
         <div class="logros-grid">
             <div class="logro-card">
-                <div class="logro-icon">
-                    <i class="fas fa-trophy" style="color: #f39c12;"></i>
-                </div>
+                <div class="logro-icon"><i class="fas fa-trophy" style="color: #f39c12;"></i></div>
                 <div>
-                    <div class="logro-number" data-target="{{ puntos_totales|default:0 }}">0</div>
+                    <div class="logro-number" data-target="{{ logros.puntos_totales|default:0 }}">0</div>
                     <div class="logro-label">Puntos Totales</div>
                 </div>
             </div>
             <div class="logro-card">
-                <div class="logro-icon">
-                    <i class="fas fa-medal" style="color: #e74c3c;"></i>
-                </div>
+                <div class="logro-icon"><i class="fas fa-medal" style="color: #e74c3c;"></i></div>
                 <div>
-                    <div class="logro-number" data-target="{{ logros_desbloqueados|default:0 }}">0</div>
+                    <div class="logro-number" data-target="{{ logros.logros_desbloqueados|default:0 }}">0</div>
                     <div class="logro-label">Logros Desbloqueados</div>
                 </div>
             </div>
             <div class="logro-card">
-                <div class="logro-icon">
-                    <i class="fas fa-fire" style="color: #e67e22;"></i>
-                </div>
+                <div class="logro-icon"><i class="fas fa-fire" style="color: #e67e22;"></i></div>
                 <div>
-                    <div class="logro-number" data-target="{{ racha_actual|default:0 }}">0</div>
+                    <div class="logro-number" data-target="{{ logros.racha_actual|default:0 }}">0</div>
                     <div class="logro-label">Racha Actual</div>
-                    <div class="logro-label">Máx: {{ racha_maxima|default:0 }} días</div>
+                    <div class="logro-label">Máx: {{ logros.racha_maxima|default:0 }} días</div>
                 </div>
             </div>
         </div>
-
-        <!-- Barra de Progreso de Nivel -->
         <div class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span style="color: #FFD700; font-weight: 600;"><strong>Progreso de Nivel:</strong></span>
-                <span style="color: #FFD700;">{{ progreso_nivel|default:0 }}%</span>
+                <span style="color: #FFD700;">{{ logros.progreso_nivel|default:0 }}%</span>
             </div>
             <div class="progress-custom">
-                <div class="progress-bar-custom" style="width: {{ progreso_nivel|default:0 }}%;"></div>
+                <div class="progress-bar-custom" style="width: {{ logros.progreso_nivel|default:0 }}%;"></div>
             </div>
             <div class="d-flex justify-content-between mt-1">
-                <small style="color: rgba(255, 255, 255, 0.7);">{{ puntos_nivel_actual|default:0 }} pts</small>
-                <small style="color: rgba(255, 255, 255, 0.7);">{{ puntos_siguiente_nivel|default:1000 }} pts</small>
+                <small style="color: rgba(255, 255, 255, 0.7);">{{ logros.puntos_nivel_actual|default:0 }} pts</small>
+                <small style="color: rgba(255, 255, 255, 0.7);">{{ logros.puntos_siguiente_nivel|default:1000 }} pts</small>
             </div>
         </div>
-
-        <!-- Logros Recientes y Próximos -->
         <div class="row mt-4">
             <div class="col-lg-6">
                 <div class="entrenamientos-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-star"></i>
-                        Logros Recientes
-                    </h4>
-                    {% if logros_recientes %}
-                    {% for logro in logros_recientes %}
+                    <h4 class="section-title"><i class="fas fa-star"></i> Logros Recientes</h4>
+                    {% if logros.logros_recientes %}
+                    {% for logro_usuario in logros.logros_recientes %}
                     <div class="logro-card">
-                        <div class="logro-icon">
-                            <i class="fas fa-trophy" style="color: #f39c12;"></i>
-                        </div>
+                        <div class="logro-icon"><i class="fas fa-trophy" style="color: #f39c12;"></i></div>
                         <div>
-                            <div class="logro-number">+{{ logro.puntos }}</div>
-                            <div class="logro-label">{{ logro.nombre }}</div>
-                            <div class="logro-label">{{ logro.fecha_obtenido|date:"d/m/Y" }}</div>
-                        </div>
+                            <div class="text-3xl font-bold">{{ logro_usuario.logro.nombre }}</div>
+                            <div class="logro-label">{{ logro_usuario.fecha_desbloqueo|date:"d/m/Y" }}</div>
+
+
                     </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-trophy"></i>
-                        <p>¡Importa entrenamientos de Liftin para desbloquear logros!</p>
-                    </div>
-                    {% endif %}
                 </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state"><i class="fas fa-trophy"></i>
+                    <p>¡Importa entrenamientos para desbloquear logros!</p></div>
+                {% endif %}
             </div>
-            <div class="col-lg-6">
-                <div class="entrenamientos-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-chart-line"></i>
-                        Próximos Logros
-                    </h4>
-                    <div class="logro-card">
-                        <div class="logro-icon">
-                            <i class="fas fa-mobile-alt" style="color: #3498db;"></i>
-                        </div>
-                        <div>
-                            <div class="logro-number">{{ entrenamientos_liftin|default:0 }}/5</div>
-                            <div class="logro-label">Liftin Principiante</div>
-                            <div class="logro-label">5 entrenamientos de Liftin</div>
-                        </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="entrenamientos-section">
+                <h4 class="section-title"><i class="fas fa-chart-line"></i> Próximos Logros</h4>
+                {% if logros.proximos_logros %}
+                {% for item in logros.proximos_logros %}
+                <div class="logro-card mb-3">
+                    <div class="logro-icon">
+                        <!-- Puedes añadir un icono dinámico si lo tienes en el modelo Logro -->
+                        <i class="fas fa-flag-checkered" style="color: #3498db;"></i>
                     </div>
-                    <div class="logro-card">
-                        <div class="logro-icon">
-                            <i class="fas fa-fire" style="color: #e74c3c;"></i>
-                        </div>
-                        <div>
-                            <div class="logro-number">{{ calorias_totales|default:0 }}/300</div>
-                            <div class="logro-label">Quemador Principiante</div>
-                            <div class="logro-label">300 calorías quemadas</div>
-                        </div>
+                    <div>
+                        <div class="logro-number">{{ item.progreso_actual }}/{{ item.logro.meta_valor }}</div>
+                        <div class="logro-label">{{ item.logro.nombre }}</div>
+                        <div class="logro-label" style="font-size: 0.8rem; color: #999;">{{ item.logro.descripcion }}</div>
                     </div>
                 </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state"><i class="fas fa-check-double"></i>
+                    <p>¡Has desbloqueado todos los logros!</p></div>
+                {% endif %}
+
             </div>
         </div>
     </div>
 
-    <!-- Distribución por Fuente -->
-    <div class="charts-section fade-in">
-        <div class="chart-container">
-            <h3 class="chart-title">
-                <i class="fas fa-chart-pie"></i>
-                Distribución por Fuente
-            </h3>
-            <canvas id="fuenteChart"></canvas>
-        </div>
-        <div class="chart-container">
-            <h3 class="chart-title">
-                <i class="fas fa-chart-bar"></i>
-                Resumen
-            </h3>
-            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; gap: 20px;">
-                <div class="logro-card" style="margin: 0; width: 100%;">
-                    <div class="logro-icon">
-                        <i class="fas fa-calendar-week" style="color: var(--neon-cyan);"></i>
-                    </div>
-                    <div>
-                        <div class="logro-number">{{ total_entrenamientos|default:0 }}</div>
-                        <div class="logro-label">Total Entrenamientos</div>
-                    </div>
-                </div>
-                <div class="logro-card" style="margin: 0; width: 100%;">
-                    <div class="logro-icon">
-                        <i class="fas fa-percentage" style="color: #28a745;"></i>
-                    </div>
-                    <div>
-                        <div class="logro-number">
-                            {% if total_entrenamientos > 0 %}
-                            {{ entrenamientos_liftin|default:0|floatformat:0 }}%
-                            {% else %}
-                            0%
-                            {% endif %}
-                        </div>
-                        <div class="logro-label">Desde Liftin</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Entrenamientos Recientes -->
     <div class="entrenamientos-section fade-in">
@@ -1026,19 +918,15 @@
                 <i class="fas fa-history"></i>
                 Entrenamientos Recientes
             </h3>
-<<<<<<< HEAD
-            <a href="{% url 'entrenos:lista_entrenamientos' %}" class="btn-cyber btn-secondary">
+            <a href="{% url 'entrenos:tabla_ejercicios' %}" class="btn-cyber btn-secondary">
+
                 Ver todos
             </a>
-=======
-            <a href="{% url 'entrenos:tabla_ejercicios' %}" class="btn-cyber btn-secondary">
-    Ver todos
-</a>
-
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
         </div>
 
         {% if entrenamientos_recientes %}
+        <p style="color:lime; font-weight:bold;">Mostrando {{ entrenamientos_recientes|length }} entrenamientos recientes</p>
+
         <div class="table-responsive">
             <table class="table-cyber">
                 <thead>
@@ -1126,40 +1014,7 @@
     </div>
 </div>
 
-    <!-- Selector de cliente mejorado -->
-    <div class="cliente-selector slide-in">
-        <form method="get" class="row align-items-center">
-            <div class="col-md-4">
-                <label for="cliente" class="form-label">
-                    <i class="fas fa-filter"></i> Filtrar por Cliente:
-                </label>
-                <select name="cliente" id="cliente" class="form-select" onchange="this.form.submit()">
-                    <option value="">Todos los clientes</option>
-                    {% for cliente in clientes_disponibles %}
-                    <option value="{{ cliente.id }}" {% if cliente_seleccionado and cliente.id == cliente_seleccionado.id %}selected{% endif %}>
-                        {{ cliente.nombre }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn-cyber">
-                    <i class="fas fa-search"></i> Filtrar
-                </button>
-            </div>
-            {% if cliente_seleccionado %}
-            <div class="col-md-6">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    Mostrando datos de: <strong>{{ cliente_seleccionado.nombre }}</strong>
-                    <a href="{% url 'entrenos:dashboard_liftin' %}" class="btn-cyber btn-secondary ms-2">
-                        <i class="fas fa-times"></i> Limpiar
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-        </form>
-    </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1320,11 +1175,6 @@
 
         // Loading state para formularios
         document.querySelectorAll('form').forEach(form => {
-<<<<<<< HEAD
-=======
-           if (!form) return;
-
->>>>>>> 1ad65a8 (mensaje claro de los cambios)
             form.addEventListener('submit', function() {
                 const button = this.querySelector('button[type="submit"]');
                 if (button) {

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .forms import ProgramaForm, EjercicioForm, RutinaForm, RutinaEjercicioForm
-from .models import Programa, Ejercicio, Rutina
+from .models import Programa, EjercicioBase, Rutina
 from django.contrib import messages
 from clientes.models import Cliente
 from .models import RutinaEjercicio
@@ -120,20 +120,52 @@ def lista_ejercicios(request):
     return render(request, 'rutinas/lista_ejercicios.html', {'ejercicios': ejercicios})
 
 
+# entrenos/views.py
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Rutina
+from .forms import RutinaEjercicioForm  # ¡Importa el formulario correcto!
+
+# En tu archivo de vistas (ej: rutinas/views.py)
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .forms import RutinaEjercicioForm
+from .models import Rutina, EjercicioBase  # ¡Asegúrate de importar EjercicioBase!
+
+# rutinas/views.py
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Rutina, RutinaEjercicio
+from .forms import RutinaEjercicioForm
+# ¡¡¡IMPORTACIÓN CLAVE Y CORRECTA!!!
+# Importamos el modelo EjercicioBase desde la app 'entrenos'
+from entrenos.models import EjercicioBase
+
+
 def agregar_ejercicio(request, rutina_id):
     rutina = get_object_or_404(Rutina, pk=rutina_id)
+
     if request.method == 'POST':
         form = RutinaEjercicioForm(request.POST)
+        # Es buena práctica asegurarse de que el queryset esté aquí también
+        form.fields['ejercicio'].queryset = EjercicioBase.objects.all()
         if form.is_valid():
+            # El form ya sabe que 'ejercicio' es una FK a entrenos.EjercicioBase
             rutina_ejercicio = form.save(commit=False)
             rutina_ejercicio.rutina = rutina
             rutina_ejercicio.save()
             return redirect('detalle_rutina', rutina_id=rutina.id)
     else:
+        # Cuando la página carga por primera vez
         form = RutinaEjercicioForm()
+        # No es necesario forzar el queryset aquí porque ya lo hemos
+        # corregido en rutinas/forms.py para que apunte a entrenos.models.EjercicioBase
+
     return render(request, 'rutinas/agregar_ejercicio.html', {
         'form': form,
         'rutina': rutina,
+        'titulo': f'Agregar Ejercicio a: {rutina.nombre}'
     })
 
 
@@ -214,7 +246,7 @@ def eliminar_rutina_ejercicio(request, pk):
 
 # ... tus imports existentes ...
 from .forms import EjercicioForm  # Asegúrate de que esta importación exista
-from .models import Ejercicio  # Asegúrate de que esta importación exista
+# Asegúrate de que esta importación exista
 from .models import Programa  # Mantener si lo usas en otras funciones
 
 
