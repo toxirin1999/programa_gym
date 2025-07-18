@@ -136,8 +136,8 @@ class AnalisisProgresionAvanzado:
         # Preparar solo los ratios válidos
         ratios_validos = {r['clave']: r['valor'] for r in analisis_ratios}
         estandares_validos = {clave: estandares[clave] for clave in ratios_validos}
-        print("🧪 Ratios finales generados:", analisis_ratios)
-        print("📊 Ratios para radar:", [r['nombre'] for r in analisis_ratios])
+        # print("🧪 Ratios finales generados:", analisis_ratios)
+        # print("📊 Ratios para radar:", [r['nombre'] for r in analisis_ratios])
 
         return {
             'ratios': analisis_ratios,
@@ -202,7 +202,7 @@ class AnalisisProgresionAvanzado:
     # ============================================================================
 
     def _obtener_1rm_ejercicios(self, dias=180):
-        print("🔥 SE LLAMÓ A _obtener_1rm_ejercicios")
+        # print("🔥 SE LLAMÓ A _obtener_1rm_ejercicios")
         """
         Calcula 1RM estimado usando fórmula de Brzycki, normalizando nombres y pesos.
         Acepta pesos con coma y maneja dominadas con peso 0 correctamente.
@@ -216,8 +216,8 @@ class AnalisisProgresionAvanzado:
         )
 
         rms = {}
-        print("🧠 Nombres normalizados detectados en 1RM:")
-        print("📂 Total ejercicios encontrados:", registros.count())
+        # print("🧠 Nombres normalizados detectados en 1RM:")
+        # print("📂 Total ejercicios encontrados:", registros.count())
 
         for r in registros:
             nombre_raw = r.nombre_ejercicio.strip()
@@ -240,7 +240,7 @@ class AnalisisProgresionAvanzado:
                     f"⚠️ Error en '{nombre_raw}' → normalizado como {nombre_norm} | peso: {r.peso_kg}, reps: {r.repeticiones} | error: {e}")
                 continue
 
-        print("📦 1RM finales generados:", rms)
+        # print("📦 1RM finales generados:", rms)
         return rms
 
     def _calcular_ratio(self, valor1, valor2):
@@ -692,7 +692,7 @@ class AnalisisProgresionAvanzado:
 
 # Vista para el Dashboard de Progresión Avanzado
 def dashboard_progresion_avanzado(request, cliente_id):
-    print("🚨 Se ejecutó la vista dashboard_progresion_avanzado")
+    # print("🚨 Se ejecutó la vista dashboard_progresion_avanzado")
     cliente = get_object_or_404(Cliente, id=cliente_id)
     analizador = AnalisisProgresionAvanzado(cliente)
 
@@ -754,11 +754,3 @@ def dashboard_progresion_avanzado(request, cliente_id):
     print("Ejercicios disponibles:", ejercicios_disponibles)
 
     return render(request, 'analytics/progresion_avanzado.html', context)
-
-
-print("📈 Dashboard de Progresión Avanzado COMPLETO Y CORREGIDO:")
-print("✅ Todos los métodos implementados")
-print("✅ Sin errores de AttributeError")
-print("✅ Funcionalidad completa garantizada")
-print("✅ Compatible con y sin scipy")
-print("✅ Manejo robusto de errores")

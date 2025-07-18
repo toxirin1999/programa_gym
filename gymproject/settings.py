@@ -258,8 +258,8 @@ LOGGING = {
 }
 
 # Mensaje de confirmación
-print("✅ Configuración de logging para gamificación cargada")
-print(f"📁 Logs se guardarán en: {LOGS_DIR}")
+# print("✅ Configuración de logging para gamificación cargada")
+# print(f"📁 Logs se guardarán en: {LOGS_DIR}")
 
 # ============================================================================
 # CONFIGURACIÓN ADICIONAL PARA GAMIFICACIÓN

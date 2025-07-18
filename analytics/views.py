@@ -706,7 +706,7 @@ def recomendaciones(request, cliente_id):
 
     # Análisis de progresión
     progresiones = calculadora.obtener_ejercicios_progresion(10)
-    print("🧪 Progresiones:", progresiones)
+    # print("🧪 Progresiones:", progresiones)
 
     ejercicios_estancados = []
 
@@ -748,9 +748,9 @@ def recomendaciones(request, cliente_id):
         'recomendaciones_automaticas': recomendaciones_automaticas,
         'mensaje': mensaje,
     }
-    print("🎯 Recomendaciones activas:", recomendaciones_activas.count())
-    print("✅ Recomendaciones aplicadas:", recomendaciones_aplicadas.count())
-    print("🧠 Recomendaciones automáticas:", recomendaciones_automaticas)
+    print("Recomendaciones activas:", recomendaciones_activas.count())
+    print("Recomendaciones aplicadas:", recomendaciones_aplicadas.count())
+    print("Recomendaciones automáticas:", recomendaciones_automaticas)
 
     return render(request, 'analytics/recomendaciones.html', context)
 
@@ -1862,15 +1862,6 @@ def dashboard_progresion_avanzado(request, cliente_id):
     return render(request, 'analytics/progresion_avanzado.html', context)
 
 
-print("📈 Dashboard de Progresión Avanzado COMPLETO Y CORREGIDO:")
-print("✅ Todos los métodos implementados")
-print("✅ Sin errores de AttributeError")
-print("✅ Funcionalidad completa garantizada")
-print("✅ Compatible con y sin scipy")
-print("✅ Manejo robusto de errores")
-# 🔥 DASHBOARD DE INTENSIDAD AVANZADO - VERSIÓN COMPLETA CORREGIDA
-# Todos los métodos implementados para evitar errores
-
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Sum, Avg, Max, Min, Count
@@ -2518,11 +2509,3 @@ def dashboard_intensidad_avanzado(request, cliente_id):
     context['datos_graficos'] = json.dumps(datos_graficos)
 
     return render(request, 'analytics/intensidad_avanzado.html', context)
-
-
-print("🔥 Dashboard de Intensidad Avanzado COMPLETO Y CORREGIDO:")
-print("✅ Todos los métodos implementados")
-print("✅ Sin errores de AttributeError")
-print("✅ Funcionalidad completa garantizada")
-print("✅ Análisis de zonas, carga, intensidad y fatiga")
-print("✅ Manejo robusto de errores")

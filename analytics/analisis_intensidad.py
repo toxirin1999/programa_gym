@@ -777,11 +777,3 @@ def dashboard_intensidad_avanzado(request, cliente_id):
 
     # 6. Renderizar la página
     return render(request, 'analytics/intensidad_avanzado.html', context)
-
-
-print("🔥 Dashboard de Intensidad Avanzado COMPLETO Y CORREGIDO:")
-print("✅ Todos los métodos implementados")
-print("✅ Sin errores de AttributeError")
-print("✅ Funcionalidad completa garantizada")
-print("✅ Análisis de zonas, carga, intensidad y fatiga")
-print("✅ Manejo robusto de errores")
