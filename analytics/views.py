@@ -2,16 +2,12 @@
 # Archivo: analytics/views.py (VERSIÓN COMPLETA)
 from django.shortcuts import render, get_object_or_404
 import json
-from .analisis_progresion import AnalisisProgresionAvanzado
-from .analisis_intensidad import AnalisisIntensidadAvanzado
-from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.db.models import Sum, Avg, Max, Min, Count, Q, F
 from django.utils import timezone
 from datetime import datetime, timedelta
-import json
 from decimal import Decimal
 from entrenos.utils import parsear_ejercicios
 from clientes.models import Cliente
@@ -22,7 +18,7 @@ from .models import (
 )
 
 from entrenos.models import EntrenoRealizado, EjercicioRealizado
-from clientes.models import Cliente
+
 
 
 class CalculadoraEjerciciosTabla:
@@ -303,17 +299,18 @@ import json
 from .models import RecomendacionEntrenamiento
 from entrenos.models import EntrenoRealizado
 from clientes.models import Cliente
-from .analisis_intensidad import AnalisisIntensidadAvanzado
+
 from datetime import datetime  # Asegúrate de que datetime esté importado
 
 # Archivo: analytics/views.py
 
 # ... (tus imports)
-from .analisis_intensidad import AnalisisIntensidadAvanzado  # Asegúrate de que esté importado
+  # Asegúrate de que esté importado
 
 
 @login_required
 def dashboard(request, cliente_id=None):
+    from .analisis_progresion import AnalisisProgresionAvanzado
     """
     Dashboard principal del centro de análisis con todas las mejoras implementadas.
     """
@@ -685,9 +682,7 @@ def recomendaciones(request, cliente_id):
     calculadora = CalculadoraEjerciciosTabla(cliente)
     ejercicios = calculadora.obtener_ejercicios_tabla()
     ejercicios = calculadora.obtener_ejercicios_tabla()
-    print("📊 Total de ejercicios obtenidos:", len(ejercicios))
-    for e in ejercicios[:3]:
-        print("👉", e)
+
 
     recomendaciones_automaticas = []
 
@@ -748,9 +743,7 @@ def recomendaciones(request, cliente_id):
         'recomendaciones_automaticas': recomendaciones_automaticas,
         'mensaje': mensaje,
     }
-    print("Recomendaciones activas:", recomendaciones_activas.count())
-    print("Recomendaciones aplicadas:", recomendaciones_aplicadas.count())
-    print("Recomendaciones automáticas:", recomendaciones_automaticas)
+
 
     return render(request, 'analytics/recomendaciones.html', context)
 
