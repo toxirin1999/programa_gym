@@ -1,6 +1,6 @@
 # VISTA CORREGIDA QUE FUNCIONA CON LOS MODELOS REALES
 # Soluciona el problema de datos no detectados
-from analytics.ia_modelos_predictivos import ModelosPredictivosIA
+
 
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
@@ -14,7 +14,7 @@ import logging
 
 from django.contrib import messages
 from clientes.models import Cliente
-from analytics.ia_recomendaciones_inteligentes import SistemaRecomendacionesIA  # <== IMPORTANTE
+ # <== IMPORTANTE
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -735,6 +735,8 @@ def crear_cliente_fallback(cliente_id, nombre="Usuario"):
 
 def dashboard_ia_principal(request, cliente_id):
     """Dashboard principal de IA con todos los sistemas integrados"""
+    from analytics.ia_recomendaciones_inteligentes import SistemaRecomendacionesIA 
+    from analytics.ia_modelos_predictivos import ModelosPredictivosIA
     try:
         # ✅ OBTENER CLIENTE REAL O FALLBACK
         try:
