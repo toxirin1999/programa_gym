@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Avg, Max
-from analytics.views import CalculadoraEjerciciosTabla
+
 
 from .models import Cliente
 from .forms import BitacoraDiariaForm
@@ -821,6 +821,7 @@ def panel_cliente(request):
     from analytics.utils import parse_reps
 
     def calcular_top_1rm(cliente):
+        from analytics.views import CalculadoraEjerciciosTabla
         calculadora = CalculadoraEjerciciosTabla(cliente)
         ejercicios = calculadora.obtener_ejercicios_tabla()
 
