@@ -1,5 +1,8 @@
 # logros/utils.py
-from .models import LogroUsuario, Nivel, PerfilGamificacion
+from .models import (
+    PerfilGamificacion, Arquetipo, PruebaLegendaria, PruebaUsuario,
+    Quest, QuestUsuario, HistorialPuntos, Notificacion
+)
 
 
 def obtener_datos_logros(cliente):

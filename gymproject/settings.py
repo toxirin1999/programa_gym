@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,14 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m^_f1+)gb!61wnzpvso)w7jhv1keu_o6@zs7yna@$$i1*2(&_z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = 'RENDER' not in os.environ
+DEBUG = True
 
-ALLOWED_HOSTS = []
-
-# El nombre del host de Render se añade automáticamente si está disponible
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -50,11 +44,23 @@ INSTALLED_APPS = [
     'joi',
     'logros',
     'analytics',
+    'estoico',
+    'django_celery_beat',
+    'nutricion_app_django',
 ]
+# Configuración de Celery (para notificaciones)
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Mexico_City'
+# Configuración de notificaciones push
+PUSH_NOTIFICATION_URL = 'https://fcm.googleapis.com/fcm/send'
+PUSH_NOTIFICATION_KEY = 'tu_clave_fcm_aqui'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -62,7 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 USE_I18N = True
 ROOT_URLCONF = 'gymproject.urls'
@@ -78,6 +84,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'joi.context_processors.joi_context',
+                'joi.context_processors.utility_functions',
+                'estoico.context_processors.estoico_context',
 
             ],
         },
@@ -90,11 +98,10 @@ WSGI_APPLICATION = 'gymproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        # Reemplaza este valor por defecto con tu URL de SQLite local
-        default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation
@@ -114,9 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-]
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -260,8 +265,8 @@ LOGGING = {
 }
 
 # Mensaje de confirmación
-# print("✅ Configuración de logging para gamificación cargada")
-# print(f"📁 Logs se guardarán en: {LOGS_DIR}")
+print("✅ Configuración de logging para gamificación cargada")
+print(f"📁 Logs se guardarán en: {LOGS_DIR}")
 
 # ============================================================================
 # CONFIGURACIÓN ADICIONAL PARA GAMIFICACIÓN

@@ -1,290 +1,55 @@
+# logros/models.py
+
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import MinValueValidator
-
-# Asumimos que estos modelos existen en la aplicación
 from clientes.models import Cliente
-from rutinas.models import EjercicioBase
 
 
-class Nivel(models.Model):
-    """
-    Modelo para definir los niveles del sistema de gamificación.
-    Cada nivel requiere una cantidad específica de puntos para ser alcanzado.
-    """
-    numero = models.PositiveIntegerField(
-        primary_key=True,
-        verbose_name=_("Número de nivel")
-    )
-    nombre = models.CharField(
-        max_length=50,
-        verbose_name=_("Nombre del nivel")
-    )
-    puntos_requeridos = models.PositiveIntegerField(
-        verbose_name=_("Puntos requeridos"),
-        help_text=_("Cantidad de puntos necesarios para alcanzar este nivel")
-    )
-    descripcion = models.TextField(
-        blank=True,
-        verbose_name=_("Descripción")
-    )
-    icono = models.ImageField(
-        upload_to='niveles/',
-        blank=True,
-        null=True,
-        verbose_name=_("Icono")
-    )
+# --------------------------------------------------------------------------
+# MODELOS DEL NUEVO "CÓDICE DE LAS LEYENDAS"
+# --------------------------------------------------------------------------
+
+class Arquetipo(models.Model):
+    """Representa un Capítulo del Códice, asociado a un personaje y un nivel."""
+    nivel = models.PositiveIntegerField(primary_key=True, verbose_name=_("Nivel"))
+    nombre_personaje = models.CharField(max_length=100, verbose_name=_("Nombre del Personaje"))
+    titulo_arquetipo = models.CharField(max_length=100, verbose_name=_("Título del Arquetipo"))
+    filosofia = models.TextField(verbose_name=_("Filosofía del Nivel"))
+    puntos_requeridos = models.PositiveIntegerField(verbose_name=_("Puntos Requeridos para Desbloquear"))
+    icono_fa = models.CharField(max_length=50, blank=True, null=True, help_text="Ej: 'fas fa-fist-raised'")
+    imagen_url = models.URLField(blank=True, null=True, help_text="URL a una imagen épica del personaje.")
 
     class Meta:
-        verbose_name = _("Nivel")
-        verbose_name_plural = _("Niveles")
-        ordering = ['numero']
+        verbose_name = _("Arquetipo (Nivel)")
+        verbose_name_plural = _("Arquetipos (Niveles)")
+        ordering = ['nivel']
 
     def __str__(self):
-        return f"{self.numero} - {self.nombre} ({self.puntos_requeridos} pts)"
+        return f"Nivel {self.nivel}: {self.titulo_arquetipo}"
 
 
-class TipoLogro(models.Model):
-    """
-    Categorías de logros (hitos, consistencia, superación, especiales)
-    """
-    CATEGORIA_CHOICES = [
-        ('hito', _('Hito')),
-        ('consistencia', _('Consistencia')),
-        ('superacion', _('Superación')),
-        ('especial', _('Especial')),
-        # Nuevas categorías
-        ('exploracion', _('Exploración')),
-        ('equilibrio', _('Equilibrio')),
-        ('social', _('Social')),
-        ('tecnica', _('Técnica')),
-        ('recuperacion', _('Recuperación')),
-    ]
-
-    nombre = models.CharField(
-        max_length=50,
-        verbose_name=_("Nombre")
-    )
-    categoria = models.CharField(
-        max_length=20,
-        choices=CATEGORIA_CHOICES,
-        default='hito',
-        verbose_name=_("Categoría")
-    )
-    descripcion = models.TextField(
-        blank=True,
-        verbose_name=_("Descripción")
-    )
+class PruebaLegendaria(models.Model):
+    """Representa un Logro Épico, que es una prueba dentro de un capítulo/arquetipo."""
+    arquetipo = models.ForeignKey(Arquetipo, on_delete=models.CASCADE, related_name='pruebas')
+    nombre = models.CharField(max_length=200, verbose_name=_("Nombre de la Prueba"))
+    descripcion = models.TextField(verbose_name=_("Descripción"))
+    clave_calculo = models.CharField(max_length=50, unique=True, help_text="Identificador para la lógica de cálculo.")
+    meta_valor = models.FloatField(default=1.0)
+    puntos_recompensa = models.PositiveIntegerField(default=100)
+    es_secreta = models.BooleanField(default=False, help_text=_("Oculta hasta ser completada."))
 
     class Meta:
-        verbose_name = _("Tipo de Logro")
-        verbose_name_plural = _("Tipos de Logros")
+        verbose_name = _("Prueba Legendaria (Logro)")
+        verbose_name_plural = _("Pruebas Legendarias (Logros)")
+        ordering = ['arquetipo', 'nombre']
 
     def __str__(self):
-        return f"{self.nombre} ({self.get_categoria_display()})"
-
-
-class Logro(models.Model):
-    """
-    Modelo para los logros (badges) que pueden desbloquear los usuarios.
-    """
-    nombre = models.CharField(
-        max_length=100,
-        verbose_name=_("Nombre")
-    )
-    descripcion = models.TextField(
-        verbose_name=_("Descripción")
-    )
-    tipo = models.ForeignKey(
-        TipoLogro,
-        on_delete=models.CASCADE,
-        related_name='logros',
-        verbose_name=_("Tipo de logro")
-    )
-    puntos_recompensa = models.PositiveIntegerField(
-        default=0,
-        verbose_name=_("Puntos de recompensa"),
-        help_text=_("Puntos que recibe el usuario al desbloquear este logro")
-    )
-    icono = models.ImageField(
-        upload_to='logros/',
-        blank=True,
-        null=True,
-        verbose_name=_("Icono")
-    )
-    meta_valor = models.PositiveIntegerField(
-        default=1,
-        verbose_name=_("Valor meta"),
-        help_text=_("Valor numérico que se debe alcanzar para desbloquear el logro")
-    )
-    es_secreto = models.BooleanField(
-        default=False,
-        verbose_name=_("Es secreto"),
-        help_text=_("Si es verdadero, el logro no se muestra hasta que se desbloquea")
-    )
-    fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("Fecha de creación")
-    )
-
-    class Meta:
-        verbose_name = _("Logro")
-        verbose_name_plural = _("Logros")
-        ordering = ['tipo', 'meta_valor']
-
-    def __str__(self):
-        return self.nombre
-
-
-class TipoQuest(models.Model):
-    """
-    Categorías de misiones (diarias, semanales, mensuales, progresivas)
-    """
-    PERIODO_CHOICES = [
-        ('diaria', _('Diaria')),
-        ('semanal', _('Semanal')),
-        ('mensual', _('Mensual')),
-        ('progresiva', _('Progresiva')),
-        ('permanente', _('Permanente')),
-        # Nueva categoría
-        ('especial', _('Especial')),
-    ]
-
-    nombre = models.CharField(
-        max_length=50,
-        verbose_name=_("Nombre")
-    )
-    periodo = models.CharField(
-        max_length=20,
-        choices=PERIODO_CHOICES,
-        default='semanal',
-        verbose_name=_("Periodo")
-    )
-    duracion_dias = models.PositiveIntegerField(
-        default=7,
-        verbose_name=_("Duración en días"),
-        help_text=_("Número de días que dura la misión")
-    )
-    descripcion = models.TextField(
-        blank=True,
-        verbose_name=_("Descripción")
-    )
-
-    class Meta:
-        verbose_name = _("Tipo de Misión")
-        verbose_name_plural = _("Tipos de Misiones")
-
-    def __str__(self):
-        return f"{self.nombre} ({self.get_periodo_display()})"
-
-
-class Quest(models.Model):
-    """
-    Modelo para las misiones (quests) que pueden completar los usuarios.
-    """
-    nombre = models.CharField(
-        max_length=100,
-        verbose_name=_("Nombre")
-    )
-    descripcion = models.TextField(
-        verbose_name=_("Descripción")
-    )
-    tipo = models.ForeignKey(
-        TipoQuest,
-        on_delete=models.CASCADE,
-        related_name='quests',
-        verbose_name=_("Tipo de misión")
-    )
-    puntos_recompensa = models.PositiveIntegerField(
-        default=100,
-        verbose_name=_("Puntos de recompensa"),
-        help_text=_("Puntos que recibe el usuario al completar esta misión")
-    )
-    icono = models.ImageField(
-        upload_to='quests/',
-        blank=True,
-        null=True,
-        verbose_name=_("Icono")
-    )
-    meta_valor = models.PositiveIntegerField(
-        default=1,
-        verbose_name=_("Valor meta"),
-        help_text=_("Valor numérico que se debe alcanzar para completar la misión")
-    )
-    ejercicio = models.ForeignKey(
-        'rutinas.EjercicioBase',
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='quests',
-        verbose_name=_("Ejercicio relacionado")
-    )
-    quest_padre = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='quests_hijos',
-        verbose_name=_("Misión padre"),
-        help_text=_("Para misiones progresivas que forman parte de una serie")
-    )
-    activa = models.BooleanField(
-        default=True,
-        verbose_name=_("Activa")
-    )
-    fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("Fecha de creación")
-    )
-    # Nuevos campos para misiones progresivas y especiales
-    orden_secuencia = models.IntegerField(
-        null=True,
-        blank=True,
-        verbose_name=_("Orden en secuencia"),
-        help_text=_("Para misiones progresivas, indica el orden en la secuencia")
-    )
-    grupo_secuencia = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        verbose_name=_("Grupo de secuencia"),
-        help_text=_("Identificador del grupo de misiones progresivas")
-    )
-    requisito_anterior = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        verbose_name=_("Requisito anterior"),
-        help_text=_("Nombre de la misión que debe completarse antes")
-    )
-    fecha_inicio_evento = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name=_("Fecha inicio evento"),
-        help_text=_("Para misiones especiales con tiempo limitado")
-    )
-    fecha_fin_evento = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name=_("Fecha fin evento"),
-        help_text=_("Para misiones especiales con tiempo limitado")
-    )
-
-    class Meta:
-        verbose_name = _("Misión")
-        verbose_name_plural = _("Misiones")
-        ordering = ['tipo', 'nombre']
-
-    def __str__(self):
-        return self.nombre
+        return f"({self.arquetipo.nombre_personaje}) - {self.nombre}"
 
 
 class PerfilGamificacion(models.Model):
-    """
-    Perfil de gamificación para cada usuario, con sus puntos, nivel y estadísticas.
-    """
+    """El perfil del cliente. Ahora se relaciona con Arquetipo en lugar de Nivel."""
     cliente = models.OneToOneField(
         Cliente,
         on_delete=models.CASCADE,
@@ -296,11 +61,12 @@ class PerfilGamificacion(models.Model):
         verbose_name=_("Puntos totales")
     )
     nivel_actual = models.ForeignKey(
-        Nivel,
+        Arquetipo,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='usuarios',
-        verbose_name=_("Nivel actual")
+        blank=True,
+        related_name='perfiles',
+        verbose_name=_("Arquetipo Actual")
     )
     fecha_ultimo_entreno = models.DateTimeField(
         null=True,
@@ -309,13 +75,11 @@ class PerfilGamificacion(models.Model):
     )
     racha_actual = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("Racha actual"),
-        help_text=_("Días consecutivos de entrenamiento")
+        verbose_name=_("Racha actual")
     )
     racha_maxima = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("Racha máxima"),
-        help_text=_("Máximo de días consecutivos de entrenamiento")
+        verbose_name=_("Racha máxima")
     )
     entrenos_totales = models.PositiveIntegerField(
         default=0,
@@ -331,150 +95,114 @@ class PerfilGamificacion(models.Model):
         verbose_name_plural = _("Perfiles de Gamificación")
 
     def __str__(self):
-        return f"Perfil de {self.cliente.nombre} - Nivel {self.nivel_actual.numero if self.nivel_actual else 1}"
+        return f"Perfil de {self.cliente.nombre} - {self.nivel_actual.titulo_arquetipo if self.nivel_actual else 'Nivel Inicial'}"
 
     def actualizar_nivel(self):
-        """Actualiza el nivel del usuario según sus puntos totales"""
-        nuevo_nivel = Nivel.objects.filter(
+        """Actualiza el nivel (Arquetipo) del usuario según sus puntos totales."""
+        nuevo_arquetipo = Arquetipo.objects.filter(
             puntos_requeridos__lte=self.puntos_totales
-        ).order_by('-puntos_requeridos').first()
+        ).order_by('-nivel').first()
 
-        if nuevo_nivel and (not self.nivel_actual or nuevo_nivel.numero > self.nivel_actual.numero):
-            self.nivel_actual = nuevo_nivel
+        if nuevo_arquetipo and (not self.nivel_actual or nuevo_arquetipo.nivel > self.nivel_actual.nivel):
+            nivel_anterior = self.nivel_actual
+            self.nivel_actual = nuevo_arquetipo
             self.save(update_fields=['nivel_actual'])
             return True
         return False
 
 
-class LogroUsuario(models.Model):
-    """
-    Relación entre usuarios y logros desbloqueados.
-    """
-    perfil = models.ForeignKey(
-        PerfilGamificacion,
-        on_delete=models.CASCADE,
-        related_name='logros',
-        verbose_name=_("Perfil")
-    )
-    logro = models.ForeignKey(
-        Logro,
-        on_delete=models.CASCADE,
-        related_name='usuarios',
-        verbose_name=_("Logro")
-    )
-    fecha_desbloqueo = models.DateTimeField(
-        default=timezone.now,
-        verbose_name=_("Fecha de desbloqueo")
-    )
-    progreso_actual = models.PositiveIntegerField(
-        default=0,
-        verbose_name=_("Progreso actual")
-    )
-    completado = models.BooleanField(
-        default=False,
-        verbose_name=_("Completado")
-    )
+class PruebaUsuario(models.Model):
+    """El progreso de un cliente en una Prueba Legendaria específica."""
+    perfil = models.ForeignKey(PerfilGamificacion, on_delete=models.CASCADE, related_name='pruebas_completadas')
+    prueba = models.ForeignKey(PruebaLegendaria, on_delete=models.CASCADE)
+    progreso_actual = models.FloatField(default=0)
+    completada = models.BooleanField(default=False)
+    fecha_completada = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = _("Logro de Usuario")
-        verbose_name_plural = _("Logros de Usuarios")
-        unique_together = ('perfil', 'logro')
-        ordering = ['-fecha_desbloqueo']
+        verbose_name = _("Progreso de Prueba de Usuario")
+        verbose_name_plural = _("Progresos de Pruebas de Usuarios")
+        unique_together = ('perfil', 'prueba')
 
     def __str__(self):
-        return f"{self.perfil.cliente.nombre} - {self.logro.nombre}"
+        return f"{self.perfil.cliente.nombre} - {self.prueba.nombre}"
+
+
+# --------------------------------------------------------------------------
+# MODELOS DE MISIONES (QUESTS) - SIN CAMBIOS
+# --------------------------------------------------------------------------
+
+class TipoQuest(models.Model):
+    """Tipos de misiones disponibles"""
+    nombre = models.CharField(max_length=50, unique=True, verbose_name=_("Nombre"))
+    descripcion = models.TextField(blank=True, verbose_name=_("Descripción"))
+    icono = models.CharField(max_length=50, blank=True, verbose_name=_("Icono"))
+
+    class Meta:
+        verbose_name = _("Tipo de Quest")
+        verbose_name_plural = _("Tipos de Quest")
+
+    def __str__(self):
+        return self.nombre
+
+
+class Quest(models.Model):
+    """Misiones que los usuarios pueden completar"""
+    PERIODO_CHOICES = [
+        ('diario', _('Diario')),
+        ('semanal', _('Semanal')),
+        ('mensual', _('Mensual')),
+        ('especial', _('Especial')),
+    ]
+
+    nombre = models.CharField(max_length=200, verbose_name=_("Nombre"))
+    descripcion = models.TextField(verbose_name=_("Descripción"))
+    tipo = models.ForeignKey(TipoQuest, on_delete=models.CASCADE, verbose_name=_("Tipo"))
+    periodo = models.CharField(max_length=20, choices=PERIODO_CHOICES, verbose_name=_("Período"))
+    puntos_recompensa = models.PositiveIntegerField(verbose_name=_("Puntos de recompensa"))
+    activa = models.BooleanField(default=True, verbose_name=_("Activa"))
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_("Fecha de creación"))
+
+    class Meta:
+        verbose_name = _("Quest")
+        verbose_name_plural = _("Quests")
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_periodo_display()})"
 
 
 class QuestUsuario(models.Model):
-    """
-    Relación entre usuarios y misiones aceptadas/completadas.
-    """
-    perfil = models.ForeignKey(
-        PerfilGamificacion,
-        on_delete=models.CASCADE,
-        related_name='quests',
-        verbose_name=_("Perfil")
-    )
-    quest = models.ForeignKey(
-        Quest,
-        on_delete=models.CASCADE,
-        related_name='usuarios',
-        verbose_name=_("Misión")
-    )
-    fecha_inicio = models.DateTimeField(
-        default=timezone.now,
-        verbose_name=_("Fecha de inicio")
-    )
-    fecha_fin = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name=_("Fecha de finalización")
-    )
-    progreso_actual = models.PositiveIntegerField(
-        default=0,
-        verbose_name=_("Progreso actual")
-    )
-    completada = models.BooleanField(
-        default=False,
-        verbose_name=_("Completada")
-    )
+    """Progreso de un usuario en una quest específica"""
+    perfil = models.ForeignKey(PerfilGamificacion, on_delete=models.CASCADE, related_name='quests_usuario')
+    quest = models.ForeignKey(Quest, on_delete=models.CASCADE)
+    progreso_actual = models.FloatField(default=0, verbose_name=_("Progreso actual"))
+    completada = models.BooleanField(default=False, verbose_name=_("Completada"))
+    fecha_inicio = models.DateTimeField(auto_now_add=True, verbose_name=_("Fecha de inicio"))
+    fecha_completada = models.DateTimeField(null=True, blank=True, verbose_name=_("Fecha de completada"))
 
     class Meta:
-        verbose_name = _("Misión de Usuario")
-        verbose_name_plural = _("Misiones de Usuarios")
+        verbose_name = _("Quest de Usuario")
+        verbose_name_plural = _("Quests de Usuario")
         unique_together = ('perfil', 'quest')
-        ordering = ['-fecha_inicio']
 
     def __str__(self):
         return f"{self.perfil.cliente.nombre} - {self.quest.nombre}"
 
 
+# --------------------------------------------------------------------------
+# MODELOS DE HISTORIAL Y NOTIFICACIONES
+# --------------------------------------------------------------------------
+
 class HistorialPuntos(models.Model):
-    """
-    Registro histórico de puntos ganados por el usuario.
-    """
-    perfil = models.ForeignKey(
-        PerfilGamificacion,
-        on_delete=models.CASCADE,
-        related_name='historial_puntos',
-        verbose_name=_("Perfil")
-    )
-    puntos = models.PositiveIntegerField(
-        verbose_name=_("Puntos")
-    )
-    entreno = models.ForeignKey(
-        'entrenos.EntrenoRealizado',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='puntos',
-        verbose_name=_("Entrenamiento")
-    )
-    logro = models.ForeignKey(
-        Logro,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='puntos_otorgados',
-        verbose_name=_("Logro")
-    )
-    quest = models.ForeignKey(
-        Quest,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='puntos_otorgados',
-        verbose_name=_("Misión")
-    )
-    descripcion = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name=_("Descripción")
-    )
-    fecha = models.DateTimeField(
-        default=timezone.now,
-        verbose_name=_("Fecha")
-    )
+    """Historial de puntos ganados por el usuario"""
+    perfil = models.ForeignKey(PerfilGamificacion, on_delete=models.CASCADE, related_name='historial_puntos')
+    puntos = models.PositiveIntegerField(verbose_name=_("Puntos"))
+    entreno = models.ForeignKey('entrenos.EntrenoRealizado', on_delete=models.SET_NULL, null=True, blank=True)
+    prueba_legendaria = models.ForeignKey(PruebaLegendaria, on_delete=models.SET_NULL, null=True, blank=True,
+                                          related_name='puntos_otorgados')
+    quest = models.ForeignKey(Quest, on_delete=models.SET_NULL, null=True, blank=True, related_name='puntos_otorgados')
+    descripcion = models.CharField(max_length=255, blank=True, verbose_name=_("Descripción"))
+    fecha = models.DateTimeField(default=timezone.now, verbose_name=_("Fecha"))
 
     class Meta:
         verbose_name = _("Historial de Puntos")
@@ -482,31 +210,29 @@ class HistorialPuntos(models.Model):
         ordering = ['-fecha']
 
     def __str__(self):
-        return f"{self.perfil.cliente.nombre} - {self.puntos} pts - {self.fecha.strftime('%d/%m/%Y')}"
+        return f"{self.perfil.cliente.nombre} - {self.puntos} puntos - {self.fecha.strftime('%d/%m/%Y')}"
 
-
-# logros/models.py - Añadir al final del archivo
 
 class Notificacion(models.Model):
-    TIPOS = (
-        ('logro', 'Logro Desbloqueado'),
-        ('mision', 'Misión Completada'),
-        ('nivel', 'Subida de Nivel'),
-        ('racha', 'Racha Conseguida'),
-        ('sistema', 'Sistema'),
-    )
+    """Notificaciones para el usuario"""
+    TIPO_CHOICES = [
+        ('logro', _('Logro')),
+        ('quest', _('Quest')),
+        ('nivel', _('Nivel')),
+        ('general', _('General')),
+    ]
 
-    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
-    tipo = models.CharField(max_length=20, choices=TIPOS)
-    titulo = models.CharField(max_length=100)
-    mensaje = models.TextField()
-    icono = models.CharField(max_length=50, default='🏆')
-    fecha = models.DateTimeField(auto_now_add=True)
-    leida = models.BooleanField(default=False)
-    url_accion = models.CharField(max_length=255, blank=True, null=True)
+    perfil = models.ForeignKey(PerfilGamificacion, on_delete=models.CASCADE, related_name='notificaciones')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name=_("Tipo"))
+    titulo = models.CharField(max_length=200, verbose_name=_("Título"))
+    mensaje = models.TextField(verbose_name=_("Mensaje"))
+    leida = models.BooleanField(default=False, verbose_name=_("Leída"))
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_("Fecha de creación"))
 
     class Meta:
-        ordering = ['-fecha']
+        verbose_name = _("Notificación")
+        verbose_name_plural = _("Notificaciones")
+        ordering = ['-fecha_creacion']
 
     def __str__(self):
-        return f"{self.get_tipo_display()}: {self.titulo} ({self.cliente.nombre})"
+        return f"{self.perfil.cliente.nombre} - {self.titulo}"

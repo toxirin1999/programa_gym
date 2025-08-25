@@ -47,12 +47,15 @@ urlpatterns = [
     path('logros/', include('logros.urls')),
     # API para Liftin
     path('api/liftin/', include('entrenos.urls_api')),
-
+    path('estoico/', include('estoico.urls')),
+    # ... (otras urls)
+    path('logros/', include('logros.urls')),
     # Página principal (opcional)
     path('', include('entrenos.urls')),  # Redirigir a dashboard de entrenos
     # Admin
     path('admin/', admin.site.urls),
     path('analytics/', include('analytics.urls')),
+    path('nutricion/', include('nutricion_app_django.urls')),
 ]
 # Servir archivos media en desarrollo
 if settings.DEBUG:

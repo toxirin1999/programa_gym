@@ -1,38 +1,46 @@
+# logros/urls.py
+
 from django.urls import path
 from . import views
 
 app_name = 'logros'
 
 urlpatterns = [
-    # Perfil de gamificación
-    path('perfil/', views.perfil_gamificacion, name='perfil_gamificacion'),
-    path('perfil/<int:cliente_id>/', views.perfil_gamificacion, name='perfil_gamificacion'),
-    path('', views.dashboard_principal, name='dashboard_principal'),
-    # Logros
-    path('logros/', views.lista_logros, name='lista_logros'),
-    path('logros/<int:logro_id>/', views.detalle_logro, name='detalle_logro'),
+    # Vista principal del Códice de las Leyendas
+    path('', views.perfil_gamificacion, name='perfil_gamificacion'),
+    path('cliente/<int:cliente_id>/', views.perfil_gamificacion, name='perfil_gamificacion'),
 
-    # Misiones
-    path('misiones/', views.lista_misiones, name='lista_misiones'),
-    path('misiones/<int:quest_id>/', views.detalle_mision, name='detalle_mision'),
+    # Vistas de Arquetipos (antes Niveles)
+    path('arquetipos/', views.lista_arquetipos, name='lista_arquetipos'),
+    path('cliente/<int:cliente_id>/arquetipo/<int:arquetipo_nivel>/', views.detalle_arquetipo,
+         name='detalle_arquetipo'),
 
-    # Ranking
-    # path('ranking/', views.ranking_clientes, name='ranking_clientes'),
+    # Vistas de Pruebas Legendarias (antes Logros)
+    path('pruebas-legendarias/', views.lista_pruebas_legendarias, name='lista_pruebas_legendarias'),
 
-    # Procesamiento de entrenamientos
+    # Ranking y competición
+    path('ranking/', views.ranking_clientes, name='ranking_clientes'),
+
+    # Procesamiento manual
     path('procesar-entreno/<int:entreno_id>/', views.procesar_entreno, name='procesar_entreno'),
 
-    # AJAX
-    path('actualizar-progreso/<int:cliente_id>/', views.actualizar_progreso_ajax, name='actualizar_progreso_ajax'),
-    # Notificaciones
-    path('notificaciones/<int:cliente_id>/', views.listar_notificaciones, name='listar_notificaciones'),
-    path('notificaciones/marcar-leida/<int:notificacion_id>/', views.marcar_notificacion_leida,
-         name='marcar_notificacion_leida'),
-    path('api/notificaciones/<int:cliente_id>/', views.obtener_notificaciones_ajax, name='obtener_notificaciones_ajax'),
-    path('notificaciones/marcar-todas-leidas/<int:cliente_id>/', views.marcar_todas_notificaciones_leidas,
-         name='marcar_todas_notificaciones_leidas'),
+    # Análisis y reportes
     path('analisis/cliente/<int:cliente_id>/', views.analisis_cliente, name='analisis_cliente'),
     path('analisis/global/', views.analisis_global, name='analisis_global'),
-    path('analisis/cliente/<int:cliente_id>/exportar-pdf/', views.exportar_analisis_cliente_pdf,
+    path('analisis/cliente/<int:cliente_id>/pdf/', views.exportar_analisis_cliente_pdf,
          name='exportar_analisis_cliente_pdf'),
+
+    # Notificaciones
+    path('cliente/<int:cliente_id>/notificaciones/', views.listar_notificaciones, name='listar_notificaciones'),
+    path('notificacion/<int:notificacion_id>/marcar-leida/', views.marcar_notificacion_leida,
+         name='marcar_notificacion_leida'),
+    path('cliente/<int:cliente_id>/notificaciones/ajax/', views.obtener_notificaciones_ajax,
+         name='obtener_notificaciones_ajax'),
+
+    # Misiones (Quests) - mantienen la funcionalidad original
+    path('misiones/', views.lista_misiones, name='lista_misiones'),
+    path('mision/<int:mision_id>/', views.detalle_mision, name='detalle_mision'),
+
+    # URLs de compatibilidad (para no romper enlaces existentes)
+    path('logros/', views.lista_pruebas_legendarias, name='lista_logros'),  # Redirige a pruebas legendarias
 ]
