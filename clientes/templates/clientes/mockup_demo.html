@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_tags %}
-{% load extra_filters %}
-{% load custom_filters %}
+
+{% load clientes_filters %}
 
 {% block title %}Inicio – Nueva Gym{% endblock %}
 
@@ -321,12 +320,69 @@
     <!-- ================================================================== -->
     <!-- ENCABEZADO (Ocupa todo el ancho) -->
     <!-- ================================================================== -->
-    <header class="text-center mb-8">
-        <h1 class="text-5xl font-extrabold leading-tight bg-gradient-to-r from-cyan-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg">
-            Hola, {{ cliente.nombre }}
-        </h1>
-        <p class="text-lg text-cyan-200 mt-2">{{ frase_bitacora|default:"¿Listo para analizar tu progreso?" }}</p>
+
+        <header class="mb-8 animate-fadeSlide">
+    <div class="metric-card p-4">
+        <div class="flex items-center gap-4">
+            <!-- Avatar del Cliente -->
+            <div class="flex-shrink-0">
+                {% if cliente.foto %}
+                    <img src="{{ cliente.foto.url }}" alt="Avatar de {{ cliente.nombre }}" class="w-40 h-40 rounded-full border-2 border-cyan-400 object-cover">
+                {% else %}
+                    <div class="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center text-cyan-400 text-3xl font-bold">
+                        {{ cliente.nombre|first|upper }}
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Información y Objetivo -->
+            <div class="flex-grow">
+                <h1 class="text-3xl font-bold text-white">Hola, {{ cliente.nombre }}</h1>
+                <p class="text-md text-cyan-300 mt-1">
+                    <i class="fas fa-bullseye"></i> Objetivo Actual: <strong>{{ cliente.get_objetivo_principal_display }}</strong>
+                </p>
+                <a href="{% url 'clientes:detalle_cliente' user.cliente_perfil.id %}" class="dropdown-item">
+                                <i class="fas fa-tachometer-alt mr-2"></i> Mi Panel
+                            </a>
+                            {% if estoico_disponible %}
+                        <a href="{% url 'estoico:dashboard' %}"
+                           class="text-yellow-400 hover:text-yellow-300 transition-colors">
+                            <i class="fas fa-brain mr-2"></i> Crecimiento Personal
+                        </a>
+                        {% endif %}
+            </div>
+
+            <!-- Botón para editar perfil/preferencias -->
+            <div>
+                <a href="{% url 'clientes:configurar_preferencias_helms' cliente.id %}" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-cog fa-lg"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
     </header>
+{% if notificaciones %}
+<div class="space-y-3 mb-8 animate-fadeSlide" style="animation-delay: 0.1s;">
+    {% for notif in notificaciones %}
+    <div class="metric-card p-4 border-l-4 border-{{ notif.color }}-400">
+        <div class="flex items-center gap-4">
+            <div class="text-{{ notif.color }}-400 text-2xl">
+                <i class="fas {{ notif.icono }}"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-white">{{ notif.titulo }}</h4>
+                <p class="text-sm text-gray-300">{{ notif.mensaje }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="col-md-6">
+
+    </div>
 
     <!-- ================================================================== -->
     <!-- INICIO DEL LAYOUT DE 2 COLUMNAS -->
@@ -338,16 +394,29 @@
         <!-- ============================================= -->
         <div class="lg:col-span-2 space-y-8">
 
-            <!-- 1. Conclusión Semanal de Joi (antes burbuja de chat) -->
-            <div class="quote-box animate-fadeSlide">
-                <div class="flex items-center gap-4">
-                    <img src="{% static 'images/joi_neutra.png' %}" alt="Joi" class="entity-image">
-                    <div>
-                        <p class="text-sm uppercase text-cyan-400 font-bold">Análisis Semanal</p>
-                        <p class="text-lg font-semibold mt-1 text-white">“{{ conclusion_joi }}”</p>
-                    </div>
-                </div>
-            </div>
+
+            <!-- ================================================================== -->
+<!-- INICIO: Panel de la Cita Estoica del Día -->
+<!-- ================================================================== -->
+{% if estoico_disponible and contenido_hoy %}
+
+
+    <div class="quote-box p-5 text-center">
+        <blockquote class="blockquote mb-0">
+            <p class="text-lg font-semibold fst-italic text-white mb-3">
+                "{{ contenido_hoy.cita }}"
+            </p>
+            <footer class="blockquote-footer text-sm text-gray-400">
+                <strong>{{ contenido_hoy.autor }}</strong>
+            </footer>
+        </blockquote>
+    </div>
+
+
+{% endif %}
+<!-- ================================================================== -->
+<!-- FIN: Panel de la Cita Estoica del Día -->
+<!-- ================================================================== -->
 
             <!-- 2. Acciones Rápidas -->
             <div class="quote-box animate-fadeSlide" style="animation-delay: 0.1s;">
@@ -361,6 +430,7 @@
                         Dashboard IA</a>
                 </div>
             </div>
+
 
             <!-- 3. Entrenamientos Recientes -->
             <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.2s;">
@@ -487,8 +557,299 @@
         </div>
         {% endfor %}
     </div>
+
+
+</div>
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
+    <h3 class="section-title text-yellow-400"><i class="fas fa-exclamation-triangle"></i> Puntos Débiles Identificados</h3>
+    <div class="p-4 rounded-lg border border-yellow-700 bg-yellow-900/50 space-y-2">
+        {% for punto in ratios_fuerza.puntos_debiles %}
+            <p class="text-sm text-yellow-200">{{ punto }}</p>
+        {% endfor %}
+    </div>
+    <div class="text-right mt-2">
+        <a href="{% url 'analytics:progresion_avanzado' cliente.id %}" class="text-xs text-cyan-400 hover:text-cyan-300">
+            Ver análisis completo →
+        </a>
+    </div>
+</div>
+    <section class="quote-box">
+        <div class="text-center mb-4">
+            <h2 class="text-3xl font-bold title">Empezar Sesión de Hoy</h2>
+            <p class="text-secondary">Tu portal para el entrenamiento diario: check-in, rutina ajustada y registro.</p>
+        </div>
+        <a href="{% url 'clientes:portal_sesion' cliente.id %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+        🚀 Iniciar Portal de Sesión
+    </a>
+    </section>
+
+{% if ajuste_del_dia %}
+<div class="timeline-section animate-fadeSlide mb-6" style="animation-delay: 0.1s; border-left: 5px solid; border-color: {{ ajuste_del_dia.color }};">
+    <h3 class="section-title text-xl font-bold text-{{ ajuste_del_dia.color }}-400 mb-2">
+        <i class="fas fa-robot"></i> Recomendación de Joi para Hoy
+    </h3>
+    <p class="text-gray-300">{{ ajuste_del_dia.mensaje }}</p>
+        <div class="flex space-x-4 mt-2 text-sm">
+        <span>
+            Ajuste de RPE:
+            <strong class="text-white">
+                {% if ajuste_del_dia.modificacion_rpe > 0 %}
+                    +{{ ajuste_del_dia.modificacion_rpe }}
+                {% else %}
+                    {{ ajuste_del_dia.modificacion_rpe }}
+                {% endif %}
+                 puntos
+            </strong>
+        </span>
+        <span>
+            Ajuste de Volumen:
+            <strong class="text-white">
+                {{ ajuste_del_dia.modificacion_volumen|multiply:100|floatformat:0 }}% del planificado
+            </strong>
+        </span>
+    </div>
 </div>
 {% endif %}
+{% include 'clientes/includes/tarjeta_proximo_entrenamiento.html' %}
+{% endif %}
+
+
+<!-- 2.5. Dashboard de Adherencia -->
+            <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.15s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="section-title"><i class="fas fa-chart-line text-cyan-400"></i> Dashboard de Adherencia</h3>
+
+                        <a href="{% url 'clientes:dashboard_adherencia' cliente.id %}" class="text-sm text-cyan-400 hover:text-cyan-300">Ver completo</a>
+
+                </div>
+
+                <!-- Métricas de Adherencia -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="metric-card text-center p-4">
+                        <h3 class="text-lg font-semibold text-cyan-400 mb-2">Adherencia Semanal</h3>
+                        {% if reporte and reporte.metricas %}
+                            <p class="text-3xl font-bold text-white">{{ reporte.metricas.porcentaje_adherencia_semanal|floatformat:1 }}%</p>
+                            <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                                <div class="bg-gradient-to-r from-cyan-400 to-green-400 h-2 rounded-full" style="width: {{ reporte.metricas.porcentaje_adherencia_semanal }}%"></div>
+                            </div>
+                        {% else %}
+                            <p class="text-3xl font-bold text-white">66.7%</p>
+                            <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                                <div class="bg-gradient-to-r from-cyan-400 to-green-400 h-2 rounded-full" style="width: 66.7%"></div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="metric-card text-center p-4">
+                        <h3 class="text-lg font-semibold text-cyan-400 mb-2">Días Perdidos (Consec.)</h3>
+                        {% if reporte and reporte.metricas %}
+                            <p class="text-3xl font-bold text-white">{{ reporte.metricas.dias_consecutivos_perdidos }}</p>
+                        {% else %}
+                            <p class="text-3xl font-bold text-white">0</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-400 mt-1">días seguidos</p>
+                    </div>
+                    <div class="metric-card text-center p-4">
+                        <h3 class="text-lg font-semibold text-cyan-400 mb-2">Tendencia</h3>
+                        {% if reporte and reporte.metricas and reporte.metricas.tendencia %}
+                            <p class="text-3xl font-bold
+                                {% if reporte.metricas.tendencia == 'mejorando' or reporte.metricas.tendencia == 'estable' %}
+                                    text-green-400
+                                {% else %}
+                                    text-yellow-400
+                                {% endif %}">
+                                {{ reporte.metricas.tendencia|capfirst }}
+                            </p>
+                            {% if reporte.metricas.tendencia == 'mejorando' %}
+                                <i class="fas fa-arrow-trend-up text-green-400 text-lg mt-1"></i>
+                            {% elif reporte.metricas.tendencia == 'estable' %}
+                                <i class="fas fa-minus text-yellow-400 text-lg mt-1"></i>
+                            {% else %}
+                                <i class="fas fa-arrow-trend-down text-red-400 text-lg mt-1"></i>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-3xl font-bold text-yellow-400">Bajo</p>
+                            <i class="fas fa-arrow-trend-down text-red-400 text-lg mt-1"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Alertas Activas -->
+                <div class="mt-4">
+                    <h4 class="text-lg font-bold mb-3 text-white">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i> Alertas Activas
+                    </h4>
+                    {% if reporte and reporte.alertas_activas %}
+                        <div class="space-y-3">
+                            {% for alerta in reporte.alertas_activas %}
+                            <div class="bg-red-900/50 border border-red-500 p-4 rounded-lg animate-pulse">
+                                <h5 class="font-bold text-red-400 mb-2">
+                                    {{ alerta.tipo.value|capfirst }}
+                                    <span class="text-xs bg-red-600 text-white px-2 py-1 rounded ml-2">
+                                        Severidad: {{ alerta.severidad }}
+                                    </span>
+                                </h5>
+                                <p class="text-white mb-2">{{ alerta.mensaje }}</p>
+                                {% if alerta.recomendaciones %}
+                                <div class="mt-2">
+                                    <p class="text-sm font-semibold text-cyan-400 mb-1">Recomendaciones:</p>
+                                    <ul class="list-disc list-inside text-sm text-gray-300 space-y-1">
+                                        {% for rec in alerta.recomendaciones %}
+                                        <li>{{ rec }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- Mostrar alerta de ejemplo si no hay datos reales -->
+                        {% if not reporte %}
+                            <div class="bg-red-900/50 border border-red-500 p-4 rounded-lg animate-pulse">
+                                <h5 class="font-bold text-red-400 mb-2">
+                                    Adherencia Baja
+                                    <span class="text-xs bg-red-600 text-white px-2 py-1 rounded ml-2">
+                                        Severidad: 3
+                                    </span>
+                                </h5>
+                                <p class="text-white mb-2">Adherencia semanal baja: 66.7%</p>
+                                <div class="mt-2">
+                                    <p class="text-sm font-semibold text-cyan-400 mb-1">Recomendaciones:</p>
+                                    <ul class="list-disc list-inside text-sm text-gray-300 space-y-1">
+                                        <li>Revisar si el programa es demasiado demandante.</li>
+                                        <li>Considerar reducir volumen temporalmente.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="bg-green-900/30 border border-green-500 p-4 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                                    <div>
+                                        <p class="text-green-400 font-semibold">¡Sin alertas!</p>
+                                        <p class="text-gray-300 text-sm">Todo en orden. Mantén el buen trabajo.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+<!-- ================================================================== -->
+<!-- INICIO DE LA SECCIÓN -->
+<!-- ================================================================== -->
+
+
+<!-- ================================================================== -->
+<!-- 4. PANEL DE NUTRICIÓN COMPLETO (RÉPLICA DEL DISEÑO) -->
+<!-- ================================================================== -->
+{% if cliente.perfil_nutricion %}
+    {# Obtenemos los datos una sola vez para reutilizarlos en todo el bloque #}
+    {% with perfil_nutri=cliente.perfil_nutricion ultimo_nivel1=cliente.perfil_nutricion.get_ultimo_calculo_nivel1 ultimo_nivel2=cliente.perfil_nutricion.get_ultimo_calculo_nivel2 progreso_piramide=cliente.perfil_nutricion.get_progreso_piramide niveles_completados=cliente.perfil_nutricion.get_niveles_completados %}
+    <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="section-title"><i class="fas fa-apple-alt text-green-400"></i> Resumen Nutricional</h3>
+            <a href="{% url 'nutricion_app_django:dashboard_completo' %}" class="text-sm text-cyan-400 hover:text-cyan-300">Ver dashboard completo</a>
+        </div>
+
+        <!-- Métricas Principales -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="metric-card text-center p-3">
+                <div class="text-lg font-bold text-green-400">{{ perfil_nutri.peso|floatformat:1 }}</div>
+                <div class="text-xs text-gray-400">Peso (kg)</div>
+            </div>
+            <div class="metric-card text-center p-3">
+                <div class="text-lg font-bold text-blue-400">{{ ultimo_nivel1.calorias_objetivo|floatformat:0|default:"-" }}</div>
+                <div class="text-xs text-gray-400">Calorías</div>
+            </div>
+            <div class="metric-card text-center p-3">
+                <div class="text-lg font-bold text-red-400">{{ ultimo_nivel2.proteina_gramos|floatformat:0|default:"-" }}</div>
+                <div class="text-xs text-gray-400">Proteína (g)</div>
+            </div>
+            <div class="metric-card text-center p-3">
+                <div class="text-lg font-bold text-purple-400">{{ niveles_completados }}/5</div>
+                <div class="text-xs text-gray-400">Niveles</div>
+            </div>
+        </div>
+
+        <!-- Barra de Progreso de la Pirámide -->
+        <div class="mb-4">
+            <div class="flex justify-between items-center mb-2 text-sm">
+                <span class="text-gray-300">Progreso en la Pirámide</span>
+                <span class="text-cyan-400">{{ niveles_completados }}/5 completados</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full" style="width: {{ niveles_completados|multiply:20 }}%"></div>
+            </div>
+        </div>
+
+        <!-- Lista de Niveles de la Pirámide -->
+        <div class="space-y-2 mb-6">
+            {% for progreso in progreso_piramide %}
+            <div class="flex items-center justify-between p-2 rounded-lg {% if progreso.completado %}bg-green-900/30 border-green-500/30{% else %}bg-gray-800/30 border-gray-600/30{% endif %} border">
+                <div class="flex items-center gap-3">
+                    {% if progreso.completado %}
+                        <i class="fas fa-check-circle text-green-400"></i>
+                    {% else %}
+                        <i class="far fa-circle text-gray-500"></i>
+                    {% endif %}
+                    <span class="text-sm text-white">Nivel {{ progreso.nivel }}:
+                        {% if progreso.nivel == 1 %}Balance Energético{% endif %}
+                        {% if progreso.nivel == 2 %}Macronutrientes{% endif %}
+                        {% if progreso.nivel == 3 %}Micronutrientes{% endif %}
+                        {% if progreso.nivel == 4 %}Timing{% endif %}
+                        {% if progreso.nivel == 5 %}Suplementos{% endif %}
+                    </span>
+                </div>
+                {% if not progreso.completado %}
+                    {# Lógica para mostrar el botón "Completar" solo en el primer nivel no completado #}
+                    {% if forloop.counter0 == niveles_completados %}
+                    <a href="{% url 'nutricion_app_django:nivel1_balance' %}" class="text-xs text-cyan-400 hover:text-cyan-300">Completar</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Próximo Paso -->
+        <div class="mb-6 p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-arrow-right text-blue-400"></i>
+                <span class="text-sm text-white font-semibold">Próximo paso:</span>
+            </div>
+            <p class="text-sm text-gray-300 mt-1">{{ perfil_nutri.get_proximo_paso }}</p>
+        </div>
+
+        <!-- Acciones Rápidas de Nutrición -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a href="{% url 'nutricion_app_django:seguimiento_peso' %}" class="block w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center font-semibold py-2 px-3 rounded-lg shadow-md hover:scale-105 transition text-sm">
+                <i class="fas fa-weight me-1"></i>Registrar Peso
+            </a>
+            <a href="{% url 'nutricion_app_django:piramide_principal' %}" class="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center font-semibold py-2 px-3 rounded-lg shadow-md hover:scale-105 transition text-sm">
+                <i class="fas fa-pyramid me-1"></i>Ver Pirámide
+            </a>
+        </div>
+    </div>
+    {% endwith %}
+{% else %}
+    {# El bloque para usuarios sin perfil se queda igual #}
+    <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
+        <div class="text-center p-6">
+            <h3 class="section-title"><i class="fas fa-apple-alt text-green-400"></i> Nutrición</h3>
+            <p class="text-gray-400 mb-4">Configura tu perfil nutricional para acceder a la pirámide de nutrición personalizada.</p>
+            <a href="{% url 'nutricion_app_django:configurar_perfil' %}" class="block w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center font-semibold py-3 rounded-xl shadow-md hover:scale-105 transition">
+                <i class="fas fa-user-plus me-2"></i>Configurar Perfil Nutricional
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+
+<!-- ================================================================== -->
+<!-- 4. PANEL RESUMEN DE NUTRICIÓN (VERSIÓN FINAL CON MÉTODOS) -->
+<!-- ================================================================== -->
+
+
 <!-- ================================================================== -->
 <!-- FIN DE LA SECCIÓN -->
 <!-- ================================================================== -->
@@ -514,6 +875,65 @@
                 <div class="metric-card text-center p-4">
                     <h2 class="text-3xl font-bold">82</h2>
                     <p class="text-xs text-gray-400">Consistencia</p>
+                </div>
+            </div>
+             <!-- Integración Fitness-Estoico -->
+
+            <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.3s;">
+                <h3 class="integration-title">
+                    <i class="fas fa-yin-yang mr-2"></i>
+                    Equilibrio Mente-Cuerpo
+                </h3>
+
+                <div class="">
+                    <!-- Progreso físico -->
+                    <div class="text-center">
+                        <div class="text-cyan-400 text-3xl mb-2">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4 class="text-white font-semibold">Progreso Físico</h4>
+                        <p class="text-gray-300 text-sm">
+                            "El cuerpo es el templo del alma"
+                        </p>
+                        <div class="mt-2">
+                            <span class="text-cyan-400 font-bold">{{ progreso_fisico|default:50 }}%</span>
+                            <span class="text-gray-400 text-sm">hacia tu objetivo</span>
+                        </div>
+                    </div>
+
+                    <!-- Progreso mental -->
+                    <div class="text-center">
+                        <div class="text-yellow-400 text-3xl mb-2">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h4 class="text-white font-semibold">Crecimiento Mental</h4>
+                        <p class="text-gray-300 text-sm">
+                            "Una mente sana en un cuerpo sano"
+                        </p>
+                        <div class="mt-2">
+                            <span class="text-yellow-400 font-bold">{{ dias_reflexion|default:0 }}</span>
+
+                            <span class="text-gray-400 text-sm">días de reflexión</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+
+                        <a href="{% url 'estoico:diario_hoy' %}" class="btn-estoico">
+                            <i class="fas fa-eye mr-2"></i>Ver Reflexión
+                        </a>
+
+                        <a href="{% url 'estoico:diario_hoy' %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                            <i class="fas fa-pen mr-2"></i>Reflexionar Ahora
+                        </a>
+
+                </div>
+                </div>
+
+                <!-- Mensaje motivacional integrado -->
+                <div class="mt-4 p-3 bg-black bg-opacity-30 rounded-lg">
+                    <p class="text-center text-gray-200 italic">
+                        "{{ mensaje_integracion|default:'Mente sana en cuerpo sano - Los antiguos sabían que ambos van unidos.' }}"
+                    </p>
                 </div>
             </div>
 
@@ -623,23 +1043,34 @@
     </div>
 
     {% if datos_logros.logros_completados %}
-    <div class="mt-6">
-        <h4 class="text-white text-sm font-semibold mb-2">🕒 Logros Recientes</h4>
-        <ul class="space-y-2">
-            {% for logro_usuario in datos_logros.logros_completados %}
-            <li class="bg-[#2a2d3a] p-3 rounded-lg flex items-center justify-between">
-                <div>
-                    <div class="text-sm font-bold text-green-400">{{ logro_usuario.logro.nombre }}</div>
-                    <div class="text-xs text-gray-400">{{ logro_usuario.logro.descripcion }}</div>
-                </div>
-                <div class="text-xs text-yellow-300 font-semibold">
-                    +{{ logro_usuario.logro.puntos_recompensa }} pts
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
+<div class="mt-6">
+    <h4 class="text-white text-sm font-semibold mb-2">🕒 Logros Recientes</h4>
+    <!-- Le añadimos un ID a la lista para poder seleccionarla con JS -->
+    <ul id="lista-logros" class="space-y-2">
+        <!-- Usamos slice:":3" para mostrar solo los primeros 3 elementos -->
+        {% for logro_usuario in datos_logros.logros_completados|slice:":3" %}
+        <li class="logro-item bg-[#2a2d3a] p-3 rounded-lg flex items-center justify-between">
+            <div>
+                <div class="text-sm font-bold text-green-400">{{ logro_usuario.logro.nombre }}</div>
+                <div class="text-xs text-gray-400">{{ logro_usuario.logro.descripcion }}</div>
+            </div>
+            <div class="text-xs text-yellow-300 font-semibold">
+                +{{ logro_usuario.logro.puntos_recompensa }} pts
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    <!-- Añadimos el botón "Ver más" solo si hay más de 3 logros -->
+    {% if datos_logros.logros_completados|length > 3 %}
+    <div class="text-center mt-4">
+        <button id="btn-ver-mas-logros" class="text-sm text-cyan-400 hover:text-cyan-300 transition">
+            Ver más
+        </button>
     </div>
     {% endif %}
+</div>
+{% endif %}
+
 
             </div>
             <!-- En tu template principal, por ejemplo, en la columna derecha -->
@@ -647,6 +1078,28 @@
 <!-- ================================================================== -->
 <!-- SECCIÓN DE FATIGA ACUMULADA - PÉGALA AQUÍ -->
 <!-- ================================================================== -->
+<div class="metric-card animate-fadeSlide" style="animation-delay: 0.3s;">
+    <h3 class="section-title mb-0">⚡ Ratio ACWR Actual</h3>
+
+    {% if analisis_acwr and analisis_acwr.acwr_actual is not None %}
+        <div class="gauge-container {{ analisis_acwr.zona_riesgo }}">
+            <div class="gauge-value">{{ analisis_acwr.acwr_actual|floatformat:2 }}</div>
+            <div class="gauge-label">Zona de {{ analisis_acwr.zona_riesgo_display }}</div>
+            <p class="gauge-reco">{{ analisis_acwr.recomendacion }}</p>
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'analytics:dashboard_fatiga' cliente.id %}" class="text-sm text-cyan-400 hover:text-cyan-300">
+                Ver análisis completo →
+            </a>
+        </div>
+    {% else %}
+        <div class="text-center py-4">
+            <p class="text-gray-400">No hay suficientes datos para calcular el ratio ACWR.</p>
+            <p class="text-xs text-gray-500">Se necesita al menos una semana de entrenamientos registrados.</p>
+        </div>
+    {% endif %}
+</div>
+
 {% if fatiga_acumulada %}
 <div class="timeline-section animate-fadeSlide" style="animation-delay: 0.2s;">
     <div class="flex justify-between items-center mb-4">
@@ -731,6 +1184,53 @@
     {% endif %}
 </div>
 {% endif %}
+<!-- en clientes/templates/clientes/mockup_demo.html -->
+
+{% if estancamientos %}
+<div class="timeline-section animate-fadeSlide mt-6" style="animation-delay: 0.2s;">
+    <h3 class="section-title text-xl font-bold text-yellow-400 mb-4">
+        <i class="fas fa-exclamation-triangle"></i> Alertas de Progresión
+    </h3>
+    <div class="space-y-3">
+        {% for ejercicio, info in estancamientos.items %}
+        <div class="bg-yellow-900/50 border border-yellow-500 p-4 rounded-lg">
+            <h4 class="font-bold text-yellow-300">{{ ejercicio }}</h4>
+            <p class="text-sm text-gray-300">
+                Detectado un estancamiento de **{{ info.dias_estancado }} días**.
+            </p>
+            <p class="mt-2 text-xs text-yellow-200"><i class="fas fa-lightbulb mr-1"></i> {{ info.recomendacion }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% if prediccion_riesgo %}
+<div class="timeline-section animate-fadeSlide" style="animation-delay: 0.4s;">
+    <h3 class="section-title text-{{ prediccion_riesgo.color }}-400">
+        <i class="fas fa-brain"></i> Predicción de Adherencia
+    </h3>
+    <div class="bg-gray-800/50 p-4 rounded-lg border border-{{ prediccion_riesgo.color }}-500/50">
+        <div class="flex justify-between items-center">
+            <span class="font-bold text-lg text-white">Riesgo {{ prediccion_riesgo.riesgo|capfirst }}</span>
+            <span class="text-sm font-mono text-{{ prediccion_riesgo.color }}-300">
+                {{ prediccion_riesgo.probabilidad|multiply:100|floatformat:0 }}% prob.
+            </span>
+        </div>
+        <p class="text-sm text-gray-300 mt-2">{{ prediccion_riesgo.mensaje }}</p>
+
+        {% if prediccion_riesgo.recomendaciones %}
+        <div class="mt-3 pt-3 border-t border-gray-700">
+            <h5 class="text-xs font-semibold text-cyan-400 mb-1">Acciones Sugeridas:</h5>
+            <ul class="list-disc list-inside text-xs text-gray-400 space-y-1">
+                {% for rec in prediccion_riesgo.recomendaciones %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 <!-- ================================================================== -->
 <!-- FIN DE LA SECCIÓN -->
 <!-- ================================================================== -->
@@ -752,385 +1252,71 @@
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- CÓDIGO DE CHART.JS ---
-        const pesoCanvas = document.getElementById('graficoPeso');
-        if (pesoCanvas) {
-            const ctxPeso = pesoCanvas.getContext('2d');
-            new Chart(ctxPeso, {
-                type: 'line',
-                data: {
-                    labels: [{% for punto in datos_peso %}"{{ punto.fecha|date:"D" }}"{% if not forloop.last %},{% endif %}{% endfor %}],
-                    datasets: [{
-                        label: 'Peso Corporal (kg)',
-                        data: [{% for punto in datos_peso %}{{ punto.peso }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                        borderColor: '#32FF00',
-                        backgroundColor: 'rgba(50, 255, 0, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
-                    }
-                }
-            });
-        }
-
-        const rendimientoCanvas = document.getElementById('graficoRendimiento');
-        if (rendimientoCanvas) {
-            const ctxRendimiento = rendimientoCanvas.getContext('2d');
-            new Chart(ctxRendimiento, {
-                type: 'line',
-                data: {
-                    labels: [{% for punto in datos_rendimiento %}"{{ punto.semana }}"{% if not forloop.last %},{% endif %}{% endfor %}],
-                    datasets: [{
-                        label: 'Rendimiento',
-                        data: [{% for punto in datos_rendimiento %}{{ punto.valor }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                        borderColor: '#31CFF4',
-                        backgroundColor: 'rgba(49, 207, 244, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-                        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
-                    }
-                }
-            });
-        }
-
-        // --- Glitch Sutil Aleatorio ---
-        function applySubtleGlitch(element, type = 'text') {
-            const animationClass = type === 'text' ? (Math.random() > 0.5 ? 'textGlitch1' : 'textGlitch2') : 'borderGlitch';
-            const animationName = type === 'text' ? animationClass : 'borderGlitch';
-
-            // Para evitar que se apilen las animaciones si ya está glitcheando
-            if (element.style.animationName === animationName) {
-                return;
-            }
-
-            element.style.animation = `${animationName} 0.2s linear 1`; // 1 iteración
-            setTimeout(() => {
-                element.style.animation = ''; // Limpiar la animación para permitir que se active de nuevo
-            }, 200); // Duración de la animación
-        }
-
-        function initSubtleGlitches() {
-            const glitchableTexts = document.querySelectorAll('.glitch-text-subtle');
-            const glitchableBorders = document.querySelectorAll('.glitch-border-subtle');
-
-            glitchableTexts.forEach(el => {
-                setInterval(() => {
-                    if (Math.random() < 0.02) { // 2% de probabilidad de glitch cada intervalo
-                        applySubtleGlitch(el, 'text');
-                    }
-                }, Math.random() * 5000 + 3000); // Intervalo aleatorio entre 3 y 8 segundos
-            });
-
-            glitchableBorders.forEach(el => {
-                setInterval(() => {
-                    if (Math.random() < 0.01) { // 1% de probabilidad de glitch cada intervalo
-                        applySubtleGlitch(el, 'border');
-                    }
-                }, Math.random() * 8000 + 5000); // Intervalo aleatorio entre 5 y 13 segundos
-            });
-        }
-        initSubtleGlitches(); // Llama a la función de inicialización
-
-        // --- Animación de Conteo para Métricas ---
-        function animateCountUp(element) {
-            const target = parseFloat(element.getAttribute('data-target'));
-            const duration = 1500; // Duración de la animación en ms
-            let start = 0;
-            const increment = target / (duration / 16); // Aproximadamente 60 fps
-
-            function updateCount() {
-                start += increment;
-                if (start < target) {
-                    element.textContent = Math.round(start * 10) / 10; // Redondear a un decimal si es necesario
-                    requestAnimationFrame(updateCount);
-                } else {
-                    element.textContent = target; // Asegurar que el valor final sea exacto
-                }
-            }
-            requestAnimationFrame(updateCount);
-        }
-
-        function initCountUpAnimations() {
-            const countUpElements = document.querySelectorAll('.count-up');
-            countUpElements.forEach(animateCountUp);
-        }
-        initCountUpAnimations(); // Llama a la función de inicialización
-
-        // --- Joi Thinking Animation Control ---
-        function showJoiThinking(duration = 2000) {
-            const phraseDisplay = document.getElementById('joi-phrase-display');
-            const thinkingAnimation = document.getElementById('joi-thinking-animation');
-
-            if (!phraseDisplay || !thinkingAnimation) return;
-
-            // Ocultar la frase actual y mostrar la animación
-            phraseDisplay.classList.add('hidden');
-            thinkingAnimation.classList.remove('hidden');
-
-            // Después de la duración, ocultar la animación y mostrar la frase (actualizada si es el caso)
-            setTimeout(() => {
-                thinkingAnimation.classList.add('hidden');
-                phraseDisplay.classList.remove('hidden');
-            }, duration);
-        }
-        showJoiThinking(1500); // Llama a Joi thinking al cargar
-
-        // --- Floating Entity Logic ---
-        const floatingEntity = document.getElementById('floating-entity');
-        if (floatingEntity) { // Asegúrate de que el elemento exista
-            let currentX = window.innerWidth / 2;
-            let currentY = window.innerHeight / 2;
-            let targetX = currentX;
-            let targetY = currentY;
-            let velocityX = 0;
-            let velocityY = 0;
-            const friction = 0.98;
-            const attraction = 0.005;
-            const maxVelocity = 5;
-
-            // Ensure entity is initially hidden until JS is ready
-            floatingEntity.style.opacity = 0;
-            setTimeout(() => {
-                floatingEntity.style.display = 'block'; // Make it visible (but still at 0 opacity)
-                floatingEntity.style.opacity = 1; // Fade in
-            }, 500); // Small delay before fading in
-
-
-            function generateNewTarget() {
-                const padding = 100; // Keep entity away from edges
-                targetX = Math.random() * (window.innerWidth - 2 * padding) + padding;
-                targetY = Math.random() * (window.innerHeight - 2 * padding) + padding;
-            }
-
-            function animateEntity() {
-                const dx = targetX - currentX;
-                const dy = targetY - currentY;
-
-                velocityX += dx * attraction;
-                velocityY += dy * attraction;
-
-                velocityX *= friction;
-                velocityY *= friction;
-
-                // Cap velocity
-                velocityX = Math.max(-maxVelocity, Math.min(maxVelocity, velocityX));
-                velocityY = Math.max(-maxVelocity, Math.min(maxVelocity, velocityY));
-
-                currentX += velocityX;
-                currentY += velocityY;
-
-                // Keep entity within bounds
-                const entityWidth = floatingEntity.offsetWidth;
-                const entityHeight = floatingEntity.offsetHeight;
-                currentX = Math.max(entityWidth / 2, Math.min(window.innerWidth - entityWidth / 2, currentX));
-                currentY = Math.max(entityHeight / 2, Math.min(window.innerHeight - entityHeight / 2, currentY));
-
-                floatingEntity.style.left = `${currentX}px`;
-                floatingEntity.style.top = `${currentY}px`;
-
-                // Generate new target if close enough
-                if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-                    generateNewTarget();
-                }
-
-                requestAnimationFrame(animateEntity);
-            }
-
-            // Start initial movement
-            generateNewTarget();
-            animateEntity();
-
-            // Adjust on window resize
-            window.addEventListener('resize', () => {
-                currentX = window.innerWidth / 2;
-                currentY = window.innerHeight / 2;
-                generateNewTarget();
-            });
-        }
-
-        // Atmosphere Controls Logic
-        const atmosphereButtons = document.querySelectorAll('.atmosphere-control-btn');
-        const statusIndicators = {
-            low: document.getElementById('lowStatus'),
-            medium: document.getElementById('mediumStatus'),
-            high: document.getElementById('highStatus'),
-            paused: document.getElementById('pauseStatus')
-        };
-        let currentAtmosphereLevel = 'medium'; // Default
-
-        function updateStatusIndicator(level) {
-            Object.values(statusIndicators).forEach(indicator => {
-                indicator.style.backgroundColor = 'gray'; // Reset all
-            });
-            if (statusIndicators[level]) {
-                statusIndicators[level].style.backgroundColor = level === 'low' ? 'gray' : (level === 'medium' ? 'green' : (level === 'high' ? 'red' : 'blue'));
-            }
-        }
-
-        function setAtmosphereIntensity(intensity) {
-            currentAtmosphereLevel = intensity;
-            updateStatusIndicator(intensity);
-
-            const body = document.body;
-            let filterValue = 'brightness(0.9)';
-            let particleDensity = 1; // Default for medium
-            let particleSpeed = 1; // Default for medium
-
-            switch (intensity) {
-                case 'low':
-                    filterValue = 'brightness(1)';
-                    particleDensity = 0.5;
-                    particleSpeed = 0.5;
-                    break;
-                case 'medium':
-                    filterValue = 'brightness(0.9)';
-                    particleDensity = 1;
-                    particleSpeed = 1;
-                    break;
-                case 'high':
-                    filterValue = 'brightness(0.7)';
-                    particleDensity = 1.5;
-                    particleSpeed = 1.5;
-                    break;
-                case 'paused':
-                    filterValue = 'brightness(1)';
-                    particleDensity = 0; // No particles
-                    particleSpeed = 0; // No particle movement
-                    break;
-            }
-            body.style.filter = filterValue;
-            // Assuming blade-runner-particles.js has functions to adjust its settings
-            if (typeof updateParticleSettings === 'function') {
-                updateParticleSettings(particleDensity, particleSpeed);
-            }
-        }
-
-        atmosphereButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const intensity = button.dataset.intensity;
-                setAtmosphereIntensity(intensity);
-            });
-        });
-
-        // Initialize atmosphere on load
-        setAtmosphereIntensity(currentAtmosphereLevel);
-
-
-        // Particle and Glitch Button Logic
-        const glitchButton = document.getElementById('glitchButton');
-        const particlesButton = document.getElementById('particlesButton');
-        const emojiButton = document.getElementById('emojiButton');
-        const bladeRunnerCanvas = document.getElementById('bladeRunnerCanvas');
-
-        // Ensure these functions exist in blade-runner-particles.js or other included scripts
-        function createGlitchEffect(canvas) {
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-
-            for (let i = 0; i < 5; i++) { // Apply multiple small shifts
-                const offset = Math.floor(Math.random() * 20) - 10;
-                const row = Math.floor(Math.random() * canvas.height);
-                const length = Math.floor(Math.random() * canvas.width / 5);
-
-                for (let x = 0; x < length; x++) {
-                    const srcIndex = ((row * canvas.width) + x) * 4;
-                    const destIndex = ((row * canvas.width) + x + offset) * 4;
-
-                    if (destIndex >= 0 && destIndex < data.length - 4) {
-                        data[destIndex] = data[srcIndex];     // R
-                        data[destIndex + 1] = data[srcIndex + 1]; // G
-                        data[destIndex + 2] = data[srcIndex + 2]; // B
-                        data[destIndex + 3] = data[srcIndex + 3]; // A
-                    }
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
-
-            setTimeout(() => {
-                // If you have `bladeRunnerEffects.drawParticles()` or similar to redraw, call it here
-                // Otherwise, the glitch will persist until the next frame update of the particles.
-            }, 100);
-        }
-
-        function createClickParticles(event) {
-            const particle = document.createElement('div');
-            particle.textContent = ['✨', '🌟', '💥', '💫'][Math.floor(Math.random() * 4)];
-            particle.style.position = 'fixed';
-            particle.style.left = `${event.clientX}px`;
-            particle.style.top = `${event.clientY}px`;
-            particle.style.pointerEvents = 'none';
-            particle.style.fontSize = '20px';
-            particle.style.opacity = '1';
-            particle.style.transition = 'all 1s ease-out';
-            particle.style.transform = `translate(-50%, -50%) scale(1) rotate(${Math.random() * 360}deg)`;
-            document.body.appendChild(particle);
-
-            requestAnimationFrame(() => {
-                particle.style.opacity = '0';
-                particle.style.transform = `translate(${event.clientX + (Math.random() - 0.5) * 100}px, ${event.clientY + (Math.random() - 0.5) * 100}px) scale(0) rotate(${Math.random() * 360}deg)`;
-                setTimeout(() => {
-                    particle.remove();
-                }, 1000);
-            });
-        }
-
-
-        if (glitchButton && bladeRunnerCanvas) {
-            glitchButton.addEventListener('click', () => {
-                createGlitchEffect(bladeRunnerCanvas);
-            });
-        }
-
-        if (particlesButton && typeof addHolographicPulse === 'function') { // Assuming this is from blade-runner-particles.js
-            particlesButton.addEventListener('click', () => {
-                addHolographicPulse(); // Call a function from your particles script
-            });
-        }
-
-        if (emojiButton) {
-            emojiButton.addEventListener('click', (event) => {
-                createClickParticles(event);
-            });
-        }
-
-        // Joi Image Enhancements (example of how to apply filters dynamically)
-        const joiImage = document.querySelector('.joi-flotante');
-        if (joiImage) {
-            joiImage.addEventListener('mouseenter', () => {
-                joiImage.style.filter = 'drop-shadow(0 0 30px #00ffff) drop-shadow(0 0 15px #ff00ff) brightness(1.2) saturate(1.5)';
-                joiImage.style.transform = 'scale(1.05)';
-            });
-            joiImage.addEventListener('mouseleave', () => {
-                joiImage.style.filter = 'drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 10px #ff00ff)';
-                joiImage.style.transform = 'scale(1)';
-            });
-        }
-
-    }); // Cierre del único DOMContentLoaded
-
 document.addEventListener('DOMContentLoaded', function() {
-    // ... (tu código JS existente para los otros gráficos va aquí) ...
 
-    // --- CÓDIGO PARA EL NUEVO GRÁFICO DE RADAR ---
+    // ==================================================================
+    // GRÁFICOS DE CHART.JS
+    // ==================================================================
+
+    // --- Gráfico de Peso ---
+    const pesoCanvas = document.getElementById('graficoPeso');
+    if (pesoCanvas) {
+        const ctxPeso = pesoCanvas.getContext('2d');
+        new Chart(ctxPeso, {
+            type: 'line',
+            data: {
+                labels: [{% for punto in datos_peso %}"{{ punto.fecha|date:"D" }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Peso Corporal (kg)',
+                    data: [{% for punto in datos_peso %}{{ punto.peso }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#32FF00',
+                    backgroundColor: 'rgba(50, 255, 0, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    // --- Gráfico de Rendimiento ---
+    const rendimientoCanvas = document.getElementById('graficoRendimiento');
+    if (rendimientoCanvas) {
+        const ctxRendimiento = rendimientoCanvas.getContext('2d');
+        new Chart(ctxRendimiento, {
+            type: 'line',
+            data: {
+                labels: [{% for punto in datos_rendimiento %}"{{ punto.semana }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Rendimiento',
+                    data: [{% for punto in datos_rendimiento %}{{ punto.valor }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#31CFF4',
+                    backgroundColor: 'rgba(49, 207, 244, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    // --- Gráfico de Radar (Balance de Fuerza) ---
     const ctxRadarInicio = document.getElementById('radarChartInicio');
-    const ratiosData = {{ ratios_fuerza.grafico_radar|safe }};
-
+    const ratiosData = {{ ratios_fuerza.grafico_radar|safe|default:"null" }};
     if (ctxRadarInicio && ratiosData && ratiosData.labels && ratiosData.labels.length > 0) {
         new Chart(ctxRadarInicio, {
             type: 'radar',
@@ -1139,14 +1325,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Ratios Actuales',
                     data: ratiosData.valores,
-                    borderColor: '#00ffff', // Cian
+                    borderColor: '#00ffff',
                     backgroundColor: 'rgba(0, 255, 255, 0.2)',
                     borderWidth: 2,
                     pointBackgroundColor: '#00ffff'
                 }, {
                     label: 'Ratios Óptimos',
                     data: ratiosData.optimos,
-                    borderColor: '#ff00ff', // Magenta
+                    borderColor: '#ff00ff',
                     backgroundColor: 'rgba(255, 0, 255, 0.1)',
                     borderWidth: 2,
                     borderDash: [5, 5],
@@ -1156,49 +1342,31 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false // Ocultamos la leyenda para un look más limpio en el dashboard
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                  r: {
+                    r: {
                         angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
                         grid: { color: 'rgba(255, 255, 255, 0.2)' },
-                        pointLabels: {
-                            color: '#e0e0e0',
-                            font: { size: 10 }
-                        },
-                        ticks: {
-                            color: '#aaa',
-                            backdropColor: 'transparent',
-                            stepSize: 0.2
-                        }
+                        pointLabels: { color: '#e0e0e0', font: { size: 10 } },
+                        ticks: { color: '#aaa', backdropColor: 'transparent', stepSize: 0.2 }
                     }
                 }
             }
         });
     }
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-    // ... (tu código JS existente para los otros gráficos va aquí) ...
-
-    // --- CÓDIGO PARA EL NUEVO GRÁFICO DE FATIGA ---
+    // --- Gráfico Gauge (Fatiga Acumulada) ---
     const ctxFatigaInicio = document.getElementById('fatigaGaugeInicio');
     {% if fatiga_acumulada %}
     const fatigaValor = parseFloat("{{ fatiga_acumulada.fatiga_actual|floatformat:2 }}".replace(",", "."));
-    const fatigaMax = 150; // Valor de referencia para el 100% del gauge
-
+    const fatigaMax = 150;
     if (ctxFatigaInicio) {
-        // Determinar el color basado en el nivel de fatiga
         let gaugeColor = '#10b981'; // Verde (Baja)
         if (fatigaValor >= 100) {
             gaugeColor = '#ef4444'; // Rojo (Alta)
         } else if (fatigaValor >= 50) {
             gaugeColor = '#f59e0b'; // Naranja (Moderada)
         }
-
         new Chart(ctxFatigaInicio, {
             type: 'doughnut',
             data: {
@@ -1207,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: [gaugeColor, 'rgba(255, 255, 255, 0.1)'],
                     borderColor: 'transparent',
                     borderWidth: 0,
-                    circumference: 270, // 3/4 de círculo
+                    circumference: 270,
                     rotation: 225
                 }]
             },
@@ -1215,14 +1383,124 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '80%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
-                }
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
             }
         });
     }
     {% endif %}
+
+
+    // ==================================================================
+    // LÓGICA DEL BOTÓN "VER MÁS" PARA LOGROS (CORREGIDO)
+    // ==================================================================
+    const btnVerMasLogros = document.getElementById('btn-ver-mas-logros');
+    if (btnVerMasLogros) {
+        // Generamos el HTML de todos los logros en una variable.
+        // Se eliminó el filtro 'multiply' que causaba el error.
+        const todosLosLogrosHtml = `
+            {% for logro_usuario in datos_logros.logros_completados %}
+            <li class="logro-item bg-[#2a2d3a] p-3 rounded-lg flex items-center justify-between animate-fadeSlide">
+                <div>
+                    <div class="text-sm font-bold text-green-400">{{ logro_usuario.logro.nombre }}</div>
+                    <div class="text-xs text-gray-400">{{ logro_usuario.logro.descripcion|escapejs }}</div>
+                </div>
+                <div class="text-xs text-yellow-300 font-semibold">
+                    +{{ logro_usuario.logro.puntos_recompensa }} pts
+                </div>
+            </li>
+            {% endfor %}
+        `;
+
+        btnVerMasLogros.addEventListener('click', function() {
+            const listaLogros = document.getElementById('lista-logros');
+            if (listaLogros) {
+                listaLogros.innerHTML = todosLosLogrosHtml;
+            }
+            // Ocultamos el botón después de usarlo.
+            btnVerMasLogros.style.display = 'none';
+        });
+    }
+
+
+    // ==================================================================
+    // EFECTOS VISUALES Y ANIMACIONES
+    // ==================================================================
+
+    // --- Glitch Sutil Aleatorio ---
+    function applySubtleGlitch(element, type = 'text') {
+        const animationClass = type === 'text' ? (Math.random() > 0.5 ? 'textGlitch1' : 'textGlitch2') : 'borderGlitch';
+        const animationName = type === 'text' ? animationClass : 'borderGlitch';
+        if (element.style.animationName === animationName) return;
+        element.style.animation = `${animationName} 0.2s linear 1`;
+        setTimeout(() => { element.style.animation = ''; }, 200);
+    }
+
+    function initSubtleGlitches() {
+        const glitchableTexts = document.querySelectorAll('.glitch-text-subtle');
+        const glitchableBorders = document.querySelectorAll('.glitch-border-subtle');
+        glitchableTexts.forEach(el => {
+            setInterval(() => { if (Math.random() < 0.02) applySubtleGlitch(el, 'text'); }, Math.random() * 5000 + 3000);
+        });
+        glitchableBorders.forEach(el => {
+            setInterval(() => { if (Math.random() < 0.01) applySubtleGlitch(el, 'border'); }, Math.random() * 8000 + 5000);
+        });
+    }
+    initSubtleGlitches();
+
+    // --- Animación de Conteo para Métricas ---
+    function animateCountUp(element) {
+        const target = parseFloat(element.getAttribute('data-target'));
+        if (isNaN(target)) return;
+        const duration = 1500;
+        let start = 0;
+        const increment = target / (duration / 16);
+        function updateCount() {
+            start += increment;
+            if (start < target) {
+                element.textContent = Math.round(start);
+                requestAnimationFrame(updateCount);
+            } else {
+                element.textContent = target;
+            }
+        }
+        requestAnimationFrame(updateCount);
+    }
+    document.querySelectorAll('.count-up').forEach(animateCountUp);
+
+    // --- Joi Thinking Animation Control ---
+    function showJoiThinking(duration = 1500) {
+        const phraseDisplay = document.getElementById('joi-phrase-display');
+        const thinkingAnimation = document.getElementById('joi-thinking-animation');
+        if (!phraseDisplay || !thinkingAnimation) return;
+        phraseDisplay.classList.add('hidden');
+        thinkingAnimation.classList.remove('hidden');
+        setTimeout(() => {
+            thinkingAnimation.classList.add('hidden');
+            phraseDisplay.classList.remove('hidden');
+        }, duration);
+    }
+    showJoiThinking();
+
+    // --- Joi Image Enhancements ---
+    const joiImage = document.querySelector('.joi-flotante');
+    if (joiImage) {
+        joiImage.addEventListener('mouseenter', () => {
+            joiImage.style.filter = 'drop-shadow(0 0 30px #00ffff) drop-shadow(0 0 15px #ff00ff) brightness(1.2) saturate(1.5)';
+            joiImage.style.transform = 'scale(1.05)';
+        });
+        joiImage.addEventListener('mouseleave', () => {
+            joiImage.style.filter = 'drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 10px #ff00ff)';
+            joiImage.style.transform = 'scale(1)';
+        });
+    }
+
+    // --- Lógica de botones (si existen) ---
+    const glitchButton = document.getElementById('glitchButton');
+    if (glitchButton) {
+        glitchButton.addEventListener('click', () => { /* Tu lógica de glitch aquí */ });
+    }
+    // ... y así para otros botones como particlesButton, emojiButton, etc.
+
 });
 </script>
 

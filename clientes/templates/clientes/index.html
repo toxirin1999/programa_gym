@@ -54,9 +54,9 @@
                         {% endif %}
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <a href="{% url 'detalle_cliente' cliente.id %}" class="px-4 py-3 font-bold text-green-400"><i class="bi bi-eye"></i> Ver</a>
-                        <a href="{% url 'editar_cliente' cliente.id %}" class="px-4 py-3 font-bold text-yellow-300"><i class="bi bi-pencil-square"></i> Editar</a>
-                        <a href="{% url 'eliminar_cliente' cliente.id %}" class="px-4 py-3 font-bold text-pink-400" onclick="return confirm('¿Estás seguro de eliminar este cliente?');"><i class="bi bi-trash"></i> Eliminar</a>
+                        <a href="{% url 'clientes:detalle_cliente' cliente.id %}" class="px-4 py-3 font-bold text-green-400"><i class="bi bi-eye"></i> Ver</a>
+                        <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="px-4 py-3 font-bold text-yellow-300"><i class="bi bi-pencil-square"></i> Editar</a>
+                        <a href="{% url 'clientes:eliminar_cliente' cliente.id %}" class="px-4 py-3 font-bold text-pink-400" onclick="return confirm('¿Estás seguro de eliminar este cliente?');"><i class="bi bi-trash"></i> Eliminar</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -68,7 +68,7 @@
         {% endif %}
 
         <div class="text-end">
-            <a href="{% url 'agregar_cliente' %}" class="bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white font-semibold px-6 py-2 rounded-xl shadow-md hover:scale-105 transition">
+            <a href="{% url 'clientes:agregar_cliente' %}" class="bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white font-semibold px-6 py-2 rounded-xl shadow-md hover:scale-105 transition">
                 <i class="bi bi-plus-circle"></i> Añadir nuevo cliente
             </a>
         </div>

@@ -12,6 +12,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class SugerenciaAceptada(models.Model):
@@ -59,14 +60,18 @@ class EstadoSemanal(models.Model):
 class BitacoraDiaria(models.Model):
     cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
     fecha = models.DateField(auto_now_add=True)
-    horas_sueno = models.DecimalField(max_digits=4, decimal_places=2)
+
+    # --- INICIO DE LA CORRECCIÓN ---
+    horas_sueno = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     humor = models.CharField(max_length=20, choices=[
         ('verde', '😊 Bien'),
         ('amarillo', '😐 Neutro'),
         ('rojo', '😞 Bajo')
-    ])
-    rpe = models.PositiveSmallIntegerField(help_text="Esfuerzo percibido (1-10)")
-    nota_personal = models.TextField(blank=True)
+    ], null=True, blank=True)
+    rpe = models.PositiveSmallIntegerField(help_text="Esfuerzo percibido (1-10)", null=True, blank=True)
+    # --- FIN DE LA CORRECCIÓN ---
+
+    nota_personal = models.TextField(blank=True, null=True)  # Es bueno añadir null=True también a los TextField
     mindfulness_am = models.BooleanField(default=False)
     mindfulness_pm = models.BooleanField(default=False)
     peso_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -77,24 +82,17 @@ class BitacoraDiaria(models.Model):
     rumiacion_baja = models.BooleanField(null=True, blank=True, help_text="¿La rumiación bajó después de escribir?")
     circunferencia_biceps = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
-    emocion_dia = models.CharField(max_length=100, blank=True)
-    cosas_positivas = models.TextField(blank=True, help_text="Escribe 3 cosas que funcionaron hoy.")
-    aprendizaje = models.TextField(blank=True)
-    # Quién quiero ser hoy
-    quien_quiero_ser = models.TextField(blank=True, help_text="Describe qué tipo de persona quieres ser hoy.")
-
-    # Lista de tareas del día (como texto plano)
-    tareas_dia = models.TextField(blank=True,
+    emocion_dia = models.CharField(max_length=100, blank=True, null=True)
+    cosas_positivas = models.TextField(blank=True, null=True, help_text="Escribe 3 cosas que funcionaron hoy.")
+    aprendizaje = models.TextField(blank=True, null=True)
+    quien_quiero_ser = models.TextField(blank=True, null=True,
+                                        help_text="Describe qué tipo de persona quieres ser hoy.")
+    tareas_dia = models.TextField(blank=True, null=True,
                                   help_text="Escribe hasta 5 tareas importantes para hoy, separadas por saltos de línea.")
-
-    # Mejora del día
-    que_puedo_mejorar = models.TextField(blank=True, help_text="Reflexiona sobre qué podrías mejorar del día.")
-
-    # Reflexión final
-    reflexion_diaria = models.TextField(blank=True, help_text="Escribe una reflexión libre sobre tu día.")
-
+    que_puedo_mejorar = models.TextField(blank=True, null=True,
+                                         help_text="Reflexiona sobre qué podrías mejorar del día.")
+    reflexion_diaria = models.TextField(blank=True, null=True, help_text="Escribe una reflexión libre sobre tu día.")
     limito_socialmente = models.BooleanField(null=True, help_text="¿Respondiste solo, sin iniciar?")
-
     check_in_energia = models.CharField(max_length=10, choices=[
         ('si', 'Sí, doy más de lo que recibo'),
         ('no', 'No, está equilibrado'),
@@ -108,7 +106,7 @@ class BitacoraDiaria(models.Model):
 class DietaAsignada(models.Model):
     cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='dietas_asignadas_clientes')
 
-    dieta = models.ForeignKey(Dieta, on_delete=models.CASCADE)
+    dieta = models.ForeignKey(Dieta, on_delete=models.CASCADE, null=True, blank=True)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField(null=True, blank=True)
     observaciones = models.TextField(blank=True)
@@ -201,12 +199,69 @@ class Cliente(models.Model):
     muslos = models.FloatField(null=True, blank=True, help_text="cm")
     gemelos = models.FloatField(null=True, blank=True, help_text="cm")
     entrenos_perfectos = models.PositiveIntegerField(default=0)
+    # NIVEL 1: ADHERENCIA
+    dias_disponibles = models.IntegerField(
+        default=4,
+        help_text="Días por semana disponibles para entrenar"
+    )
+    tiempo_por_sesion = models.IntegerField(
+        default=90,
+        help_text="Minutos disponibles por sesión"
+    )
+    ejercicios_preferidos = models.JSONField(
+        default=list,
+        help_text="Lista de ejercicios que le gustan al cliente"
+    )
+    ejercicios_evitar = models.JSONField(
+        default=list,
+        help_text="Lista de ejercicios que el cliente no puede/quiere hacer"
+    )
+    flexibilidad_horario = models.BooleanField(
+        default=True,
+        help_text="¿Puede cambiar horarios si es necesario?"
+    )
+    perfil_nutricion = models.OneToOneField(
+        'nutricion_app_django.UserProfile',  # Usamos string para evitar importación circular
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cliente_asociado',
+        verbose_name="Perfil de Nutrición"
+    )
+    # ============ AUTORREGULACIÓN ============
+    nivel_estres = models.IntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Nivel de estrés actual (1-10)"
+    )
+    calidad_sueño = models.IntegerField(
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Calidad del sueño (1-10)"
+    )
+    nivel_energia = models.IntegerField(
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Nivel de energía general (1-10)"
+    )
 
-    # --- CAMPOS DE PERSONALIZACIÓN (MODIFICADOS Y AÑADIDOS) ---
-
+    # ============ DATOS TÉCNICOS ============
+    one_rm_data = models.JSONField(
+        default=dict,
+        help_text="Datos de 1RM por ejercicio: {'sentadilla': 100, 'press_banca': 80}"
+    )
+    historial_volumen = models.JSONField(
+        default=dict,
+        help_text="Series por semana históricas por grupo muscular"
+    )
     # Foto (usamos tu campo 'foto' existente y le añadimos un default)
     foto = models.ImageField(upload_to='clientes_fotos/', null=True, blank=True, default='clientes_fotos/default.png')
-
+    experiencia_años = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Años de experiencia entrenando de forma consistente.",
+        verbose_name="Años de experiencia"
+    )
     # Campo para el objetivo principal del cliente (NUEVO)
     OBJETIVO_CHOICES = [
         ('hipertrofia', 'Hipertrofia Muscular'),
@@ -221,11 +276,123 @@ class Cliente(models.Model):
         default='general',
         help_text="El objetivo principal del cliente para personalizar su experiencia."
     )
+    # ============================================================================
+    # NIVEL 1: ADHERENCIA (Base fundamental del sistema Helms)
+    # ============================================================================
 
-    # -----------------------------------------------------------
+    dias_disponibles = models.IntegerField(
+        default=4,
+        validators=[MinValueValidator(2), MaxValueValidator(7)],
+        help_text="Días reales por semana que puede entrenar (2-7)",
+        verbose_name="Días disponibles por semana"
+    )
+
+    tiempo_por_sesion = models.IntegerField(
+        default=90,
+        validators=[MinValueValidator(30), MaxValueValidator(180)],
+        help_text="Minutos reales disponibles por sesión (30-180)",
+        verbose_name="Tiempo por sesión (minutos)"
+    )
+
+    ejercicios_preferidos = models.JSONField(
+        default=list,
+        help_text="Ejercicios que disfruta hacer - mejora adherencia",
+        verbose_name="Ejercicios preferidos"
+    )
+
+    ejercicios_evitar = models.JSONField(
+        default=list,
+        help_text="Ejercicios que no puede/quiere hacer - lesiones, limitaciones",
+        verbose_name="Ejercicios a evitar"
+    )
+
+    flexibilidad_horario = models.BooleanField(
+        default=True,
+        help_text="¿Puede cambiar horarios si surge un imprevisto?",
+        verbose_name="Flexibilidad de horario"
+    )
+
+    # ============================================================================
+    # AUTORREGULACIÓN (Adaptación inteligente del programa)
+    # ============================================================================
+
+    nivel_estres = models.IntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Nivel de estrés actual (1=muy bajo, 10=muy alto)",
+        verbose_name="Nivel de estrés"
+    )
+
+    calidad_sueño = models.IntegerField(
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Calidad del sueño (1=muy mala, 10=excelente)",
+        verbose_name="Calidad del sueño"
+    )
+
+    nivel_energia = models.IntegerField(
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Nivel de energía general (1=muy bajo, 10=muy alto)",
+        verbose_name="Nivel de energía"
+    )
+
+    # ============================================================================
+    # DATOS TÉCNICOS AVANZADOS
+    # ============================================================================
+
+    one_rm_data = models.JSONField(
+        default=dict,
+        help_text="1RM por ejercicio: {'sentadilla': 100, 'press_banca': 80, 'peso_muerto': 120}",
+        verbose_name="Datos de 1RM"
+    )
+
+    historial_volumen = models.JSONField(
+        default=dict,
+        help_text="Series por semana por grupo muscular: {'pecho': 16, 'espalda': 18, 'piernas': 20}",
+        verbose_name="Historial de volumen"
+    )
+
+    # ============================================================================
+    # MÉTODOS AUXILIARES
+    # ============================================================================
+
+    def get_nivel_experiencia(self):
+        """Determina el nivel según años de experiencia"""
+        if self.experiencia_años < 1:
+            return 'principiante'
+        elif self.experiencia_años < 3:
+            return 'intermedio'
+        else:
+            return 'avanzado'
+
+    def get_factor_recuperacion(self):
+        """Calcula factor de recuperación basado en autorregulación"""
+        # Promedio de estrés (invertido), sueño y energía
+        estres_invertido = 11 - self.nivel_estres
+        promedio = (estres_invertido + self.calidad_sueño + self.nivel_energia) / 3
+        return promedio / 10  # Factor entre 0.1 y 1.0
+
+    def necesita_descarga(self):
+        """Determina si necesita una semana de descarga"""
+        factor_recuperacion = self.get_factor_recuperacion()
+        return factor_recuperacion < 0.6  # Si está por debajo del 60%
+
+    def get_ejercicios_permitidos(self):
+        """Lista de ejercicios que puede hacer (excluyendo los que evita)"""
+        todos_ejercicios = [
+            'sentadilla', 'press_banca', 'peso_muerto', 'press_militar',
+            'remo_con_barra', 'dominadas', 'fondos', 'curl_biceps',
+            'extension_triceps', 'elevaciones_laterales', 'peso_muerto_rumano'
+        ]
+        return [ej for ej in todos_ejercicios if ej not in self.ejercicios_evitar]
+
+    class Meta:
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
 
     def __str__(self):
-        return f"{self.id} - {self.nombre}"
+        return f"{self.nombre} - {self.get_nivel_experiencia().title()}"
 
 
 class Medida(models.Model):
@@ -285,3 +452,37 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+# Modelos para el control de peso y evolución (inspirado en HappyScale)
+
+class PesoDiario(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='registros_peso')
+    fecha = models.DateField(auto_now_add=True, unique=True)  # Se registra una vez al día
+    peso_kg = models.DecimalField(max_digits=5, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Peso Diario"
+        verbose_name_plural = "Pesos Diarios"
+        ordering = ['-fecha']
+        unique_together = ('cliente', 'fecha')  # Asegura que un cliente solo tenga un registro por día
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.fecha}: {self.peso_kg} kg"
+
+
+class ObjetivoPeso(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='objetivos_peso')
+    peso_objetivo_kg = models.DecimalField(max_digits=5, decimal_places=2)
+    fecha_inicio = models.DateField(auto_now_add=True)
+    fecha_fin = models.DateField(null=True, blank=True)
+    alcanzado = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Objetivo de Peso"
+        verbose_name_plural = "Objetivos de Peso"
+        ordering = ['-fecha_inicio']
+
+    def __str__(self):
+        estado = "(Alcanzado)" if self.alcanzado else ""
+        return f"{self.cliente.nombre} - Objetivo: {self.peso_objetivo_kg} kg {estado}"

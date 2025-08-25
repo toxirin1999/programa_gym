@@ -87,7 +87,7 @@
                                 <p class="font-bold">{{ item.cliente.nombre }}</p>
                                 <p class="text-sm text-yellow-400">{{ item.motivo }}</p>
                             </div>
-                            <a href="{% url 'detalle_cliente' item.cliente.id %}" class="btn btn-secondary text-sm">Ver</a>
+                            <a href="{% url 'clientes:detalle_cliente' item.cliente.id %}" class="btn btn-secondary text-sm">Ver</a>
                         </li>
                         {% endfor %}
                     </ul>

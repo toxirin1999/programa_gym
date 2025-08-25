@@ -1,3 +1,5 @@
+# clientes/urls.py
+
 from django.urls import path
 from . import views
 from .views import calendario_bitacoras
@@ -7,6 +9,13 @@ from .views import historial_cliente, redirigir_usuario, panel_cliente
 from django.contrib.auth.decorators import login_required
 from joi import views as joi_views
 from .views import recuerdos_semanales
+
+# =================================================================
+# ### AÑADE ESTA LÍNEA ###
+# Esto soluciona el error 'NoReverseMatch'
+# =================================================================
+app_name = 'clientes'
+# =================================================================
 
 urlpatterns = [
     # Vista raíz: lista de clientes (entrenador)
@@ -24,7 +33,20 @@ urlpatterns = [
     path('agregar/', views.agregar_cliente, name='agregar_cliente'),
     path('editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
     path('eliminar/<int:cliente_id>/', views.eliminar_cliente, name='eliminar_cliente'),
+
+    # --- Esta es la URL que estamos buscando ---
+    path('cliente/<int:cliente_id>/preferencias-helms/', views.configurar_preferencias_helms,
+         name='configurar_preferencias_helms'),
+    path("cliente/<int:cliente_id>/control-peso/", views.control_peso_cliente, name="control_peso_cliente"),
+    path("cliente/<int:cliente_id>/registrar-peso/", views.registrar_peso, name="registrar_peso"),
+    path("cliente/<int:cliente_id>/establecer-objetivo-peso/", views.establecer_objetivo_peso,
+         name="establecer_objetivo_peso"),
+    path('portal/guardar/<int:cliente_id>/', views.guardar_entrenamiento_activo, name='guardar_entrenamiento_activo'),
+
+    path('cliente/<int:cliente_id>/dashboard-adherencia/', views.dashboard_adherencia, name='dashboard_adherencia'),
+    path('sesion/<int:cliente_id>/', views.portal_sesion_unificado, name='portal_sesion'),
     path('detalle/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),
+    path('cliente/<int:cliente_id>/educacion/', views.vista_educacion_helms, name='vista_educacion_helms'),
     path('programa/<int:programa_id>/asignar_cliente/', views.asignar_programa_a_cliente,
          name='asignar_programa_a_cliente'),
     path('cliente/<int:cliente_id>/revisiones/', views.lista_revisiones, name='lista_revisiones'),
@@ -69,4 +91,7 @@ urlpatterns = [
     path('comparar/', views.comparar_clientes, name='comparar_clientes'),
     path('comparar/datos/', views.datos_comparacion, name='datos_comparacion'),
     path('panel-entrenador/', views.panel_entrenador, name='panel_entrenador'),
+    path('api/chat-con-joi/', views.chat_con_joi, name='chat_con_joi_api'),
+    # Nueva URL para la página del chat
+    path('joi-chat/', views.pagina_chat_joi, name='pagina_chat_joi'),
 ]

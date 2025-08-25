@@ -29,7 +29,7 @@
             <div class="bg-indigo-500 h-2.5 rounded-full" style="width: {{ item.consistencia }}%"></div>
         </div>
     </td>
-    <td class="p-2"><a href="{% url 'detalle_cliente' item.cliente.id %}" class="text-indigo-400 font-semibold hover:underline">Ver</a></td>
+    <td class="p-2"><a href="{% url 'clientes:detalle_cliente' item.cliente.id %}" class="text-indigo-400 font-semibold hover:underline">Ver</a></td>
 </tr>
 {% empty %}
 <tr>

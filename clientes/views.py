@@ -1,151 +1,73 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Count, Avg, Max
-
-
-from .models import Cliente
-from .forms import BitacoraDiariaForm
-from entrenos.models import RegistroWhoop
-
-from .forms import SugerenciaForm
-from joi.models import RecuerdoEmocional
-from django.utils import timezone
-from .models import Cliente, Medida, RevisionProgreso
-from .forms import ClienteForm, MedidaForm, RevisionProgresoForm
+# Django Core Imports
 from django.contrib import messages
-from joi.utils import recuperar_frase_de_recaida
-from datetime import date, timedelta
-from django.db.models import Count
-from .models import SugerenciaAceptada
-from logros.models import LogroUsuario
-from entrenos.models import EntrenoRealizado
-from datetime import date, timedelta
-from .forms import ObjetivoClienteForm
-from .models import ObjetivoCliente
-from joi.utils import obtener_estado_joi, frase_cambio_forma_joi
-from datetime import timedelta, date
-from django.db.models import F
-from .models import RevisionProgreso  # o como se llame tu modelo de revisiones
-from datetime import date
-from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from rutinas.models import Programa  # ✅ Correcto
-
-from collections import defaultdict
-import json
-from joi.utils import frase_motivadora_entrenador
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
-from clientes.models import RevisionProgreso
-from entrenos.models import EntrenoRealizado
-
-from django.http import JsonResponse
-from .forms import DietaAsignadaForm
-from django.db.models import Q
-from joi.models import RecuerdoEmocional, MotivacionUsuario
-from joi.models import EstadoEmocional, Entrenamiento, RecuerdoEmocional
-
-from datetime import date
-from entrenos.models import EntrenoRealizado
-from collections import defaultdict
-from datetime import timedelta
-import json
-from decimal import Decimal, ROUND_HALF_UP
-from django.utils.timezone import now
-from datetime import timedelta
-
-from django.http import HttpResponse
-from .models import Cliente
-
-# En tu archivo views.py
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from decimal import Decimal
-# Asegúrate de importar el formulario que acabas de crear
-from .forms import DatosNutricionalesForm
-# Importa o define tu modelo para guardar los planes nutricionales
-from .models import PlanNutricional
-
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render, redirect
-from datetime import date
-
 from django.contrib.auth.models import User
-from .models import Cliente
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from joi.models import EstadoEmocional, Entrenamiento, RecuerdoEmocional
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-
-from joi.models import EstadoEmocional
-from django.views.decorators.http import require_POST
-
-from django.shortcuts import render
-from joi.models import EstadoEmocional, RecuerdoEmocional, Entrenamiento
-from joi.utils import obtener_estado_joi, frase_cambio_forma_joi
-from clientes.models import Cliente
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from datetime import date
-from joi.utils import generar_respuesta_joi
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-# Si tienes modelos relacionados con entrenos, emociones o logros en otras apps:
-
-from entrenos.models import EntrenoRealizado, LogroDesbloqueado
-# si tienes esta app
-from logros.models import Logro  # o el nombre de tu modelo de logros
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from entrenos.models import EntrenoRealizado, EstadoEmocional, LogroDesbloqueado
-
-from django.shortcuts import render
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from entrenos.models import EntrenoRealizado, DetalleEjercicioRealizado, EstadoEmocional, LogroDesbloqueado
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .forms import BitacoraDiariaForm
-from .models import Cliente, BitacoraDiaria
-from django.contrib.auth.decorators import login_required
-
-from django.utils.timezone import now, timedelta
-from collections import Counter
-
-from datetime import date, timedelta
-from .models import BitacoraDiaria, EstadoSemanal
-from datetime import date, timedelta
-from .models import EstadoSemanal
-
+from django.db import IntegrityError
+from django.db.models import Avg, Count, F, Max, Q
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.timezone import now
+from django.views.decorators.http import require_GET, require_POST
+from analytics.views import AnalizadorCargaYFatiga
+# Python Standard Library Imports
+import json
+import logging
 import random
-from datetime import date, timedelta
-
 from calendar import monthrange
-from datetime import date, timedelta
-from .models import BitacoraDiaria
+from collections import Counter, defaultdict
+from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Dict
 
-from django.http import JsonResponse
-from .models import BitacoraDiaria
-
-from datetime import datetime
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from .models import BitacoraDiaria
-
-from datetime import timedelta, date
-from clientes.models import BitacoraDiaria
-from logros.utils import obtener_datos_logros  # o como se llame tu función
+# Project-specific (App ) Imports
+from analytics.analytics_predictivos import predecir_riesgo_abandono
+from analytics.autorregulacion import calcular_ajuste_sesion
+from analytics.notificaciones import generar_notificaciones_contextuales
+from analytics.sistema_educacion_helms import NivelEducativo, SistemaEducacionHelms
+from analytics.sistema_progresion_avanzada import (RegistroEjercicio,
+                                                   RegistroSerie,
+                                                   SistemaProgresionAvanzada)
+from analytics.views import CalculadoraEjerciciosTabla
+from entrenos.models import (DetalleEjercicioRealizado, EntrenoRealizado,
+                             EstadoEmocional as EntrenoEstadoEmocional, LogroDesbloqueado,
+                             RegistroWhoop, SerieRealizada)
 from entrenos.views import analizar_entreno_whoop
-from .models import Cliente, RevisionProgreso  # Tu importación existente
+from joi.models import (Entrenamiento, EstadoEmocional, MotivacionUsuario,
+                        RecuerdoEmocional)
+from joi.utils import (frase_cambio_forma_joi, frase_motivadora_entrenador,
+                       generar_respuesta_joi, obtener_estado_joi,
+                       recuperar_frase_de_recaida)
+from logros.models import PruebaLegendaria, PruebaUsuario
+from logros.utils import obtener_datos_logros
 from rutinas.models import Programa, Rutina
+
+# Local App Imports
+from .forms import (BitacoraDiariaForm, CheckinDiarioForm, ClienteForm,
+                    DatosNutricionalesForm, DietaAsignadaForm, MedidaForm,
+                    ObjetivoClienteForm, ObjetivoPesoForm, PesoDiarioForm,
+                    RevisionProgresoForm, SugerenciaForm)
+from .models import (BitacoraDiaria, Cliente, EstadoSemanal, Medida,
+                     ObjetivoCliente, ObjetivoPeso, PesoDiario, PlanNutricional,
+                     RevisionProgreso, SugerenciaAceptada)
+
+# Importaciones para la app de nutrición
+try:
+    from nutricion_app_django.models import (
+        UserProfile as NutricionUserProfile,
+        CalculoNivel1, CalculoNivel2, ConfiguracionNivel3,
+        ConfiguracionNivel4, ConfiguracionNivel5, ProgresoNivel,
+        SeguimientoPeso
+    )
+
+    NUTRICION_DISPONIBLE = True
+except ImportError:
+    NUTRICION_DISPONIBLE = False
+    print("⚠️ App de nutrición no disponible")
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -613,9 +535,9 @@ def registrar_emocion(request):
 @login_required
 def redirigir_usuario(request):
     if request.user.is_superuser or request.user.is_staff:
-        return redirect('panel_entrenador')  # ✅ panel nuevo con Joi y diseño moderno
+        return redirect('clientes:panel_entrenador')  # ✅ panel nuevo con Joi y diseño moderno
     else:
-        return redirect('panel_cliente')
+        return redirect('clientes:panel_cliente')
 
 
 from django.contrib.auth.decorators import login_required
@@ -631,7 +553,11 @@ from analytics.analisis_progresion import AnalisisProgresionAvanzado
 @login_required
 def panel_cliente(request):
     usuario = request.user
-    cliente = get_object_or_404(Cliente, user=usuario)
+    cliente = get_object_or_404(
+        Cliente.objects.select_related('perfil_nutricion')
+        .prefetch_related('perfil_nutricion__progresonivel_set'),
+        user=usuario
+    )
 
     generar_retos_semanales(cliente)
     lunes = obtener_lunes_actual()
@@ -818,10 +744,9 @@ def panel_cliente(request):
         except Exception:
             return "–:–"
 
-    from analytics.utils import parse_reps
+    from entrenos.utils.utils import parse_reps_and_series
 
     def calcular_top_1rm(cliente):
-        from analytics.views import CalculadoraEjerciciosTabla
         calculadora = CalculadoraEjerciciosTabla(cliente)
         ejercicios = calculadora.obtener_ejercicios_tabla()
 
@@ -896,14 +821,275 @@ def panel_cliente(request):
         'emocion_frecuente': emocion_texto,
         'frase': "Esta semana cultivaste conciencia y resiliencia. Incluso los días bajos cuentan como práctica. 🌒"
     }
+    sistema_progresion = SistemaProgresionAvanzada(cliente_id=cliente.id)
+
+    # Obtener todas las series realizadas por el cliente, ordenadas por fecha
+    series_historial = SerieRealizada.objects.filter(entreno__cliente=cliente).order_by('entreno__fecha',
+                                                                                        'entreno__id').select_related(
+        'entreno', 'ejercicio')
+
+    # Agrupar series por entreno y por ejercicio
+    sesiones_agrupadas = defaultdict(lambda: defaultdict(list))
+    for serie in series_historial:
+        sesion_id = serie.entreno.id
+        ejercicio_nombre = serie.ejercicio.nombre
+        sesiones_agrupadas[sesion_id][ejercicio_nombre].append(
+            RegistroSerie(peso=float(serie.peso_kg), repeticiones=serie.repeticiones)
+        )
+
+    # Alimentar el sistema de progresión con los datos estructurados
+    for entreno_id, ejercicios in sesiones_agrupadas.items():
+        entreno_obj = EntrenoRealizado.objects.get(id=entreno_id)
+        for nombre_ejercicio, series_registradas in ejercicios.items():
+            # Creamos el objeto RegistroEjercicio que el sistema espera
+            registro_ejercicio = RegistroEjercicio(
+                fecha=timezone.make_aware(datetime.combine(entreno_obj.fecha, datetime.min.time())),
+                ejercicio=nombre_ejercicio,
+                series=series_registradas,
+                # Simplificación: Usamos valores por defecto para los datos que no tenemos
+                repeticiones_planificadas=8,
+                rpe_planificado=8,
+                rpe_real=8,
+                tiempo_descanso=120
+            )
+            sistema_progresion.registrar_sesion(registro_ejercicio)
+
+    estancamientos_detectados = sistema_progresion.detectar_estancamientos()
+    print(f"🔎 Estancamientos detectados: {estancamientos_detectados}")
+    proximo_entrenamiento = obtener_proximo_entrenamiento(cliente)
+    estadisticas_plan = obtener_estadisticas_plan_anual(cliente)
+
+    checkin_form = CheckinDiarioForm()
+    ajuste_del_dia = None
+
+    if request.method == 'POST' and 'submit_checkin' in request.POST:
+        checkin_form = CheckinDiarioForm(request.POST)
+        if checkin_form.is_valid():
+            bitacora, created = BitacoraDiaria.objects.get_or_create(
+                cliente=cliente, fecha=now().date()
+            )
+            bitacora.energia_subjetiva = checkin_form.cleaned_data['energia_subjetiva']
+            bitacora.dolor_articular = checkin_form.cleaned_data['dolor_articular']
+            # --- CORRECCIÓN ---
+            bitacora.horas_sueno = checkin_form.cleaned_data['horas_sueno']
+            bitacora.save()
+
+            # Calculamos el ajuste para la sesión de hoy
+            ajuste_del_dia = calcular_ajuste_sesion(
+                bitacora.energia_subjetiva,
+                bitacora.dolor_articular,
+                # --- CORRECCIÓN ---
+                # Pasamos el valor de horas_sueno, pero lo normalizamos a una escala de 1-10
+                # para que la función de cálculo funcione como se esperaba.
+                # Asumimos que 8 horas es un 10/10.
+                (bitacora.horas_sueno / 8) * 10 if bitacora.horas_sueno else 5
+            )
+            messages.success(request, "Check-in registrado. ¡Recomendación generada!")
+
+    # --- INICIO DEL NUEVO BLOQUE: ANALYTICS PREDICTIVOS ---
+    # Recopilar datos de adherencia semanal para la predicción
+    historial_semanal = defaultdict(lambda: {'completados': 0, 'planificados': 0})
+
+    # Usamos el historial de series que ya consultamos
+    for serie in series_historial:
+        # Agrupamos por el lunes de la semana
+        lunes_semana = serie.entreno.fecha - timedelta(days=serie.entreno.fecha.weekday())
+        # Usamos un set para contar cada entreno solo una vez por día
+        if 'entrenos_contados' not in historial_semanal[lunes_semana]:
+            historial_semanal[lunes_semana]['entrenos_contados'] = set()
+
+        if serie.entreno.id not in historial_semanal[lunes_semana]['entrenos_contados']:
+            historial_semanal[lunes_semana]['planificados'] += 1  # Asumimos 1 entreno planificado
+            if serie.entreno.ejercicios_realizados.exists():  # O alguna otra lógica de completado
+                historial_semanal[lunes_semana]['completados'] += 1
+            historial_semanal[lunes_semana]['entrenos_contados'].add(serie.entreno.id)
+
+    # Calcular el porcentaje de adherencia para cada semana
+    adherencia_semanal_lista = []
+    for semana in sorted(historial_semanal.keys()):
+        datos_semana = historial_semanal[semana]
+        if datos_semana['planificados'] > 0:
+            porcentaje = (datos_semana['completados'] / datos_semana['planificados']) * 100
+            adherencia_semanal_lista.append(porcentaje)
+
+    historial_adherencia = obtener_historial_adherencia_semanal(cliente,
+                                                                num_semanas=8)  # Analizamos las últimas 8 semanas
+
+    # Pasa el historial a la función de predicción
+    prediccion = predecir_riesgo_abandono(historial_adherencia)
+    print(f"🔮 Historial para predicción: {historial_adherencia}")
+    print(f"🔮 Predicción de riesgo generada: {prediccion.riesgo}")
+
+    reporte_adherencia = calcular_reporte_adherencia_cliente(cliente)
+    print(f"📈 Reporte de adherencia para el panel principal: {reporte_adherencia}")
+    # --- FIN DEL NUEVO BLOQUE ---
+    notificaciones = generar_notificaciones_contextuales(cliente, entrenamientos_recientes)
+    # ================================================================
+    # INTEGRACIÓN ESTOICA DINÁMICA (CORREGIDA)
+    # ================================================================
+
+    # Inicializar valores por defecto
+    estoico_disponible = False
+    contenido_hoy = None
+    reflexion_hoy = None
+    reflexion_pendiente = False
+    total_reflexiones = 0
+    racha_reflexion = 0
+    logros_estoicos = 0
+    dias_reflexion = 0
+
+    # Intentar cargar datos estoicos
+    try:
+        from estoico.models import ContenidoDiario, ReflexionDiaria
+        try:
+            from estoico.models import LogroUsuario as LogroEstoico
+        except ImportError:
+            # Si no existe LogroUsuario en estoico, usar None
+            LogroEstoico = None
+
+        estoico_disponible = True
+        print(f"🏛️ App estoica disponible - Usuario: {request.user}")
+
+        # Contenido del día
+        dia_año = hoy.timetuple().tm_yday
+        contenido_hoy = ContenidoDiario.objects.filter(dia=dia_año).first()
+        print(f"📚 Contenido del día {dia_año}: {contenido_hoy}")
+
+        # Reflexión de hoy del usuario específico
+        reflexion_hoy = ReflexionDiaria.objects.filter(
+            usuario=request.user,
+            fecha=hoy
+        ).first()
+        print(f"🤔 Reflexión de hoy: {reflexion_hoy}")
+
+        reflexion_pendiente = not reflexion_hoy
+
+        # Total de reflexiones del usuario
+        total_reflexiones = ReflexionDiaria.objects.filter(
+            usuario=request.user
+        ).count()
+        print(f"📊 Total reflexiones del usuario: {total_reflexiones}")
+
+        # Calcular racha de reflexión del usuario
+        racha_reflexion = 0
+        fecha_actual = hoy
+        while True:
+            reflexion = ReflexionDiaria.objects.filter(
+                usuario=request.user,
+                fecha=fecha_actual
+            ).first()
+
+            if reflexion:
+                racha_reflexion += 1
+                fecha_actual -= timedelta(days=1)
+            else:
+                break
+
+            if racha_reflexion > 365:  # Límite de seguridad
+                break
+
+        print(f"🔥 Racha de reflexión: {racha_reflexion}")
+
+        # Logros estoicos del usuario
+        if LogroEstoico:
+            try:
+                logros_estoicos = LogroEstoico.objects.filter(
+                    usuario=request.user
+                ).count()
+                print(f"🏆 Logros estoicos: {logros_estoicos}")
+            except Exception as e:
+                print(f"⚠️ Error cargando logros estoicos: {e}")
+                logros_estoicos = 0
+
+        # Días de reflexión = total de reflexiones
+        dias_reflexion = total_reflexiones
+
+    except ImportError as e:
+        print(f"⚠️ App estoica no disponible: {e}")
+        estoico_disponible = False
+    except Exception as e:
+        print(f"❌ Error cargando datos estoicos: {e}")
+        estoico_disponible = False
+
+    # ================================================================
+    # MENSAJES MOTIVACIONALES INTEGRADOS
+    # ================================================================
+
+    mensajes_integracion = [
+        "Tu disciplina física refleja tu fortaleza mental. Los estoicos estarían orgullosos.",
+        "Un cuerpo entrenado es el hogar de una mente disciplinada.",
+        "Como decía Marco Aurelio: 'La mente que no se ejercita se debilita'.",
+        "Cada entreno es un acto de autodisciplina. Continúa construyendo tu fortaleza.",
+        "El cuerpo y la mente se fortalecen juntos. Sigue adelante.",
+        "La disciplina comienza con un solo paso. Tu cuerpo y mente te esperan.",
+        "Como enseñaba Epicteto: 'Ningún gran descubrimiento se hizo sin un acto audaz'.",
+        "Tu constancia en la reflexión fortalece tanto tu mente como tu determinación física.",
+        "La sabiduría diaria nutre el alma que habita en tu cuerpo entrenado.",
+        "Un momento de reflexión puede darte la claridad para tu próximo entreno.",
+        "La mente clara toma mejores decisiones sobre el cuidado del cuerpo.",
+        "Mente sana en cuerpo sano - Los antiguos sabían que ambos van unidos."
+    ]
+
+    import random
+    mensaje_integracion = random.choice(mensajes_integracion)
+
+    # ================================================================
+    # INICIO DEL NUEVO BLOQUE: CÁLCULO DEL ACWR
+    # ================================================================
+
+    analizador_carga = AnalizadorCargaYFatiga(cliente)
+
+    # 2. Ejecutamos la función que devuelve todos los datos necesarios.
+    #    El método se llama analizar_acwr() según el código que me proporcionaste.
+    analisis_acwr_completo = analizador_carga.analizar_acwr()
+
+    # Imprimimos en la consola para depurar y asegurarnos de que funciona (opcional)
+    print(f"🔥 Análisis ACWR para {cliente.nombre}: Ratio={analisis_acwr_completo.get('acwr_actual', 'N/A')}")
+
+    # ================================================================
+    # FIN DEL NUEVO BLOQUE
+    # ================================================================
+    # ================================================================
+    # NOTIFICACIONES CONTEXTUALES
+    # ================================================================
+    # ================================================================
+    # INTEGRACIÓN ESTOICA DINÁMICA (CORREGIDA)
+    # ================================================================
+
+    estoico_disponible = False
+    contenido_hoy = None
+
+    try:
+        # ¡AÑADE ESTA IMPORTACIÓN DENTRO DEL TRY PARA MAYOR SEGURIDAD!
+        from estoico.models import ContenidoDiario, ReflexionDiaria
+
+        # ... (código existente para cargar LogroEstoico, etc.)
+
+        estoico_disponible = True
+
+        # --- ESTA ES LA LÓGICA QUE YA TIENES Y FUNCIONA ---
+        dia_año = hoy.timetuple().tm_yday
+        contenido_hoy = ContenidoDiario.objects.filter(dia=dia_año).first()
+
+        # ... (resto de tu lógica para reflexiones, rachas, etc.)
+
+    except ImportError as e:
+        print(f"⚠️ App estoica no disponible: {e}")
+        estoico_disponible = False
+    except Exception as e:
+        print(f"❌ Error cargando datos estoicos: {e}")
+        estoico_disponible = False
+
     return render(request, 'clientes/mockup_demo.html', {
         'usuario': usuario,
         'cliente': cliente,
         'entrenos': entrenos,
+        'analisis_acwr': analisis_acwr_completo,
         'emociones': emociones,
         'emociones_lista': emociones_lista,
         'recuerdo': recuerdo,
         'logros': logros,
+        'reporte': reporte_adherencia,
         'top_ejercicios': calcular_top_1rm(cliente),
         'conclusion_joi': conclusion_joi,
         'datos_logros': datos_logros,
@@ -913,6 +1099,7 @@ def panel_cliente(request):
         'frase_extra_joi': frase_extra_joi,
         'registro_whoop': registro_whoop,
         'frase_recaida': frase_recaida,
+        'prediccion_riesgo': prediccion,
         'entrenamientos_recientes': entrenamientos_recientes,
         'dias_emocionales': dias_emocionales,
         'entrenos_count': EntrenoRealizado.objects.filter(cliente=cliente).count(),
@@ -944,6 +1131,23 @@ def panel_cliente(request):
         'ratios_fuerza': ratios_fuerza,
         'mesociclo_actual': mesociclo_actual,
         'fatiga_acumulada': fatiga_acumulada,
+        'proximo_entrenamiento': proximo_entrenamiento,
+        'estadisticas_plan': estadisticas_plan,
+        'estancamientos': estancamientos_detectados,
+        'checkin_form': checkin_form,
+        'ajuste_del_dia': ajuste_del_dia,
+        'prediccion_riesgo': prediccion,
+        'notificaciones': notificaciones,
+        'mensaje_integracion': mensaje_integracion,
+        'contenido_hoy': contenido_hoy,
+        'reflexion_hoy': reflexion_hoy,
+        'reflexion_pendiente': reflexion_pendiente,
+        'total_reflexiones': total_reflexiones,
+        'racha_reflexion': racha_reflexion,
+        'logros_estoicos': logros_estoicos,
+        'dias_reflexion': dias_reflexion,
+        'contenido_hoy': contenido_hoy,
+        'estoico_disponible': estoico_disponible,
     })
 
 
@@ -1495,7 +1699,18 @@ def lista_clientes(request):
 # Dashboard de clientes
 
 
+# FUNCIÓN DASHBOARD CORREGIDA - REEMPLAZA TU FUNCIÓN ACTUAL
+
+@login_required
 def dashboard(request):
+    """
+    Dashboard principal con integración estoica DINÁMICA corregida
+    """
+    # ================================================================
+    # TU CÓDIGO EXISTENTE (mantener)
+    # ================================================================
+
+    cliente = request.user.cliente_perfil
     clientes = Cliente.objects.all()
     total_clientes = clientes.count()
     total_revisiones = sum(cliente.revisiones.count() for cliente in clientes)
@@ -1504,16 +1719,17 @@ def dashboard(request):
     entrenos_mes_lista = []
     entrenos_anio_lista = []
     entrenos_todos_lista = []
+
     # Promedios
     promedio_peso = 0
     promedio_grasa = 0
     total_mediciones = 0
 
-    for cliente in clientes:
-        ultima = cliente.revisiones.order_by('-fecha').first()
+    for cliente_item in clientes:
+        ultima = cliente_item.revisiones.order_by('-fecha').first()
         if ultima:
-            print(f"{cliente.nombre} ({ultima.fecha}) → {ultima.check_alerts()}")
-        for rev in cliente.revisiones.all():
+            print(f"{cliente_item.nombre} ({ultima.fecha}) → {ultima.check_alerts()}")
+        for rev in cliente_item.revisiones.all():
             if rev.peso_corporal:
                 promedio_peso += rev.peso_corporal
             if rev.grasa_corporal:
@@ -1523,7 +1739,8 @@ def dashboard(request):
     if total_mediciones > 0:
         promedio_peso /= total_mediciones
         promedio_grasa /= total_mediciones
-        # 📊 Datos de entrenos
+
+    # Datos de entrenos
     from datetime import date, timedelta
     from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 
@@ -1550,18 +1767,15 @@ def dashboard(request):
     from collections import defaultdict
     alertas_raw = defaultdict(list)
 
-    for cliente in clientes:
-        ultima = cliente.revisiones.order_by('-fecha').first()
+    for cliente_item in clientes:
+        ultima = cliente_item.revisiones.order_by('-fecha').first()
         if ultima:
             alertas = ultima.check_alerts()
             if alertas:
                 for alerta in alertas:
-                    alertas_raw[alerta].append((cliente, ultima.fecha))
+                    alertas_raw[alerta].append((cliente_item, ultima.fecha))
 
-    # Convertimos el defaultdict a dict plano
     alertas_por_tipo = dict(alertas_raw)
-
-    context = {'alertas_por_tipo': alertas_por_tipo, }
 
     # Datos adicionales
     resumen_programa = Cliente.objects.values('programa__nombre').annotate(count=Count('id'))
@@ -1575,11 +1789,12 @@ def dashboard(request):
         .order_by('month')
     )
     top_peso = Cliente.objects.order_by('-peso_corporal')[:5]
+
     color_por_alerta = {
         "Grasa corporal alta": "danger",
         "Peso corporal muy bajo": "warning",
-        # Puedes agregar más tipos aquí
     }
+
     alertas_por_tipo_coloreadas = []
     for tipo, clientes_lista in alertas_por_tipo.items():
         alertas_por_tipo_coloreadas.append({
@@ -1587,19 +1802,230 @@ def dashboard(request):
             'color': color_por_alerta.get(tipo, 'secondary'),
             'clientes': clientes_lista
         })
-        hoy = date.today()
-        inicio_semana = hoy - timedelta(days=hoy.weekday())
-        inicio_mes = hoy.replace(day=1)
-        inicio_anio = hoy.replace(month=1, day=1)
 
-        entrenos_hoy_lista = EntrenoRealizado.objects.filter(fecha=hoy).select_related('cliente', 'rutina')
-        entrenos_semana_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_semana).select_related('cliente',
-                                                                                                         'rutina')
-        entrenos_mes_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_mes).select_related('cliente', 'rutina')
-        entrenos_anio_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_anio).select_related('cliente',
+    # ================================================================
+    # DATOS ESPECÍFICOS DEL CLIENTE ACTUAL (CORREGIDO)
+    # ================================================================
+
+    # Entrenos del cliente específico (no todos los clientes)
+    entrenos_semana_cliente = EntrenoRealizado.objects.filter(
+        cliente=cliente,
+        fecha__gte=inicio_semana
+    ).count()
+
+    entrenos_mes_cliente = EntrenoRealizado.objects.filter(
+        cliente=cliente,
+        fecha__gte=inicio_mes
+    ).count()
+
+    # Calcular racha de entrenamiento del cliente
+    racha_actual = 0
+    fecha_actual = hoy
+    while True:
+        entreno = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            fecha=fecha_actual
+        ).first()
+
+        if entreno:
+            racha_actual += 1
+            fecha_actual -= timedelta(days=1)
+        else:
+            break
+
+        if racha_actual > 365:  # Límite de seguridad
+            break
+
+    # Logros del usuario específico
+    try:
+        logros_total = LogroUsuario.objects.filter(usuario=request.user).count()
+        logros_recientes = LogroUsuario.objects.filter(
+            usuario=request.user
+        ).order_by('-fecha_obtenido')[:3]
+    except:
+        logros_total = 0
+        logros_recientes = []
+
+    # Progreso físico del cliente
+    medidas_recientes = cliente.revisiones.order_by('-fecha')[:2]
+    progreso_fisico = 50  # Valor por defecto
+
+    if len(medidas_recientes) >= 2:
+        objetivo = cliente.objetivo_principal
+
+        if objetivo == 'perder_peso':
+            peso_inicial = medidas_recientes[1].peso_corporal or 0
+            peso_actual = medidas_recientes[0].peso_corporal or 0
+            peso_objetivo = getattr(cliente, 'peso_objetivo', peso_inicial * 0.9) or peso_inicial * 0.9
+
+            if peso_inicial > peso_objetivo:
+                progreso = ((peso_inicial - peso_actual) / (peso_inicial - peso_objetivo)) * 100
+                progreso_fisico = min(max(progreso, 0), 100)
+
+    # Progresos recientes del cliente
+    progresos_recientes = []
+    entrenos_recientes = EntrenoRealizado.objects.filter(
+        cliente=cliente
+    ).order_by('-fecha')[:3]
+
+    for entreno in entrenos_recientes:
+        progresos_recientes.append({
+            'ejercicio': f'Entreno {entreno.fecha.strftime("%d/%m")}',
+            'mejora': '+5kg'  # Esto deberías calcularlo según tu lógica
+        })
+
+    # ================================================================
+    # INTEGRACIÓN ESTOICA DINÁMICA (CORREGIDA)
+    # ================================================================
+
+    # Inicializar valores por defecto
+    estoico_disponible = False
+    contenido_hoy = None
+    reflexion_hoy = None
+    reflexion_pendiente = False
+    total_reflexiones = 0
+    racha_reflexion = 0
+    logros_estoicos = 0
+    dias_reflexion = 0
+
+    # Intentar cargar datos estoicos
+    try:
+        from estoico.models import ContenidoDiario, ReflexionDiaria
+        try:
+            from estoico.models import LogroUsuario as LogroEstoico
+        except ImportError:
+            # Si no existe LogroUsuario en estoico, usar None
+            LogroEstoico = None
+
+        estoico_disponible = True
+        print(f"🏛️ App estoica disponible - Usuario: {request.user}")
+
+        # Contenido del día
+        dia_año = hoy.timetuple().tm_yday
+        contenido_hoy = ContenidoDiario.objects.filter(dia=dia_año).first()
+        print(f"📚 Contenido del día {dia_año}: {contenido_hoy}")
+
+        # Reflexión de hoy del usuario específico
+        reflexion_hoy = ReflexionDiaria.objects.filter(
+            usuario=request.user,
+            fecha=hoy
+        ).first()
+        print(f"🤔 Reflexión de hoy: {reflexion_hoy}")
+
+        reflexion_pendiente = not reflexion_hoy
+
+        # Total de reflexiones del usuario
+        total_reflexiones = ReflexionDiaria.objects.filter(
+            usuario=request.user
+        ).count()
+        print(f"📊 Total reflexiones del usuario: {total_reflexiones}")
+
+        # Calcular racha de reflexión del usuario
+        racha_reflexion = 0
+        fecha_actual = hoy
+        while True:
+            reflexion = ReflexionDiaria.objects.filter(
+                usuario=request.user,
+                fecha=fecha_actual
+            ).first()
+
+            if reflexion:
+                racha_reflexion += 1
+                fecha_actual -= timedelta(days=1)
+            else:
+                break
+
+            if racha_reflexion > 365:  # Límite de seguridad
+                break
+
+        print(f"🔥 Racha de reflexión: {racha_reflexion}")
+
+        # Logros estoicos del usuario
+        if LogroEstoico:
+            try:
+                logros_estoicos = LogroEstoico.objects.filter(
+                    usuario=request.user
+                ).count()
+                print(f"🏆 Logros estoicos: {logros_estoicos}")
+            except Exception as e:
+                print(f"⚠️ Error cargando logros estoicos: {e}")
+                logros_estoicos = 0
+
+        # Días de reflexión = total de reflexiones
+        dias_reflexion = total_reflexiones
+
+    except ImportError as e:
+        print(f"⚠️ App estoica no disponible: {e}")
+        estoico_disponible = False
+    except Exception as e:
+        print(f"❌ Error cargando datos estoicos: {e}")
+        estoico_disponible = False
+
+    # ================================================================
+    # MENSAJES MOTIVACIONALES INTEGRADOS
+    # ================================================================
+
+    mensajes_integracion = [
+        "Tu disciplina física refleja tu fortaleza mental. Los estoicos estarían orgullosos.",
+        "Un cuerpo entrenado es el hogar de una mente disciplinada.",
+        "Como decía Marco Aurelio: 'La mente que no se ejercita se debilita'.",
+        "Cada entreno es un acto de autodisciplina. Continúa construyendo tu fortaleza.",
+        "El cuerpo y la mente se fortalecen juntos. Sigue adelante.",
+        "La disciplina comienza con un solo paso. Tu cuerpo y mente te esperan.",
+        "Como enseñaba Epicteto: 'Ningún gran descubrimiento se hizo sin un acto audaz'.",
+        "Tu constancia en la reflexión fortalece tanto tu mente como tu determinación física.",
+        "La sabiduría diaria nutre el alma que habita en tu cuerpo entrenado.",
+        "Un momento de reflexión puede darte la claridad para tu próximo entreno.",
+        "La mente clara toma mejores decisiones sobre el cuidado del cuerpo.",
+        "Mente sana en cuerpo sano - Los antiguos sabían que ambos van unidos."
+    ]
+
+    import random
+    mensaje_integracion = random.choice(mensajes_integracion)
+
+    # ================================================================
+    # NOTIFICACIONES CONTEXTUALES
+    # ================================================================
+
+    notificaciones = []
+
+    # Notificaciones fitness
+    if entrenos_semana_cliente == 0:
+        notificaciones.append({
+            'titulo': 'Tu cuerpo te extraña',
+            'mensaje': 'Han pasado varios días desde tu último entreno',
+            'icono': 'fa-dumbbell',
+            'color': 'cyan'
+        })
+
+    if progreso_fisico > 80:
+        notificaciones.append({
+            'titulo': '¡Excelente progreso!',
+            'mensaje': f'Estás al {progreso_fisico:.0f}% de tu objetivo',
+            'icono': 'fa-chart-line',
+            'color': 'green'
+        })
+
+    # ================================================================
+    # LISTAS DE ENTRENOS (TU CÓDIGO EXISTENTE)
+    # ================================================================
+
+    entrenos_hoy_lista = EntrenoRealizado.objects.filter(fecha=hoy).select_related('cliente', 'rutina')
+    entrenos_semana_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_semana).select_related('cliente',
                                                                                                      'rutina')
-        entrenos_todos_lista = EntrenoRealizado.objects.all().select_related('cliente', 'rutina')
+    entrenos_mes_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_mes).select_related('cliente', 'rutina')
+    entrenos_anio_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_anio).select_related('cliente', 'rutina')
+    entrenos_todos_lista = EntrenoRealizado.objects.all().select_related('cliente', 'rutina')
+
+    # ================================================================
+    # CONTEXT FINAL COMBINADO
+    # ================================================================
+
     context = {
+        # Datos del cliente
+        'cliente': cliente,
+
+        # Datos fitness existentes (globales)
         'total_clientes': total_clientes,
         'total_revisiones': total_revisiones,
         'promedio_peso': round(promedio_peso, 1),
@@ -1610,10 +2036,11 @@ def dashboard(request):
         'genero_count': list(genero_count),
         'peso_por_genero': list(peso_por_genero),
         'registro_por_mes': list(registro_por_mes),
-        'alertas_por_tipo': dict(alertas_raw),
         'alertas_por_tipo_coloreadas': alertas_por_tipo_coloreadas,
         'color_por_alerta': color_por_alerta,
         'top_peso': top_peso,
+
+        # Datos de entrenos (globales)
         'entr_hoy': entrenos_hoy,
         'entr_semana': entrenos_semana,
         'entr_mes': entrenos_mes,
@@ -1622,31 +2049,54 @@ def dashboard(request):
         'prom_sem': promedio_semanal,
         'prom_mes': promedio_mensual,
         'prom_anio': promedio_anual,
+
+        # Datos del cliente específico (CORREGIDO)
+        'entrenos_semana': entrenos_semana_cliente,
+        'entrenos_mes': entrenos_mes_cliente,
+        'racha_actual': racha_actual,
+        'logros_total': logros_total,
+        'logros_recientes': logros_recientes,
+        'progreso_fisico': progreso_fisico,
+        'progresos_recientes': progresos_recientes,
+
+        # Listas de entrenos
         'entr_hoy_lista': entrenos_hoy_lista,
         'entr_semana_lista': entrenos_semana_lista,
         'entr_mes_lista': entrenos_mes_lista,
         'entr_anio_lista': entrenos_anio_lista,
         'entr_todos_lista': entrenos_todos_lista,
+
+        # Datos estoicos DINÁMICOS (CORREGIDO)
+        'contenido_hoy': contenido_hoy,
+        'reflexion_hoy': reflexion_hoy,
+        'reflexion_pendiente': reflexion_pendiente,
+        'total_reflexiones': total_reflexiones,
+        'racha_reflexion': racha_reflexion,
+        'logros_estoicos': logros_estoicos,
+        'dias_reflexion': dias_reflexion,
+
+        # Integración
+        'mensaje_integracion': mensaje_integracion,
+
+        # Notificaciones
+        'notificaciones': notificaciones,
+
+        # Flags
+        'estoico_disponible': estoico_disponible,
     }
 
-    hoy = date.today()
-    inicio_semana = hoy - timedelta(days=hoy.weekday())
-    inicio_mes = hoy.replace(day=1)
-    inicio_anio = hoy.replace(month=1, day=1)
+    # Debug: Imprimir valores para verificar
+    print(f"🔍 DEBUG - Datos estoicos:")
+    print(f"   - estoico_disponible: {estoico_disponible}")
+    print(f"   - total_reflexiones: {total_reflexiones}")
+    print(f"   - racha_reflexion: {racha_reflexion}")
+    print(f"   - dias_reflexion: {dias_reflexion}")
+    print(f"   - contenido_hoy: {contenido_hoy}")
+    print(f"   - reflexion_hoy: {reflexion_hoy}")
 
-    entrenos_hoy_lista = EntrenoRealizado.objects.filter(fecha=hoy).select_related('cliente', 'rutina')
-    entrenos_semana_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_semana).select_related('cliente',
-                                                                                                     'rutina')
-    entrenos_mes_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_mes).select_related('cliente', 'rutina')
-    entrenos_anio_lista = EntrenoRealizado.objects.filter(fecha__gte=inicio_anio).select_related('cliente', 'rutina')
-    entrenos_todos_lista = EntrenoRealizado.objects.all().select_related('cliente', 'rutina')
     return render(request, 'clientes/dashboard.html', context)
 
 
-# Vista detalle cliente
-# En tu archivo: clientes/views.py
-
-# Asegúrate de tener estas importaciones
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
@@ -1859,7 +2309,7 @@ def asignar_programa(request, cliente_id):
         cliente.save()
         messages.info(request, "Se ha quitado el programa del cliente.")
 
-    return redirect('detalle_cliente', cliente_id=cliente.id)
+    return redirect('clientes:detalle_cliente', cliente_id=cliente.id)
 
 
 @require_POST
@@ -1939,7 +2389,7 @@ def editar_cliente(request, cliente_id):
                 cliente.user = user
 
             form.save()
-            redirect('lista_clientes')
+            return redirect('clientes:lista_clientes')
     else:
         form = ClienteForm(instance=cliente)
 
@@ -2052,11 +2502,10 @@ def panel_entrenador(request):
             primer_volumen = entrenos_mes[-1].volumen_total_kg or 0
             ultimo_volumen = entrenos_mes[0].volumen_total_kg or 0
 
-            if float(ultimo_volumen or 0) > float(primer_volumen or 0) * 1.05:
-
+            if (ultimo_volumen or 0) > (primer_volumen or 0) * Decimal('1.05'):
                 progreso_reciente = "Positivo"
                 progreso_color = "text-green-400"
-            elif ultimo_volumen < (primer_volumen or 0) * 0.95:
+            elif (ultimo_volumen or 0) < (primer_volumen or 0) * Decimal('0.95'):
                 progreso_reciente = "Negativo"
                 progreso_color = "text-red-400"
 
@@ -2175,7 +2624,7 @@ def asignar_programa_a_cliente(request, programa_id):
         programa = get_object_or_404(Programa, id=programa_id)
         cliente.programa = programa
         cliente.save()
-        return redirect('detalle_programa', programa_id=programa_id)
+        return redirect('clientes:detalle_programa', programa_id=programa_id)
 
 
 def actualizar_recordatorio_peso(request, cliente_id):
@@ -2192,3 +2641,960 @@ from django.shortcuts import render
 
 def blade_runner_demo(request):
     return render(request, 'clientes/blade-runner-demo.html')
+
+
+import os
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from .services import generar_ficha_contexto_dinamica
+
+# Importa la función que creamos en el paso 2
+
+
+# Carga la clave de API
+load_dotenv()
+
+# Definimos la plantilla del prompt fuera de la vista para más eficiencia.
+# Esta es la "magia" de LangChain para formatear la instrucción.
+PROMPT_TEMPLATE = """
+# TU MISIÓN Y PERSONALIDAD
+Eres Joi, una IA de coaching de fitness de élite. Tu personalidad es una mezcla de un analista de datos perspicaz, un entrenador motivador y un amigo empático. Eres directa, pero siempre alentadora. Tu objetivo no es solo responder preguntas, sino ofrecer valor añadido, conectar ideas y ayudar al usuario a entender su propio progreso.
+
+# REGLAS DE ORO
+1.  **BASADO EN DATOS, SIEMPRE:** Tu conocimiento se limita ESTRICTAMENTE al CONTEXTO proporcionado. NUNCA inventes información, métricas o entrenamientos.
+2.  **SÉ HONESTA SI NO SABES:** Si la respuesta a una pregunta no se encuentra en el CONTEXTO, di amablemente que no tienes esa información específica. Por ejemplo: "No tengo detalles sobre tu dieta en el contexto actual, pero podemos centrarnos en tu rendimiento."
+3.  **CONECTA LAS IDEAS:** Tu mayor habilidad es encontrar correlaciones. Si el usuario pregunta por su fuerza, y en el contexto ves que ha dormido poco, ¡conecta esos dos puntos! Ejemplo: "He notado que tu fuerza en el press de banca se ha estancado, y curiosamente, coincide con las semanas en las que tu bitácora muestra menos de 7 horas de sueño. El descanso es clave para la fuerza."
+4.  **SÉ PROACTIVA:** No te limites a responder. Si el usuario hace una pregunta general, aprovecha para darle un resumen de los puntos más interesantes que ves en el contexto.
+5.  **USA UN FORMATO CLARO:** Utiliza saltos de línea y asteriscos para **enfatizar** puntos clave y hacer tu respuesta más legible.
+
+# EJEMPLO DE RESPUESTA IDEAL
+Pregunta del Usuario: ¿Cómo voy?
+Respuesta Ideal de Joi:
+"¡Hola, [Nombre]! He analizado tu progreso del último mes y aquí tienes los puntos clave:
+
+*   **Rendimiento General:** ¡Impresionante! Has completado **15 sesiones** con un volumen total de casi **200,000 kg**. Eso demuestra una gran consistencia.
+*   **Progresión de Fuerza:** Veo una progresión muy buena en tu **Sentadilla**, ¡has subido 10 kg! Sin embargo, el **Press de Banca** parece haberse estancado un poco.
+*   **Posible Causa:** He notado una correlación interesante: en las semanas donde tu bitácora indica más estrés o menos horas de sueño, tu rendimiento en ejercicios de empuje se ve afectado.
+
+Mi recomendación sería enfocarnos en mejorar la calidad de tu descanso antes de los días de torso para ver si podemos romper esa barrera en el press de banca.
+
+¡Sigue así, estás haciendo un trabajo increíble!"
+
+---
+# CONTEXTO PROPORCIONADO
+{contexto}
+---
+# PREGUNTA DEL USUARIO
+{pregunta}
+---
+# RESPUESTA DE JOI
+"""
+
+
+@csrf_exempt
+@login_required  # Usar solo para pruebas, en producción usa la protección CSRF de Django
+def chat_con_joi(request):
+    if request.method == 'POST':
+        # 1. Obtener la pregunta del usuario y su ID
+        pregunta_usuario = request.POST.get('pregunta')
+
+        # --- CAMBIO IMPORTANTE: Usar el ID del usuario logueado ---
+        try:
+            # Asumimos que el modelo Cliente tiene una relación OneToOne con User
+            # llamada 'cliente_perfil' o similar. ¡Ajusta si se llama diferente!
+            atleta_id = request.user.cliente_perfil.id
+        except AttributeError:
+            # Si el usuario no tiene un perfil de cliente, devolvemos un error.
+            return JsonResponse({'error': 'El usuario actual no tiene un perfil de cliente asociado.'}, status=400)
+        # -----------------------------------------------------------
+
+        if not pregunta_usuario:
+            return JsonResponse({'error': 'No se proporcionó ninguna pregunta.'}, status=400)
+
+        # El resto de la función sigue igual...
+        contexto_atleta = generar_ficha_contexto_dinamica(atleta_id)
+
+        # 3. Configurar el modelo y el prompt con LangChain
+        chat = ChatOpenAI(model="gpt-4o", temperature=0)
+        prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+
+        # 4. Crear la "cadena" que une el prompt, el modelo y el formato de salida
+        cadena = prompt | chat
+
+        # 5. Invocar la cadena con los datos específicos de esta petición
+        print("Generando respuesta basada en contexto...")
+        respuesta = cadena.invoke({
+            "contexto": contexto_atleta,
+            "pregunta": pregunta_usuario
+        })
+
+        # 6. Devolver la respuesta al frontend
+        return JsonResponse({'respuesta': respuesta.content})
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+# clientes/views.py
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+
+# ... (tus otras vistas como chat_con_joi) ...
+
+@login_required  # Protegemos la vista para que solo usuarios logueados puedan entrar
+def pagina_chat_joi(request):
+    """
+    Esta vista simplemente muestra la página con la interfaz del chat.
+    """
+    # Pasamos el nombre del usuario a la plantilla para un saludo personalizado
+    # Asumimos que el Cliente está relacionado con el User
+    try:
+        nombre_cliente = request.user.cliente_perfil.nombre
+    except:
+        nombre_cliente = request.user.username
+
+    return render(request, 'clientes/chat_con_joi.html', {'nombre_cliente': nombre_cliente})
+
+
+# en clientes/views.py
+
+# ... (asegúrate de tener estas importaciones al principio del archivo)
+from datetime import date, timedelta
+from analytics.planificador_helms_completo import PlanificadorHelms, crear_perfil_desde_cliente
+from analytics.views import CalculadoraEjerciciosTabla
+from decimal import Decimal, InvalidOperation
+
+
+# en clientes/views.py
+
+# ... (importaciones) ...
+
+def obtener_proximo_entrenamiento(cliente):
+    """
+    Obtiene el próximo entrenamiento basándose en el plan generado por PlanificadorHelms.
+    VERSIÓN FINAL CON LÓGICA DE BÚSQUEDA SIMPLIFICADA.
+    """
+    try:
+        # --- PASO 1: Generar el plan anual completo (esto ya funciona) ---
+        # (La lógica para generar el plan es la misma, no la repetimos aquí por brevedad)
+        maximos_actuales = {}
+        try:
+            calculadora_rm = CalculadoraEjerciciosTabla(cliente)
+            ejercicios_con_rm = calculadora_rm.obtener_ejercicios_tabla()
+            for e in ejercicios_con_rm:
+                try:
+                    nombre_limpio = e.get('nombre', '').strip().lower()
+                    peso_str = str(e.get('peso', '0')).replace(',', '.')
+                    reps_valor = e.get('repeticiones', '0')
+                    reps_str = str(reps_valor).split('-')[0].strip() if isinstance(reps_valor, str) else str(reps_valor)
+                    if nombre_limpio and peso_str.replace('.', '', 1).isdigit() and reps_str.isdigit():
+                        peso, reps = Decimal(peso_str), int(reps_str)
+                        if peso > 0 and reps > 0:
+                            rm_estimado = peso * (1 + Decimal(reps) / Decimal(30))
+                            if nombre_limpio not in maximos_actuales or rm_estimado > maximos_actuales[nombre_limpio]:
+                                maximos_actuales[nombre_limpio] = float(rm_estimado)
+                except (ValueError, TypeError, InvalidOperation):
+                    continue
+        except Exception:
+            maximos_actuales = {'press_banca': 80.0, 'sentadilla': 100.0}
+
+        perfil = crear_perfil_desde_cliente(cliente)
+        perfil.maximos_actuales = maximos_actuales
+        planificador = PlanificadorHelms(perfil)
+        plan_completo = planificador.generar_plan_anual()
+
+        # --- PASO 2: Encontrar el próximo entrenamiento (LÓGICA NUEVA Y SIMPLE) ---
+        hoy = date.today()
+        entrenos_por_fecha = plan_completo.get('entrenos_por_fecha', {})
+
+        # Ordenamos las fechas para buscar la próxima
+        fechas_ordenadas = sorted(entrenos_por_fecha.keys())
+
+        for fecha_str in fechas_ordenadas:
+            fecha_entrenamiento = date.fromisoformat(fecha_str)
+
+            if fecha_entrenamiento >= hoy:
+                # ¡Encontramos el próximo entrenamiento!
+                entrenamiento = entrenos_por_fecha[fecha_str]
+
+                # Ahora, buscamos a qué bloque pertenece esta fecha
+                bloque_info = {}
+                for bloque in plan_completo.get('plan_por_bloques', []):
+                    # Un bloque contiene una lista de diccionarios de semanas
+                    # Verificamos si alguna de las semanas de este bloque contiene la fecha
+                    # (Esto es una simplificación, asumimos que podemos encontrar el bloque por la fecha)
+                    # Una forma más robusta sería calcular la semana del año de la fecha_entrenamiento
+                    semana_del_año = fecha_entrenamiento.isocalendar()[1]
+
+                    # Buscamos si el número de semana está en este bloque
+                    for semana_data in bloque.get('semanas', []):
+                        if semana_data['semana_num_total'] == semana_del_año:
+                            bloque_info = {
+                                'bloque_actual': bloque.get('nombre', 'N/A'),
+                                'objetivo': bloque.get('objetivo', 'N/A'),
+                                'semana_bloque': semana_del_año - bloque['semanas'][0]['semana_num_total'] + 1
+                            }
+                            break
+                    if bloque_info:
+                        break
+
+                dias_semana_nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+
+                return {
+                    'dia': dias_semana_nombres[fecha_entrenamiento.weekday()],
+                    'fecha': fecha_entrenamiento,
+                    'dias_hasta': (fecha_entrenamiento - hoy).days,
+                    'rutina_nombre': entrenamiento['nombre_rutina'],
+                    'ejercicios': entrenamiento['ejercicios'][:3],
+                    'total_ejercicios': len(entrenamiento['ejercicios']),
+                    'bloque_actual': bloque_info.get('bloque_actual', 'Bloque Desconocido'),
+                    'objetivo': bloque_info.get('objetivo', 'N/A'),
+                    'semana_bloque': bloque_info.get('semana_bloque', 0),
+                    'error': None
+                }
+
+        # Si el bucle termina, no hay más entrenamientos en el plan
+        raise ValueError("Plan anual finalizado.")
+
+    except Exception as e:
+        # Si algo falla, devolvemos un diccionario de error claro
+        return {
+            'error': str(e),
+            'rutina_nombre': 'Plan Finalizado o Error',
+            'dia': 'N/A',
+            'fecha': None,
+            'dias_hasta': 0,
+            'ejercicios': [],
+            'total_ejercicios': 0,
+            'bloque_actual': '-',
+            'objetivo': '-',
+            'semana_bloque': '-'
+        }
+
+
+# en clientes/views.py
+
+# ... (asegúrate de tener estas importaciones al principio del archivo)
+from analytics.planificador_helms_completo import PlanificadorHelms, crear_perfil_desde_cliente
+from analytics.views import CalculadoraEjerciciosTabla
+from decimal import Decimal, InvalidOperation
+
+
+# ...
+
+def obtener_estadisticas_plan_anual(cliente):
+    """
+    Obtiene estadísticas generales del plan anual del cliente.
+    VERSIÓN FINAL Y SINCRONIZADA.
+    """
+    try:
+        # --- PASO 1: Generar el plan anual completo (lógica unificada) ---
+        maximos_actuales = {}
+        try:
+            calculadora_rm = CalculadoraEjerciciosTabla(cliente)
+            ejercicios_con_rm = calculadora_rm.obtener_ejercicios_tabla()
+            for e in ejercicios_con_rm:
+                try:
+                    nombre_limpio = e.get('nombre', '').strip().lower()
+                    peso_str = str(e.get('peso', '0')).replace(',', '.')
+                    reps_valor = e.get('repeticiones', '0')
+                    reps_str = str(reps_valor).split('-')[0].strip() if isinstance(reps_valor, str) else str(reps_valor)
+                    if nombre_limpio and peso_str.replace('.', '', 1).isdigit() and reps_str.isdigit():
+                        peso, reps = Decimal(peso_str), int(reps_str)
+                        if peso > 0 and reps > 0:
+                            rm_estimado = peso * (1 + Decimal(reps) / Decimal(30))
+                            if nombre_limpio not in maximos_actuales or rm_estimado > maximos_actuales[nombre_limpio]:
+                                maximos_actuales[nombre_limpio] = float(rm_estimado)
+                except (ValueError, TypeError, InvalidOperation):
+                    continue
+        except Exception:
+            maximos_actuales = {'press_banca': 80.0, 'sentadilla': 100.0}
+
+        perfil = crear_perfil_desde_cliente(cliente)
+        perfil.maximos_actuales = maximos_actuales
+
+        # ¡Usamos el planificador correcto!
+        planificador = PlanificadorHelms(perfil)
+        plan_completo = planificador.generar_plan_anual()
+
+        # --- PASO 2: Calcular estadísticas desde el plan generado ---
+        plan_por_bloques = plan_completo.get('plan_por_bloques', [])
+        total_semanas = sum(bloque.get('duracion', 0) for bloque in plan_por_bloques)
+
+        hoy = date.today()
+
+        # Calcular la fecha de inicio del plan (primer lunes del año)
+        primer_dia_del_año = date(hoy.year, 1, 1)
+        dias_para_lunes = (0 - primer_dia_del_año.weekday() + 7) % 7
+        fecha_inicio_plan = primer_dia_del_año + timedelta(days=dias_para_lunes)
+
+        dias_transcurridos = max(0, (hoy - fecha_inicio_plan).days)
+
+        if total_semanas > 0:
+            semana_actual = min((dias_transcurridos // 7) + 1, total_semanas)
+            progreso_porcentaje = min(100.0, (semana_actual / total_semanas) * 100.0)
+        else:
+            semana_actual = 0
+            progreso_porcentaje = 0.0
+
+        progreso_display = round(progreso_porcentaje, 1)
+
+        progreso_css = f"{progreso_porcentaje:.1f}"
+
+        return {
+            'total_semanas': total_semanas,
+            'semana_actual': semana_actual,
+            'progreso_porcentaje_display': progreso_display,  # <-- Nuevo nombre para mostrar
+            'progreso_porcentaje_css': progreso_css,  # <-- Nuevo nombre para el CSS
+            'semanas_restantes': max(0, total_semanas - semana_actual),
+            'error': None
+        }
+
+
+    except Exception as e:
+
+        print(f"❌ ERROR en obtener_estadisticas_plan_anual: {e}")
+
+        return {
+
+            'total_semanas': 0,
+
+            'semana_actual': 0,
+
+            'progreso_porcentaje_display': 0,  # <-- Añadir valor por defecto
+
+            'progreso_porcentaje_css': "0.0",  # <-- Añadir valor por defecto
+
+            'semanas_restantes': 0,
+
+            'error': str(e)
+
+        }
+
+
+# MODIFICAR tu vista existente del dashboard para incluir estos datos
+def dashboard_cliente(request, cliente_id):
+    """
+    Vista del dashboard del cliente - MODIFICAR tu vista existente
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # ... tu lógica existente ...
+
+    # AÑADIR estas líneas para obtener los datos del próximo entrenamiento
+    proximo_entrenamiento = obtener_proximo_entrenamiento(cliente)
+    estadisticas_plan = obtener_estadisticas_plan_anual(cliente)
+
+    # AÑADIR al context existente
+    context = {
+        # ... tu context existente ...
+        'proximo_entrenamiento': proximo_entrenamiento,
+        'estadisticas_plan': estadisticas_plan,
+    }
+
+    return render(request, 'clientes/dashboard_cliente.html', context)
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import PreferenciasHelmsForm
+from .models import Cliente
+
+
+@login_required
+def configurar_preferencias_helms(request, cliente_id):
+    """
+    Vista para configurar las preferencias de adherencia según Helms.
+    Ahora maneja un selector de nivel de experiencia y lo traduce al valor numérico del modelo.
+    """
+    # Se determina si el usuario es staff o un cliente normal para obtener el objeto cliente
+    if request.user.is_staff:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+    else:
+        # Un cliente solo puede editar su propio perfil
+        cliente = get_object_or_404(Cliente, id=cliente_id, user=request.user)
+
+    if request.method == 'POST':
+        # Se instancia el formulario con los datos del POST y el objeto cliente
+        form = PreferenciasHelmsForm(request.POST, instance=cliente)
+        if form.is_valid():
+            # --- LÓGICA DE TRADUCCIÓN AÑADIDA ---
+            # 1. Obtenemos la instancia del cliente del formulario, pero NO la guardamos aún (commit=False).
+            #    form.save() por sí solo daría un error porque 'nivel_experiencia_selector' no es un campo del modelo.
+            #    Al usar commit=False, preparamos el objeto en memoria con los datos que sí coinciden.
+            cliente_instance = form.save(commit=False)
+
+            # 2. Tomamos el valor del selector del diccionario de datos validados del formulario.
+            valor_experiencia_seleccionado = form.cleaned_data['nivel_experiencia_selector']
+
+            # 3. Asignamos manualmente ese valor (convertido a float) al campo real del modelo.
+            cliente_instance.experiencia_años = float(valor_experiencia_seleccionado)
+
+            # 4. Ahora que el objeto cliente está completo y correcto, lo guardamos en la base de datos.
+            cliente_instance.save()
+
+            # 5. Los campos ManyToMany (si los tuvieras) se guardan después.
+            #    En este caso no es necesario, pero es buena práctica saberlo: form.save_m2m()
+
+            messages.success(
+                request,
+                f'✅ Preferencias actualizadas para {cliente.nombre}. '
+                f'Tu programa ahora se adaptará mejor a tu estilo de vida.'
+            )
+            # Redirige a la URL correcta
+            return redirect('entrenos:vista_plan_anual', cliente_id=cliente.id)
+        else:
+            messages.error(
+                request,
+                '❌ Por favor corrige los errores en el formulario.'
+            )
+    else:
+        # Si es una petición GET, se muestra el formulario con los datos actuales del cliente
+        form = PreferenciasHelmsForm(instance=cliente)
+
+    # El contexto no necesita cambios, ya que la lógica para mostrar el nivel
+    # de experiencia actual está en el __init__ del formulario.
+    contexto = {
+        'form': form,
+        'cliente': cliente,
+        'nivel_experiencia': cliente.get_nivel_experiencia(),
+        'factor_recuperacion': cliente.get_factor_recuperacion(),
+        'necesita_descarga': cliente.necesita_descarga(),
+    }
+
+    return render(request, 'clientes/configurar_preferencias_helms.html', contexto)
+
+
+# en clientes/views.py
+
+# --- Asegúrate de tener todas estas importaciones al principio del archivo ---
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
+from .models import Cliente  # Tu modelo de Cliente
+from entrenos.models import EntrenoRealizado  # Tu modelo de entrenamientos
+from analytics.monitor_adherencia import MonitorAdherencia, SesionEntrenamiento
+
+
+# en clientes/views.py
+
+# en clientes/views.py
+
+@login_required
+def dashboard_adherencia(request, cliente_id):
+    # ... (lógica para obtener el cliente y el reporte)
+    if request.user.is_staff:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+    else:
+        cliente = get_object_or_404(Cliente, id=cliente_id, user=request.user)
+
+    reporte_adherencia = calcular_reporte_adherencia_cliente(cliente)
+    factor_recuperacion = cliente.get_factor_recuperacion()
+
+    # --- INICIO DE LA CORRECCIÓN ---
+    if factor_recuperacion >= 0.8:
+        estado_adherencia = 'excelente'
+        color_estado = 'success'
+        mensaje_estado = 'Tu adherencia es excelente. ¡Sigue así!'
+    elif factor_recuperacion >= 0.6:
+        estado_adherencia = 'buena'
+        color_estado = 'info'
+        mensaje_estado = 'Buena adherencia. Pequeños ajustes pueden mejorarla.'
+    else:  # <-- AÑADIR ESTE BLOQUE ELSE
+        estado_adherencia = 'necesita_atencion'
+        color_estado = 'warning'
+        mensaje_estado = 'Tu adherencia necesita atención. Considera reducir intensidad.'
+    # --- FIN DE LA CORRECCIÓN ---
+
+    contexto = {
+        'cliente': cliente,
+        'reporte': reporte_adherencia,
+        'factor_recuperacion': factor_recuperacion,
+        'estado_adherencia': estado_adherencia,
+        'color_estado': color_estado,
+        'mensaje_estado': mensaje_estado,
+        'dias_entrenamiento': cliente.dias_disponibles,
+        'tiempo_total_semanal': (cliente.dias_disponibles or 0) * (cliente.tiempo_por_sesion or 0),
+        'ejercicios_preferidos_count': len(cliente.ejercicios_preferidos or []),
+        'ejercicios_evitar_count': len(cliente.ejercicios_evitar or [])
+    }
+
+    return render(request, 'clientes/dashboard_adherencia.html', contexto)
+
+
+from datetime import date, timedelta
+from django.utils import timezone
+from .models import Cliente
+from entrenos.models import EntrenoRealizado
+from analytics.monitor_adherencia import MonitorAdherencia  # Asegúrate de que la importación esté
+
+
+# en clientes/views.py
+
+def calcular_reporte_adherencia_cliente(cliente: Cliente) -> dict:
+    """
+    Función ÚNICA y CORREGIDA para calcular el reporte de adherencia.
+    Evita porcentajes mayores a 100%.
+    """
+    hoy = timezone.now().date()
+    dia_actual_semana = hoy.weekday()
+    inicio_semana = hoy - timedelta(days=dia_actual_semana)
+
+    # 1. Contar entrenamientos completados ESTA SEMANA
+    entrenamientos_completados = EntrenoRealizado.objects.filter(
+        cliente=cliente,
+        fecha__gte=inicio_semana
+    ).count()
+
+    # 2. Calcular sesiones planificadas HASTA HOY (Lógica mejorada)
+    total_sesiones_semanales = cliente.dias_disponibles or 0
+    sesiones_planificadas_hasta_hoy = 0
+    if total_sesiones_semanales > 0:
+        proporcion_semana = (dia_actual_semana + 1) / 7.0
+        sesiones_planificadas_estimadas = round(proporcion_semana * total_sesiones_semanales)
+
+        # --- INICIO DE LA CORRECCIÓN CLAVE ---
+        # El número de sesiones planificadas no puede ser menor que las ya completadas.
+        # Si el cliente ya hizo 2, lo mínimo planificado debe ser 2.
+        sesiones_planificadas_hasta_hoy = max(entrenamientos_completados, sesiones_planificadas_estimadas)
+        # --- FIN DE LA CORRECCIÓN CLAVE ---
+
+    # 3. Calcular días perdidos CONSECUTIVOS (lógica más robusta)
+    dias_perdidos = 0
+    # ... (el resto de la lógica de días perdidos se queda igual)
+    if entrenamientos_completados < sesiones_planificadas_hasta_hoy:
+        ultimo_entreno = EntrenoRealizado.objects.filter(cliente=cliente).order_by('-fecha').first()
+        if ultimo_entreno:
+            dias_desde_ultimo_entreno = (hoy - ultimo_entreno.fecha).days
+            if ultimo_entreno.fecha >= inicio_semana:
+                dias_perdidos = dias_desde_ultimo_entreno
+            else:
+                dias_perdidos = dia_actual_semana + 1
+        else:
+            dias_perdidos = dia_actual_semana + 1
+
+    # 4. Usar el MonitorAdherencia
+    monitor = MonitorAdherencia(cliente_id=cliente.id)
+    monitor.actualizar_y_evaluar(
+        completadas=entrenamientos_completados,
+        planificadas=sesiones_planificadas_hasta_hoy,
+        dias_perdidos=dias_perdidos
+    )
+
+    return monitor.obtener_reporte_adherencia()
+
+
+@login_required
+def vista_educacion_helms(request, cliente_id):
+    """
+    Muestra una página educativa que explica los principios del plan del cliente.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Determinar el nivel educativo del cliente
+    if cliente.experiencia_años < 1:
+        nivel = NivelEducativo.PRINCIPIANTE
+    else:
+        nivel = NivelEducativo.INTERMEDIO
+
+    # Crear una instancia del sistema educativo con el nivel del cliente
+    sistema_educacion = SistemaEducacionHelms(nivel_usuario=nivel)
+
+    context = {
+        'cliente': cliente,
+        'contenidos': sistema_educacion.contenidos,
+    }
+
+    return render(request, 'clientes/educacion_helms.html', context)
+
+
+# En tu archivo: clientes/views.py
+
+# --- Asegúrate de tener estas importaciones al principio del archivo ---
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
+from .models import Cliente, BitacoraDiaria
+from .forms import CheckinDiarioForm
+from analytics.autorregulacion import calcular_ajuste_sesion
+from entrenos.models import EntrenoRealizado, DetalleEjercicioRealizado  # ¡Importante!
+from rutinas.models import Rutina
+
+
+# --------------------------------------------------------------------
+
+
+@transaction.atomic  # Usamos transacción para toda la vista, protegiendo tanto el check-in como el guardado del entreno
+@login_required
+def portal_sesion_unificado(request, cliente_id):
+    """
+    VISTA SIMPLIFICADA:
+    - Su única misión es preparar y mostrar el portal de sesión.
+    - Procesa el check-in diario si se envía ese formulario específico.
+    - El guardado del entrenamiento se delega a la vista 'guardar_entrenamiento_activo'.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    hoy = timezone.now().date()
+
+    # Procesar el check-in si se envía
+    if request.method == 'POST':
+        form = CheckinDiarioForm(request.POST)
+        if form.is_valid():
+            bitacora_hoy, created = BitacoraDiaria.objects.get_or_create(
+                cliente=cliente, fecha=hoy,
+                defaults=form.cleaned_data
+            )
+            if not created:
+                for field, value in form.cleaned_data.items():
+                    setattr(bitacora_hoy, field, value)
+                bitacora_hoy.save()
+            messages.success(request, "Check-in registrado. ¡Tu sesión ha sido ajustada!")
+            return redirect('clientes:portal_sesion', cliente_id=cliente.id)
+
+    # Lógica para mostrar la página (petición GET o si el form de check-in falló)
+    bitacora_hoy = BitacoraDiaria.objects.filter(cliente=cliente, fecha=hoy).first()
+    rutina_planificada = obtener_proximo_entrenamiento(cliente)
+
+    if not rutina_planificada or rutina_planificada.get('fecha') != hoy:
+        rutina_planificada = None
+
+    ajuste_sesion = None
+    rutina_ajustada = None
+
+    if bitacora_hoy:
+        ajuste_sesion = calcular_ajuste_sesion(
+            energia=bitacora_hoy.energia_subjetiva,
+            dolor=bitacora_hoy.dolor_articular,
+            sueno=bitacora_hoy.horas_sueno
+        )
+        if rutina_planificada:
+            rutina_ajustada = rutina_planificada.copy()
+            for ejercicio in rutina_ajustada['ejercicios']:
+                ejercicio['rpe_objetivo'] += ajuste_sesion.modificacion_rpe
+                ejercicio['series'] = round(ejercicio['series'] * ajuste_sesion.modificacion_volumen)
+                ejercicio['form_id'] = f"ej_{ejercicio['nombre'].replace(' ', '_')}"
+                try:
+                    reps_str = str(ejercicio.get('repeticiones', '8'))
+                    ejercicio['reps_objetivo'] = int(reps_str.split('-')[0].strip())
+                except:
+                    ejercicio['reps_objetivo'] = 8
+                ejercicio['tempo'] = ejercicio.get('tempo', '2-0-X-0')
+                ejercicio['descanso_minutos'] = ejercicio.get('descanso_minutos', 2)
+                ejercicio['peso_recomendado_kg'] = ejercicio.get('peso_kg', 0.0)
+
+    context = {
+        'cliente': cliente,
+        'checkin_realizado': bitacora_hoy is not None,
+        'checkin_form': CheckinDiarioForm(instance=bitacora_hoy) if bitacora_hoy else CheckinDiarioForm(),
+        'ajuste_sesion': ajuste_sesion,
+        'rutina_ajustada': rutina_ajustada,
+        'leyenda_rpe': {
+            "10": "Máximo esfuerzo...", "9": "Muy intenso...", "8": "Intenso...", "7": "Moderado...",
+        }
+    }
+    return render(request, 'clientes/portal_sesion.html', context)
+
+
+# En tu archivo: clientes/views.py
+
+# --- Asegúrate de tener estas importaciones al principio del archivo ---
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.db import transaction
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
+from .models import Cliente
+from entrenos.models import EntrenoRealizado, DetalleEjercicioRealizado
+from rutinas.models import Rutina
+# En tu archivo: clientes/views.py
+
+# --- Asegúrate de tener estas importaciones al principio del archivo ---
+# ... (tus otras importaciones) ...
+# En tu archivo: clientes/views.py
+
+# --- Asegúrate de tener estas importaciones al principio del archivo ---
+# ... (tus otras importaciones) ...
+from rutinas.models import Rutina
+from entrenos.models import EntrenoRealizado, EjercicioRealizado  # ¡¡CORRECCIÓN IMPORTANTE AQUÍ!!
+
+
+# --------------------------------------------------------------------
+
+@login_required
+@require_POST
+@transaction.atomic
+def guardar_entrenamiento_activo(request, cliente_id):
+    """
+    VISTA CON LA CORRECCIÓN FINAL v3:
+    - Usa el modelo correcto 'EjercicioRealizado'.
+    - Pasa los argumentos correctos al crear el objeto.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    print(f"\n--- [VISTA FINAL v3] Iniciando guardado para {cliente.nombre} ---")
+
+    try:
+        # 1. Crear el objeto EntrenoRealizado principal (esto ya funciona bien)
+        fecha_str = request.POST.get('fecha')
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        rutina_nombre = request.POST.get('rutina_nombre')
+        rutina_obj, _ = Rutina.objects.get_or_create(nombre=rutina_nombre)
+
+        entreno = EntrenoRealizado.objects.create(
+            cliente=cliente,
+            fecha=fecha,
+            rutina=rutina_obj,
+            fuente_datos='manual',
+            duracion_minutos=request.POST.get('duracion_minutos') or None,
+            calorias_quemadas=request.POST.get('calorias_quemadas') or None,
+            notas_liftin=request.POST.get('notas_liftin', '').strip()
+        )
+        print(f"-> Creado EntrenoRealizado ID: {entreno.id}")
+
+        # 2. Procesar cada ejercicio realizado
+        volumen_total_entreno = Decimal('0.0')
+        ejercicios_procesados_count = 0
+        ejercicio_form_ids = {key.replace('_nombre', '') for key in request.POST if key.endswith('_nombre')}
+
+        for form_id in ejercicio_form_ids:
+            ejercicio_nombre = request.POST.get(f'{form_id}_nombre', '').strip().title()
+            if not ejercicio_nombre: continue
+
+            series_validas, reps_totales, peso_total_sumado, series_completadas, volumen_ejercicio = 0, 0, Decimal(
+                '0.0'), 0, Decimal('0.0')
+
+            for i in range(1, 11):
+                peso_key, reps_key = f"{form_id}_peso_{i}", f"{form_id}_reps_{i}"
+                if peso_key not in request.POST or reps_key not in request.POST: break
+
+                try:
+                    peso = Decimal(request.POST.get(peso_key, '0').replace(',', '.'))
+                    reps = int(request.POST.get(reps_key, '0'))
+                    if peso > 0 or reps > 0:
+                        series_validas += 1
+                        reps_totales += reps
+                        peso_total_sumado += peso
+                        volumen_ejercicio += (peso * reps)
+                        if request.POST.get(f"{form_id}_completado_{i}") == "1":
+                            series_completadas += 1
+                except (ValueError, TypeError, InvalidOperation):
+                    continue
+
+            if series_validas > 0:
+                # ==================================================================
+                # CORRECCIÓN CLAVE: Usar el modelo y los campos correctos
+                # ==================================================================
+                EjercicioRealizado.objects.create(
+                    entreno=entreno,
+                    nombre_ejercicio=ejercicio_nombre,  # Pasamos el nombre como string
+                    grupo_muscular="Otros",  # Valor por defecto, como en la imagen
+                    peso_kg=float(peso_total_sumado / series_validas),
+                    series=series_validas,
+                    repeticiones=int(reps_totales / series_validas),
+                    completado=(series_completadas == series_validas),
+                    fuente_datos='manual'  # Asumiendo que este campo existe
+                )
+                # ==================================================================
+                print(f"   -> Creado EjercicioRealizado para: {ejercicio_nombre}")
+                volumen_total_entreno += volumen_ejercicio
+                ejercicios_procesados_count += 1
+
+        # 3. Actualizar el EntrenoRealizado con los totales
+        entreno.volumen_total_kg = volumen_total_entreno
+        entreno.numero_ejercicios = ejercicios_procesados_count
+        entreno.save(update_fields=['volumen_total_kg', 'numero_ejercicios'])
+        print(f"-> Entrenamiento ID {entreno.id} finalizado. Volumen: {volumen_total_entreno} kg.")
+
+        messages.success(request, "¡Entrenamiento guardado con éxito! Tu progreso ha sido analizado.")
+        return redirect('clientes:panel_cliente')
+
+    except Exception as e:
+        print(f"\n--- ❌ ERROR CRÍTICO DURANTE EL GUARDADO: {e} ---")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f"Hubo un error crítico al guardar el entrenamiento: {e}")
+        return redirect('clientes:panel_cliente')
+
+
+from collections import defaultdict
+
+
+def obtener_historial_adherencia_semanal(cliente: Cliente, num_semanas: int = 12) -> list[float]:
+    """
+    Calcula el historial de porcentajes de adherencia de las últimas 'num_semanas'.
+    Es robusta y maneja semanas sin entrenamientos.
+    """
+    hoy = timezone.now().date()
+    historial_porcentajes = []
+
+    # Obtenemos el número de sesiones que el cliente debe hacer por semana
+    sesiones_planificadas_por_semana = cliente.dias_disponibles or 0
+
+    # Si no hay un plan, no podemos calcular la adherencia.
+    if sesiones_planificadas_por_semana == 0:
+        return []
+
+    # Iteramos hacia atrás desde la semana pasada durante 'num_semanas'
+    for i in range(num_semanas):
+        # Calculamos el inicio (lunes) y fin (domingo) de cada semana pasada
+        dias_atras = (i * 7) + hoy.weekday() + 1
+        fin_semana = hoy - timedelta(days=dias_atras)
+        inicio_semana = fin_semana - timedelta(days=6)
+
+        # Contamos cuántos entrenamientos se completaron en esa semana específica
+        entrenos_completados_en_semana = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            fecha__range=[inicio_semana, fin_semana]
+        ).count()
+
+        # Calculamos el porcentaje de adherencia para esa semana
+        porcentaje_semana = (entrenos_completados_en_semana / sesiones_planificadas_por_semana) * 100
+
+        # Nos aseguramos de que el porcentaje no supere el 100%
+        porcentaje_final = min(porcentaje_semana, 100.0)
+
+        historial_porcentajes.append(porcentaje_final)
+
+    # La lista está en orden cronológico inverso (la semana pasada primero), la invertimos
+    return list(reversed(historial_porcentajes))
+
+
+# Vistas para el control de peso y evolución
+# Asegúrate de tener esta importación al principio de tu archivo de vistas
+from django.core.serializers import serialize
+import json
+
+
+# ... (otras importaciones)
+
+@login_required
+def control_peso_cliente(request, cliente_id):
+    from .peso_analytics import AnalizadorPeso
+
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # 1. Obtenemos los registros como siempre para usarlos en el HTML (bucles, etc.)
+    registros_peso_queryset = PesoDiario.objects.filter(cliente=cliente).order_by("fecha")
+
+    # 2. Creamos una versión serializada específicamente para JavaScript
+    #    Usamos serialize para convertir el queryset a un string JSON con el formato correcto.
+    registros_peso_json = serialize('json', registros_peso_queryset, fields=('fecha', 'peso_kg'))
+
+    objetivos_peso = ObjetivoPeso.objects.filter(cliente=cliente).order_by("-fecha_inicio")
+
+    peso_form = PesoDiarioForm()
+    objetivo_form = ObjetivoPesoForm()
+
+    # Análisis avanzado de peso
+    analytics = {}
+    if registros_peso_queryset.exists():
+        analizador = AnalizadorPeso(registros_peso_queryset)
+        objetivo_activo = objetivos_peso.filter(alcanzado=False).first()
+        peso_objetivo = float(objetivo_activo.peso_objetivo_kg) if objetivo_activo else None
+        analytics = analizador.generar_resumen_completo(peso_objetivo)
+    progreso_radial_data = None
+    objetivo_activo = objetivos_peso.filter(alcanzado=False).first()
+
+    if objetivo_activo and registros_peso_queryset.exists():
+        registro_inicial_obj = registros_peso_queryset.filter(fecha__gte=objetivo_activo.fecha_inicio).first()
+        if not registro_inicial_obj:
+            registro_inicial_obj = registros_peso_queryset.first()
+
+        peso_inicial = float(registro_inicial_obj.peso_kg)
+        peso_actual = float(registros_peso_queryset.last().peso_kg)
+        peso_objetivo = float(objetivo_activo.peso_objetivo_kg)
+
+        # Determinar si es un objetivo de ganancia o pérdida
+        es_objetivo_de_ganancia = peso_objetivo > peso_inicial
+
+        if es_objetivo_de_ganancia:
+            # Lógica para GANAR peso
+            total_a_ganar = peso_objetivo - peso_inicial
+            ganado_hasta_ahora = peso_actual - peso_inicial
+
+            porcentaje_progreso = 0
+            if total_a_ganar > 0:
+                porcentaje_progreso = (ganado_hasta_ahora / total_a_ganar) * 100
+        else:
+            # Lógica para PERDER peso (la que ya teníamos)
+            total_a_perder = peso_inicial - peso_objetivo
+            perdido_hasta_ahora = peso_inicial - peso_actual
+
+            porcentaje_progreso = 0
+            if total_a_perder > 0:
+                porcentaje_progreso = (perdido_hasta_ahora / total_a_perder) * 100
+
+        # Aseguramos que el porcentaje esté siempre entre 0 y 100
+        porcentaje_progreso = max(0, min(100, porcentaje_progreso))
+        progreso_radial_data = {
+            "peso_actual": f"{peso_actual:.1f}",
+            "peso_objetivo": f"{peso_objetivo:.1f}",
+            "peso_inicial": f"{peso_inicial:.1f}",
+            "porcentaje_progreso": round(porcentaje_progreso),
+
+        }
+    context = {
+        "cliente": cliente,
+        "registros_peso": registros_peso_queryset,  # Para el historial en HTML
+        "registros_peso_json": registros_peso_json,  # ¡La nueva variable para el gráfico!
+        "objetivos_peso": objetivos_peso,
+        "peso_form": peso_form,
+        "objetivo_form": objetivo_form,
+        "analytics": analytics,
+        "progreso_radial_data": progreso_radial_data,
+    }
+    return render(request, "clientes/control_peso.html", context)
+
+
+from .models import Cliente, PesoDiario, ObjetivoPeso, RevisionProgreso, Medida, BitacoraDiaria, ObjetivoCliente, \
+    SugerenciaAceptada
+
+
+@login_required
+def registrar_peso(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    if request.method == "POST":
+        form = PesoDiarioForm(request.POST)
+        if form.is_valid():
+            peso_diario = form.save(commit=False)
+            peso_diario.cliente = cliente
+            peso_diario.fecha = date.today()  # Asegurarse de que la fecha sea la de hoy
+            try:
+                peso_diario.save()
+                messages.success(request, "Peso registrado exitosamente.")
+            except IntegrityError:  # Manejar el caso de que ya exista un registro para hoy
+                messages.error(request, "Ya existe un registro de peso para hoy. Puedes editarlo.")
+            return redirect("clientes:control_peso_cliente", cliente_id=cliente.id)
+        else:
+            messages.error(request, "Error al registrar el peso. Por favor, revisa los datos.")
+    return redirect("clientes:control_peso_cliente", cliente_id=cliente.id)
+
+
+@login_required
+def establecer_objetivo_peso(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    if request.method == "POST":
+        form = ObjetivoPesoForm(request.POST)
+        if form.is_valid():
+            objetivo_peso = form.save(commit=False)
+            objetivo_peso.cliente = cliente
+            objetivo_peso.save()
+            messages.success(request, "Objetivo de peso establecido exitosamente.")
+            return redirect("clientes:control_peso_cliente", cliente_id=cliente.id)
+        else:
+            messages.error(request, "Error al establecer el objetivo. Por favor, revisa los datos.")
+    return redirect("clientes:control_peso_cliente", cliente_id=cliente.id)

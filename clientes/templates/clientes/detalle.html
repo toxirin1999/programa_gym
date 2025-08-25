@@ -1,33 +1,29 @@
 {% extends "base.html" %}
-{% load filtros %}
 {% load static %}
+{% load clientes_filters %}
 
 {% block title %}Detalle de {{ cliente.nombre }}{% endblock %}
 
 {% block extra_css %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
-    /* Estilos opcionales para mantener la consistencia si no están en base.css */
-    .main-wrapper {
-        /* max-w-6xl mx-auto etc. ya vienen de Tailwind */
-    }
     .card-halo {
-        background-color: #1E1E1E; /* Un gris oscuro, similar al de detalle_rutina */
-        border-radius: 1rem; /* 16px */
-        padding: 1.5rem; /* 24px */
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1 ), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    }
-    .table-header-gradient {
-        background: linear-gradient(to right, #31cff4, #160f29);
-    }
-    .table-body-bg {
-        background-color: #121212;
+        background-color: rgba(30, 30, 30, 0.7 );
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(77, 208, 225, 0.3);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="main-wrapper space-y-6 max-w-6xl mx-auto px-4 py-8">
+<div class="main-wrapper space-y-6 max-w-7xl mx-auto px-4 py-8">
+
+    <!-- ================================================== -->
+    <!-- NUEVO HEADER COMPACTO Y FUNCIONAL -->
+    <!-- ================================================== -->
 
     <!-- TARJETA DE PERFIL PRINCIPAL -->
     <div class="card-halo flex flex-col md:flex-row items-center gap-6">
@@ -52,22 +48,74 @@
                 </span>
             </div>
             {% endif %}
+            <div class="mt-2">
+                <span class="bg-blue-900/70 text-blue-300 px-3 py-1 rounded-full text-xs font-semibold">
+                    <i class="fas fa-bullseye"></i> Objetivo: {{ cliente.get_objetivo_principal_display }}
+                </span>
+            </div>
         </div>
-
+        <div class="card-halo">
+            <h3 class="text-xl font-semibold text-white mb-4">
+                <i class="fas fa-sliders-h mr-2 text-cyan-400"></i>Ajustes y Preferencias
+            </h3>
+            <p class="text-gray-400 mb-4 text-sm">
+                Configura tus días disponibles, ejercicios preferidos y otros ajustes para personalizar al máximo tu plan de entrenamiento.
+            </p>
+            <a href="{% url 'clientes:configurar_preferencias_helms' cliente.id %}" class="w-full text-center bg-gradient-to-r from-purple-500 to-indigo-600 hover:scale-105 transition text-white font-semibold px-4 py-2 rounded-xl shadow-md flex items-center justify-center gap-2">
+                <i class="fas fa-cogs"></i> Configurar Preferencias
+            </a>
+        </div>
         <!-- Botón de Editar -->
         <div class="flex-shrink-0">
-            <a href="{% url 'editar_cliente' cliente.id %}" class="bg-gradient-to-r from-yellow-400 to-orange-500 hover:scale-105 transition text-black font-semibold px-4 py-2 rounded-xl shadow-md flex items-center gap-2">
+            <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="bg-gradient-to-r from-yellow-400 to-orange-500 hover:scale-105 transition text-black font-semibold px-4 py-2 rounded-xl shadow-md flex items-center gap-2">
                 <i class="fas fa-pencil-alt"></i> Editar Perfil
+            </a>
+            <a href="{% url 'entrenos:vista_plan_anual' cliente.id %}" class="block w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-center font-semibold py-2 rounded-xl mt-6 shadow-md hover:scale-105 transition">
+                <i class="fas fa-calendar-alt"></i> Ver Plan Anual
             </a>
         </div>
     </div>
 
-    <!-- GRID DE TARJETAS DE INFORMACIÓN -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
+    <!-- ================================================== -->
+    <!-- NUEVAS MÉTRICAS DE RENDIMIENTO -->
+    <!-- ================================================== -->
+    <a href="{% url 'clientes:control_peso_cliente' cliente.id %}" class="w-full sm:w-auto text-center bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105 transition text-white font-semibold px-4 py-2 rounded-xl shadow-md flex items-center justify-center gap-2">
+        <i class="fas fa-weight"></i> Control de Peso
+    </a>
+
+    <!-- También se puede añadir como una tarjeta en la sección de métricas -->
+    <div class="card-halo text-center">
+        <a href="{% url 'clientes:control_peso_cliente' cliente.id %}" class="block hover:scale-105 transition">
+            <i class="fas fa-weight text-3xl text-green-400 mb-2"></i>
+            <p class="text-lg font-bold text-white">Control de Peso</p>
+            <p class="text-sm text-gray-400">Gestionar evolución</p>
+        </a>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="card-halo text-center">
+            <p class="text-3xl font-bold text-white">{{ total_entrenos }}</p>
+            <p class="text-sm text-gray-400">Entrenos Totales</p>
+        </div>
+        <div class="card-halo text-center">
+            <p class="text-3xl font-bold text-white">{{ promedio_semanal }}</p>
+            <p class="text-sm text-gray-400">Entrenos / Semana</p>
+        </div>
+        <div class="card-halo text-center">
+            <p class="text-3xl font-bold text-white">{{ ultima_revision.peso_corporal|default:"N/A" }}</p>
+            <p class="text-sm text-gray-400">Peso Actual (kg)</p>
+        </div>
+        <div class="card-halo text-center">
+            <p class="text-3xl font-bold text-white">{{ ultima_revision.grasa_corporal|default:"N/A" }}%</p>
+            <p class="text-sm text-gray-400">Grasa Corporal</p>
+        </div>
+    </div>
+
+    <!-- GRID DE 2 COLUMNAS (Contenido original reorganizado) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Columna Izquierda -->
         <div class="space-y-6">
-            <!-- DATOS PERSONALES -->
+            <!-- DATOS PERSONALES (sin cambios) -->
             <div class="card-halo">
                 <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-id-card mr-2 text-cyan-400"></i>Datos Personales</h3>
                 <div class="text-sm space-y-2">
@@ -85,11 +133,11 @@
                 </div>
             </div>
 
-            <!-- OBJETIVOS -->
+            <!-- OBJETIVOS (sin cambios) -->
             <div class="card-halo">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold text-white"><i class="fas fa-bullseye mr-2 text-cyan-400"></i>Objetivos</h3>
-                    <a href="{% url 'definir_objetivo' cliente.id %}" class="bg-gradient-to-r from-green-400 to-lime-500 text-black text-xs font-semibold px-3 py-1 rounded-lg shadow-md hover:scale-105 transition">
+                    <a href="{% url 'clientes:definir_objetivo' cliente.id %}" class="bg-gradient-to-r from-green-400 to-lime-500 text-black text-xs font-semibold px-3 py-1 rounded-lg shadow-md hover:scale-105 transition">
                         <i class="fas fa-plus"></i> Nuevo
                     </a>
                 </div>
@@ -99,8 +147,8 @@
                     <li class="flex justify-between items-center p-2 rounded-lg bg-[#121212]">
                         <span>{{ obj.get_medida_display }}: <span class="font-bold text-green-400">{{ obj.valor }}</span></span>
                         <div class="flex gap-2">
-                            <a href="{% url 'editar_objetivo' obj.id %}" class="text-yellow-400 hover:text-yellow-300"><i class="fas fa-pencil-alt"></i></a>
-                            <a href="{% url 'eliminar_objetivo' obj.id %}" class="text-red-500 hover:text-red-400" onclick="return confirm('¿Eliminar este objetivo?');"><i class="fas fa-trash"></i></a>
+                            <a href="{% url 'clientes:editar_objetivo' obj.id %}" class="text-yellow-400 hover:text-yellow-300"><i class="fas fa-pencil-alt"></i></a>
+                            <a href="{% url 'clientes:eliminar_objetivo' obj.id %}" class="text-red-500 hover:text-red-400" onclick="return confirm('¿Eliminar este objetivo?');"><i class="fas fa-trash"></i></a>
                         </div>
                     </li>
                     {% endfor %}
@@ -113,42 +161,7 @@
 
         <!-- Columna Derecha -->
         <div class="space-y-6">
-            <!-- PLANIFICACIÓN ACTIVA -->
-            <div class="card-halo">
-                <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-clipboard-list mr-2 text-cyan-400"></i>Planificación Activa</h3>
-                <div class="space-y-4">
-                    <!-- Formulario para Programa -->
-                    <form action="{% url 'asignar_programa' cliente.id %}" method="POST">
-                        {% csrf_token %}
-                        <label class="block text-sm font-medium text-gray-300 mb-1">Programa Actual</label>
-                        <div class="flex items-center gap-2">
-                            <select name="programa_id" class="w-full bg-[#121212] border border-gray-600 rounded-md p-2 text-white focus:ring-cyan-500 focus:border-cyan-500">
-                                <option value="">-- Ningún Programa --</option>
-                                {% for programa in todos_los_programas %}
-                                <option value="{{ programa.id }}" {% if cliente.programa.id == programa.id %}selected{% endif %}>{{ programa.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-md transition">Guardar</button>
-                        </div>
-                    </form>
-                    <!-- Formulario para Rutina -->
-                    <form action="{% url 'asignar_rutina' cliente.id %}" method="POST">
-                        {% csrf_token %}
-                        <label class="block text-sm font-medium text-gray-300 mb-1">Rutina Activa</label>
-                        <div class="flex items-center gap-2">
-                            <select name="rutina_id" class="w-full bg-[#121212] border border-gray-600 rounded-md p-2 text-white focus:ring-cyan-500 focus:border-cyan-500">
-                                <option value="">-- Ninguna Rutina --</option>
-                                {% for rutina in todas_las_rutinas %}
-                                <option value="{{ rutina.id }}" {% if cliente.rutina_activa.id == rutina.id %}selected{% endif %}>{{ rutina.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-md transition">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- GRÁFICO DE EVOLUCIÓN -->
+            <!-- GRÁFICO DE EVOLUCIÓN (sin cambios) -->
             <div class="card-halo">
                 <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-chart-line mr-2 text-cyan-400"></i>Evolución de Métricas</h3>
                 <div class="h-80">
@@ -158,7 +171,7 @@
         </div>
     </div>
 
-    <!-- HISTORIAL COMPLETO DE ENTRENAMIENTOS -->
+    <!-- HISTORIAL COMPLETO (sin cambios) -->
     <div class="card-halo">
         <h3 class="text-xl font-semibold text-white mb-4"><i class="fas fa-history mr-2 text-cyan-400"></i>Historial Completo</h3>
         <div class="space-y-2">
@@ -173,8 +186,8 @@
                     <div class="p-2 rounded-md bg-gray-800/50">
                         <p class="font-semibold">{{ entreno.rutina.nombre }} - <span class="font-normal text-gray-400">{{ entreno.fecha|date:"l, d M" }}</span></p>
                         <ul class="list-disc list-inside text-sm space-y-1 text-gray-300 pl-4 mt-1">
-                            {% for detalle in entreno.detalles_ejercicio.all %}
-                            <li><span class="font-semibold text-white">{{ detalle.ejercicio.nombre }}:</span> {{ detalle.series }}x{{ detalle.repeticiones }} @ {{ detalle.peso_kg }} kg</li>
+                            {% for detalle in entreno.ejercicios_realizados.all %}
+                            <li><span class="font-semibold text-white">{{ detalle.nombre_ejercicio }}:</span> {{ detalle.series }}x{{ detalle.repeticiones }} @ {{ detalle.peso_kg }} kg</li>
                             {% empty %}
                             <li class="list-none italic">No hay detalles registrados.</li>
                             {% endfor %}
@@ -188,7 +201,6 @@
             {% endfor %}
         </div>
     </div>
-
 </div>
 {% endblock %}
 
@@ -196,7 +208,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function( ) {
-        // Lógica del gráfico (sin cambios, ya es compatible)
+        // Lógica del gráfico (sin cambios)
         const ctx = document.getElementById('progresoGrafico');
         if (ctx) {
             const labels = {{ labels_grafico|safe }};

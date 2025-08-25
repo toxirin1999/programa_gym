@@ -11,6 +11,36 @@ from django import forms
 from django import forms
 from .models import BitacoraDiaria
 from django import forms
+# en clientes/forms.py
+
+from django import forms
+from .models import BitacoraDiaria  # Asegúrate de que BitacoraDiaria esté en models.py
+
+
+class CheckinDiarioForm(forms.ModelForm):
+    class Meta:
+        model = BitacoraDiaria
+        # Seleccionamos solo los campos relevantes para el check-in
+        fields = ['energia_subjetiva', 'dolor_articular', 'horas_sueno']
+
+        # Widgets para hacerlos más amigables
+        widgets = {
+            'energia_subjetiva': forms.NumberInput(
+                attrs={'type': 'range', 'min': '1', 'max': '10', 'class': 'range-slider'}),
+            'dolor_articular': forms.NumberInput(
+                attrs={'type': 'range', 'min': '1', 'max': '10', 'class': 'range-slider'}),
+            # --- CORRECCIÓN ---
+            'horas_sueno': forms.NumberInput(
+                attrs={'type': 'range', 'min': '0', 'max': '12', 'step': '0.5', 'class': 'range-slider'}),
+        }
+
+        labels = {
+            'energia_subjetiva': 'Nivel de Energía Hoy (1-10)',
+            'dolor_articular': 'Nivel de Molestias/Dolor (1-10)',
+            # --- CORRECCIÓN ---
+            'horas_sueno': 'Horas de Sueño Anoche',
+        }
+
 
 EMOCIONES_CHOICES = [
     ('', '---------'),  # opción vacía
@@ -27,6 +57,179 @@ EMOCIONES_CHOICES = [
     ('cansado', '😴 Cansado'),
     ('solo', '😔 Solo'),
 ]
+
+
+# En forms.py
+class PreferenciasClienteForm(forms.ModelForm):
+    class Meta:
+        model = Cliente
+        fields = [
+            'dias_disponibles',
+            'tiempo_por_sesion',
+            'ejercicios_preferidos',
+            'ejercicios_evitar',
+            'flexibilidad_horario',
+            'nivel_estres',
+            'calidad_sueño',
+            'nivel_energia'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Personalizar widgets
+        self.fields['ejercicios_preferidos'].widget = forms.CheckboxSelectMultiple(
+            choices=EJERCICIOS_DISPONIBLES
+        )
+        self.fields['ejercicios_evitar'].widget = forms.CheckboxSelectMultiple(
+            choices=EJERCICIOS_DISPONIBLES
+        )
+
+        # Añadir clases CSS
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+
+# forms.py
+from django import forms
+from .models import Cliente
+
+from django import forms
+from .models import Cliente
+
+# Es una buena práctica definir las opciones una sola vez para reutilizarlas
+EJERCICIOS_CHOICES = [
+    ('sentadilla', 'Sentadilla'),
+    ('press_banca', 'Press de Banca'),
+    ('peso_muerto', 'Peso Muerto'),
+    ('press_militar', 'Press Militar'),
+    ('remo_con_barra', 'Remo con Barra'),
+    ('dominadas', 'Dominadas'),
+    ('fondos', 'Fondos'),
+    ('curl_biceps', 'Curl de Bíceps'),
+    ('extension_triceps', 'Extensión de Tríceps'),
+    ('elevaciones_laterales', 'Elevaciones Laterales'),
+    ('peso_muerto_rumano', 'Peso Muerto Rumano'),
+]
+
+
+class PreferenciasHelmsForm(forms.ModelForm):
+    """
+    Formulario para recopilar preferencias de adherencia según metodología Helms
+    """
+    nivel_experiencia_selector = forms.ChoiceField(
+        choices=[
+            # (valor_que_recibimos, texto_que_ve_el_usuario)
+            ('0.5', 'Principiante (< 1 año)'),
+            ('2.0', 'Intermedio (1-3 años)'),
+            ('4.0', 'Avanzado (> 3 años)'),
+        ],
+        label="Selecciona tu nivel de experiencia",
+        widget=forms.Select(attrs={'class': 'form-select'})  # Usamos el widget de selector
+    )
+    # Definición explícita de los campos (¡Esto está perfecto!)
+    ejercicios_preferidos = forms.MultipleChoiceField(
+        choices=EJERCICIOS_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Ejercicios que más disfrutas"
+    )
+
+    ejercicios_evitar = forms.MultipleChoiceField(
+        choices=EJERCICIOS_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Ejercicios a evitar (lesiones, limitaciones, etc.)"
+    )
+
+    class Meta:
+        model = Cliente
+        fields = [
+            'nivel_experiencia_selector',  # <-- El nuevo selector
+            'dias_disponibles',
+            'tiempo_por_sesion',
+            'flexibilidad_horario',
+            'ejercicios_preferidos',
+            'ejercicios_evitar',
+            'nivel_estres',
+            'calidad_sueño',
+            'nivel_energia'
+        ]
+        exclude = ['experiencia_años']
+        # 👇 SECCIÓN DE WIDGETS LIMPIA Y SIN REDUNDANCIAS
+        widgets = {
+            'dias_disponibles': forms.Select(choices=[
+                (2, '2 días - Mínimo efectivo'),
+                (3, '3 días - Principiante ideal'),
+                (4, '4 días - Intermedio estándar'),
+                (5, '5 días - Avanzado activo'),
+                (6, '6 días - Muy experimentado'),
+                (7, '7 días - Atleta dedicado')
+            ]),
+            'tiempo_por_sesion': forms.Select(choices=[
+                (45, '45 min - Sesión express'),
+                (60, '60 min - Estándar'),
+                (75, '75 min - Completa'),
+                (90, '90 min - Extendida'),
+                (120, '120 min - Muy larga')
+            ]),
+            'nivel_estres': forms.RadioSelect(choices=[
+                (1, '1 - Muy relajado'),
+                (3, '3 - Poco estrés'),
+                (5, '5 - Estrés moderado'),
+                (7, '7 - Bastante estresado'),
+                (10, '10 - Muy estresado')
+            ]),
+            'calidad_sueño': forms.RadioSelect(choices=[
+                (1, '1 - Muy mala'),
+                (3, '3 - Mala'),
+                (5, '5 - Regular'),
+                (7, '7 - Buena'),
+                (10, '10 - Excelente')
+            ]),
+            'nivel_energia': forms.RadioSelect(choices=[
+                (1, '1 - Muy bajo'),
+                (3, '3 - Bajo'),
+                (5, '5 - Moderado'),
+                (7, '7 - Alto'),
+                (10, '10 - Muy alto')
+            ])
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            años = self.instance.experiencia_años
+            if años < 1:
+                self.fields['nivel_experiencia_selector'].initial = '0.5'
+            elif años < 3:
+                self.fields['nivel_experiencia_selector'].initial = '2.0'
+            else:
+                self.fields['nivel_experiencia_selector'].initial = '4.0'
+        # Añadir clases CSS para styling
+        for field_name, field in self.fields.items():
+            if field_name in ['ejercicios_preferidos', 'ejercicios_evitar']:
+                field.widget.attrs.update({'class': 'form-check-input'})
+            elif field_name in ['nivel_estres', 'calidad_sueño', 'nivel_energia']:
+                field.widget.attrs.update({'class': 'form-check-input'})
+            else:
+                field.widget.attrs.update({'class': 'form-control'})
+
+        # Añadir help text educativo
+        self.fields['dias_disponibles'].help_text = (
+            "Sé realista. Es mejor entrenar 3 días consistentemente "
+            "que planear 6 días y fallar."
+        )
+
+        self.fields['ejercicios_preferidos'].help_text = (
+            "Los ejercicios que disfrutas aumentan tu adherencia al programa. "
+            "Selecciona los que realmente te gustan."
+        )
+
+        self.fields['nivel_estres'].help_text = (
+            "El estrés afecta tu recuperación. Esto nos ayuda a ajustar "
+            "la intensidad de tu entrenamiento."
+        )
 
 
 class SugerenciaForm(forms.Form):
@@ -217,3 +420,28 @@ class ClienteForm(forms.ModelForm):
             else:
                 field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['placeholder'] = field.label
+
+
+from .models import PesoDiario, ObjetivoPeso
+
+
+# Formularios para el control de peso y evolución
+
+class PesoDiarioForm(forms.ModelForm):
+    class Meta:
+        model = PesoDiario
+        fields = ['peso_kg']
+        widgets = {
+            'peso_kg': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 75.5', 'step': '0.1'})
+        }
+
+
+class ObjetivoPesoForm(forms.ModelForm):
+    class Meta:
+        model = ObjetivoPeso
+        fields = ['peso_objetivo_kg', 'fecha_fin']
+        widgets = {
+            'peso_objetivo_kg': forms.NumberInput(
+                attrs={'class': 'form-control', 'placeholder': 'Ej: 70.0', 'step': '0.1'}),
+            'fecha_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        }
