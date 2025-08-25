@@ -7,6 +7,7 @@ from django.urls import path
 from . import views
 from . import views_liftin
 from .views import ejercicios_realizados_view
+from clientes import views as vistas_clientes
 
 app_name = 'entrenos'
 
@@ -14,14 +15,22 @@ urlpatterns = [
     # ============================================================================
     # URLs ORIGINALES (mantener tal como están)
     # ============================================================================
-    path('', views.entrenos_filtrados, name='entrenos_filtrados'),
-    path('resumen/<str:rango>/', views.entrenos_filtrados, name='entrenos_filtrados'),
-    path('historial/', views.historial_entrenos, name='historial_entrenos'),
-    path('eliminar/<int:pk>/', views.eliminar_entreno, name='eliminar_entreno'),
-    path('resumen/<int:entreno_id>/', views.resumen_entreno, name='resumen_entreno'),
-    path('whoop/editar/<int:pk>/', views.editar_whoop, name='editar_whoop'),
-
+    path('resumen/<int:pk>/', views.resumen_entreno, name='resumen_entreno'),
+    # URL más general después
+    path('resumen/<str:rango>/', views.entrenos_filtrados, name='entrenos_filtrados_rango'),
+    # Renombrada para evitar conflicto
+    path('plan-anual/<int:cliente_id>/', views.vista_plan_anual, name='vista_plan_anual'),
+    path('historial-detallado/', views.historial_entrenos, name='historial_entrenos'),
+    # path('eliminar/<int:pk>/', views.eliminar_entreno, name='eliminar_entreno'),
     path('ejercicio/<str:nombre>/', views.detalle_ejercicio, name='detalle_ejercicio'),
+    path('tabla-ejercicios/', views.ejercicios_realizados_view, name='tabla_ejercicios'),
+    path('gestionar-base/', views.gestionar_ejercicios_base, name='gestionar_ejercicios_base'),
+
+    # --- VISTAS DEL PLANIFICADOR Y ENTRENAMIENTO ACTIVO ---
+    path('cliente/<int:cliente_id>/entrenamiento-activo/', views.vista_entrenamiento_activo,
+         name='entrenamiento_activo'),
+    path('cliente/<int:cliente_id>/guardar-entrenamiento/', views.guardar_entrenamiento_activo,
+         name='guardar_entrenamiento_activo'),
 
     # ============================================================================
     # URLs DE LIFTIN CORREGIDAS
@@ -76,4 +85,15 @@ urlpatterns = [
     path('whoop/tarjeta/', views.tarjeta_whoop, name='tarjeta_whoop'),
     # si haces una vista tipo resumen
 
+    path('cliente/<int:cliente_id>/plan/', views.vista_plan_calendario, name='vista_plan_calendario'),
+    path('cliente/<int:cliente_id>/preferencias-helms/', vistas_clientes.configurar_preferencias_helms,
+         name='configurar_preferencias_helms'),
+    path('cliente/<int:cliente_id>/dashboard-adherencia/', vistas_clientes.dashboard_adherencia,
+         name='dashboard_adherencia'),
+    # APIs para funcionalidad avanzada
+    path('api/cliente/<int:cliente_id>/regenerar-plan/', views.api_regenerar_plan_helms, name='api_regenerar_plan'),
+    path('cliente/<int:cliente_id>/comparacion/', views.dashboard_comparacion_planificadores,
+         name='dashboard_comparacion'),
+    path('resumen-anual/<int:cliente_id>/', views.vista_resumen_anual, name='vista_resumen_anual'),
+    
 ]

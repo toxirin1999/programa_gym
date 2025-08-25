@@ -152,7 +152,7 @@ class EjercicioLiftinDetallado(models.Model):
         verbose_name_plural = "Ejercicios Detallados de Liftin"
 
 
-class EjercicioBase(models.Model):
+class EjercicioBaseObsoleto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     grupo_muscular = models.CharField(
         max_length=50,

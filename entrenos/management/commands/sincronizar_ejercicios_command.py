@@ -1,10 +1,10 @@
-
 from django.core.management.base import BaseCommand
 from entrenos.models import EntrenoRealizado, EjercicioLiftinDetallado
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parsear_ejercicios
 from clientes.models import Cliente
 from django.utils.timezone import make_aware
 from datetime import datetime
+
 
 class Command(BaseCommand):
     help = 'Sincroniza ejercicios desde notas_liftin a EjercicioLiftinDetallado'
@@ -15,7 +15,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         cliente_id = kwargs['cliente_id']
         cliente = Cliente.objects.get(id=cliente_id)
-        entrenamientos = EntrenoRealizado.objects.filter(cliente=cliente).exclude(notas_liftin__isnull=True).exclude(notas_liftin='')
+        entrenamientos = EntrenoRealizado.objects.filter(cliente=cliente).exclude(notas_liftin__isnull=True).exclude(
+            notas_liftin='')
 
         creados = 0
         duplicados = 0

@@ -975,7 +975,7 @@ logger = logging.getLogger(__name__)
 
 # en entrenos/views.py
 
-from logros.models import PerfilGamificacion, Nivel, LogroUsuario, Logro
+from logros.models import PruebaLegendaria, PruebaUsuario
 
 """
 Versión Corregida de la Función obtener_contexto_dashboard

@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from entrenos.models import EntrenoRealizado, EjercicioLiftinDetallado
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parse_reps_and_series
 from django.utils.timezone import make_aware
 from datetime import datetime
 

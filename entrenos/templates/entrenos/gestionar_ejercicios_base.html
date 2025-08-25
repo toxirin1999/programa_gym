@@ -18,18 +18,6 @@
         </button>
     </div>
 
-    <!-- Mensajes de Django -->
-    {% if messages %}
-    {% for message in messages %}
-    <div class="bg-opacity-20 border text-white px-4 py-3 rounded-lg relative text-center
-            {% if message.tags == 'success' %} bg-green-500 border-green-500 {% endif %}
-            {% if message.tags == 'error' %} bg-red-500 border-red-500 {% endif %}
-            {% if message.tags == 'warning' %} bg-yellow-500 border-yellow-500 {% endif %}"
-         role="alert">
-        <span class="block sm:inline">{{ message }}</span>
-    </div>
-    {% endfor %}
-    {% endif %}
 
     <!-- Formulario de Búsqueda y Acciones -->
     <form method="POST" action="{% url 'entrenos:gestionar_ejercicios_base' %}" class="bg-[#1E1E1E] p-4 rounded-2xl shadow-md">

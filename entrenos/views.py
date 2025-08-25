@@ -1,8 +1,15 @@
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+
+from analytics.sistema_educacion_helms import agregar_educacion_a_plan
+
 from collections import defaultdict
+from analytics.monitor_adherencia import MonitorAdherencia, SesionEntrenamiento
+from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from analytics.planificador_helms_completo import PlanificadorHelms, crear_perfil_desde_cliente
+from typing import Dict
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import LogroDesbloqueado, EstadoEmocional
 from decimal import Decimal
@@ -75,30 +82,31 @@ from entrenos.models import DetalleEjercicioRealizado
 
 from django.shortcuts import render
 from entrenos.models import EntrenoRealizado
-from .utils import parsear_ejercicios  # crea este archivo o añade allí la función
+from entrenos.utils.utils import parse_reps_and_series  # crea este archivo o añade allí la función
 
 from django.shortcuts import render
 from .models import EntrenoRealizado
-from .utils import extraer_ejercicios  # si lo pones en un archivo aparte, si no, define ahí mismo
+from entrenos.utils.utils import \
+    parsear_ejercicios_de_notas  # si lo pones en un archivo aparte, si no, define ahí mismo
 
 from django.shortcuts import render
 from entrenos.models import EntrenoRealizado
-from entrenos.utils import parsear_ejercicios
 
 from collections import Counter
-from entrenos.models import EntrenoRealizado
-from entrenos.utils import parsear_ejercicios
+
 from django.shortcuts import render
 
 from collections import Counter
 from django.core.paginator import Paginator
 from entrenos.models import EntrenoRealizado
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parse_reps_and_series
 from django.shortcuts import render
 
 from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
-from entrenos.utils import normalizar_nombre_ejercicio
+from entrenos.utils.utils import normalizar_nombre_ejercicio
+from analytics.planificador import PlanificadorAvanzadoHelms, generar_contexto_calendario
+from analytics.views import CalculadoraEjerciciosTabla
 
 
 def detalle_ejercicio(request, nombre):
@@ -598,7 +606,7 @@ def historial_entrenos(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'entrenos/historial_entrenos.html', {
+    return render(request, 'entrenos/vista_historial_detallado.html', {
         'entrenos': page_obj,
         'form': form,
         'cliente': cliente,
@@ -2225,216 +2233,152 @@ class CustomJSONEncoder(DjangoJSONEncoder):
         return super().default(obj)
 
 
-# --- FUNCIÓN resumen_entreno CORREGIDA Y OPTIMIZADA ---
-def resumen_entreno(request, entreno_id):
+# entrenos/views.py
+
+# Asegúrate de tener estos imports al principio de tu archivo
+import json
+import logging
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Avg, Count, Sum, F, ExpressionWrapper, fields
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateformat import DateFormat
+
+from clientes.models import Cliente
+from .models import EntrenoRealizado, SerieRealizada, EjercicioBase
+from rutinas.models import Rutina
+
+logger = logging.getLogger(__name__)
+
+
+# Clase para codificar datos complejos a JSON (si no la tienes ya)
+class CustomJSONEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+
+def resumen_entreno(request, pk):
+    """
+    Vista completamente renovada para mostrar un resumen detallado y motivador
+    del entrenamiento realizado.
+    """
     try:
-        entreno_actual = get_object_or_404(EntrenoRealizado, id=entreno_id)
-        entreno = get_object_or_404(EntrenoRealizado, id=entreno_id)
+        # --- 1. OBTENER DATOS BÁSICOS ---
+        entreno_actual = get_object_or_404(
+            EntrenoRealizado.objects.select_related('cliente', 'rutina'),
+            pk=pk
+        )
         cliente = entreno_actual.cliente
-        rutina = entreno_actual.rutina
-    except Exception as e:
-        logger.error(f"Error al cargar entreno o cliente en resumen_entreno: {e}")
-        messages.error(request, "No se encontró el entrenamiento o no tienes permisos.")
-        return redirect('historial_entrenos')
 
-    # --- 1. Datos para Detalles del Entrenamiento Actual ---
-    series_entreno_actual = SerieRealizada.objects.filter(entreno=entreno_actual).order_by('ejercicio__nombre',
-                                                                                           'serie_numero')
-    entreno_actual_data = []
-    for serie in series_entreno_actual:
-        entreno_actual_data.append({
-            'ejercicio_nombre': serie.ejercicio.nombre,
-            'serie_numero': serie.serie_numero,
-            'repeticiones': serie.repeticiones,
-            'peso_kg': float(serie.peso_kg) if serie.peso_kg is not None else 0.0,
-            'completado': serie.completado,
-        })
-    series_totales = series_entreno_actual.count()
-    series_exitosas = series_entreno_actual.filter(completado=True).count()
-    entreno_perfecto = series_totales > 0 and series_exitosas == series_totales
-    entreno_actual_json = json.dumps(entreno_actual_data, cls=CustomJSONEncoder, ensure_ascii=False)
+        # --- 2. DETALLES DEL ENTRENAMIENTO ACTUAL ---
+        series_actuales = SerieRealizada.objects.filter(entreno=entreno_actual).select_related('ejercicio')
 
-    # --- 2. Lógica para Logros de Hoy ---
-    hoy = date.today()
-    logros_hoy = {'mensaje': 'Aún no hay datos de logros para hoy.', 'total_peso_levantado_hoy': 0.0}
-    try:
-        total_peso_hoy = SerieRealizada.objects.filter(
-            entreno__cliente=cliente,
-            entreno__fecha=hoy
-        ).aggregate(total=Sum('peso_kg'))['total'] or Decimal('0.0')
-
-        logros_hoy['total_peso_levantado_hoy'] = float(total_peso_hoy.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
-        logros_hoy['mensaje'] = f"¡Hoy levantaste un total de {logros_hoy['total_peso_levantado_hoy']} kg!"
-    except Exception as e:
-        logger.error(f"Error al calcular logros de hoy: {e}")
-        logros_hoy = {'mensaje': "Error al cargar los logros de hoy.", 'total_peso_levantado_hoy': 0.0, 'error': True}
-    logros_hoy_json = json.dumps(logros_hoy, cls=CustomJSONEncoder, ensure_ascii=False)
-
-    # --- 3. Lógica para Sugerencias Inteligentes ---
-    sugerencias = []
-    try:
-        series_fallidas = [s for s in series_entreno_actual if not s.completado]
-        if series_fallidas:
-            sugerencias.append("Considera revisar la técnica o reducir ligeramente el peso en los ejercicios fallidos.")
-        else:
-            sugerencias.append("¡Excelente rendimiento! Sigue así.")
-    except Exception as e:
-        logger.error(f"Error al generar sugerencias: {e}")
-        sugerencias = ["Error al cargar sugerencias."]
-    sugerencias_inteligentes_json = json.dumps(sugerencias, cls=CustomJSONEncoder, ensure_ascii=False)
-
-    # --- 4. Lógica para Predicciones de Progreso ---
-    predicciones = {'mensaje': "No hay datos suficientes para predecir el progreso.", 'tendencia': 'insuficiente'}
-    try:
-        ultimos_entrenos_ejercicio = SerieRealizada.objects.filter(
-            entreno__cliente=cliente,
-        ).order_by('-entreno__fecha', '-entreno__id', '-serie_numero')[:5]
-
-        pesos = [float(s.peso_kg) for s in ultimos_entrenos_ejercicio if s.peso_kg is not None]
-
-        if len(pesos) >= 2:
-            promedio_reciente = sum(pesos[:2]) / len(pesos[:2])
-            promedio_anterior = sum(pesos[2:]) / len(pesos[2:]) if len(pesos[2:]) > 0 else 0
-            if promedio_reciente > promedio_anterior:
-                predicciones['mensaje'] = "¡Tendencia al alza en el peso levantado! Buen progreso."
-                predicciones['tendencia'] = 'ascendente'
-            elif promedio_reciente < promedio_anterior and promedio_anterior != 0:
-                predicciones['mensaje'] = "El peso levantado ha disminuido ligeramente. Revisa tu descanso."
-                predicciones['tendencia'] = 'descendente'
-            else:
-                predicciones['mensaje'] = "Progreso estable."
-                predicciones['tendencia'] = 'estable'
-        else:
-            predicciones['mensaje'] = "Necesitas más datos de entrenamiento para predecir el progreso."
-            predicciones['tendencia'] = 'insuficiente'
-    except Exception as e:
-        logger.error(f"Error al generar predicciones: {e}")
-        predicciones = {'mensaje': "Error al cargar predicciones.", 'tendencia': 'error', 'error': True}
-    predicciones_progreso_json = json.dumps(predicciones, cls=CustomJSONEncoder, ensure_ascii=False)
-
-    # --- 5. Lógica para Medallas y Logros ---
-    medallas_logros = []
-    try:
-        entrenos_cliente = EntrenoRealizado.objects.filter(cliente=cliente)
-        entrenos_perfectos_count = 0  # Usar un nombre diferente para evitar confusión con entreno_perfecto del actual
-
-        for entreno in entrenos_cliente:
-            total_series_entreno = SerieRealizada.objects.filter(entreno=entreno).count()
-            completadas_series_entreno = SerieRealizada.objects.filter(entreno=entreno, completado=True).count()
-            if total_series_entreno > 0 and total_series_entreno == completadas_series_entreno:
-                entrenos_perfectos_count += 1
-
-        entrenos_completados_count = entrenos_cliente.count()
-
-        if entrenos_completados_count >= 5:
-            medallas_logros.append(
-                {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.', 'tipo': 'medalla'})
-        if entrenos_completados_count >= 10:
-            # Eliminar la medalla de constancia básica si ya se tiene la avanzada
-            if {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.',
-                'tipo': 'medalla'} in medallas_logros:
-                medallas_logros.remove(
-                    {'nombre': 'Constancia', 'descripcion': 'Completaste 5+ entrenamientos.', 'tipo': 'medalla'})
-            medallas_logros.append(
-                {'nombre': 'Constancia Avanzada', 'descripcion': 'Completaste 10+ entrenamientos.', 'tipo': 'medalla'})
-
-        # Actualizar contador de entrenos perfectos del cliente (si el entreno actual fue perfecto)
-        if entreno_perfecto:
-            if not hasattr(cliente, 'entrenos_perfectos_totales') or cliente.entrenos_perfectos_totales is None:
-                cliente.entrenos_perfectos_totales = 0  # Inicializar si no existe o es None
-            cliente.entrenos_perfectos_totales += 1
-            cliente.save()  # Guarda el contador actualizado
-
-        # Medalla de Precisión (basada en el contador total)
-        if hasattr(cliente, 'entrenos_perfectos_totales') and cliente.entrenos_perfectos_totales >= 1:
-            medallas_logros.append({
-                'nombre': 'Precisión',
-                'descripcion': f'{cliente.entrenos_perfectos_totales} entrenos perfectos (100% completado)',
-                'tipo': 'medalla'
+        # Agrupar series por ejercicio para un resumen claro
+        ejercicios_realizados = defaultdict(list)
+        for serie in series_actuales:
+            ejercicios_realizados[serie.ejercicio.nombre].append({
+                'reps': serie.repeticiones,
+                'peso': round(serie.peso_kg, 1)
             })
-    except Exception as e:
-        logger.error(f"Error al generar medallas y logros: {e}")
-        medallas_logros = [{'nombre': 'Error', 'descripcion': 'No se pudieron cargar las medallas.', 'tipo': 'error'}]
-    medallas_logros_json = json.dumps(medallas_logros, cls=CustomJSONEncoder, ensure_ascii=False)
 
-    # --- 6. Lógica para Tablas de Clasificación (Leaderboard) ---
-    leaderboard_data = []  # Inicialización segura
-    try:
-        top_clientes_entrenos = Cliente.objects.annotate(
-            num_entrenos=Count('entrenorealizado')
-        ).order_by('-num_entrenos')[:5]
-        for c in top_clientes_entrenos:
-            leaderboard_data.append({'nombre': c.nombre, 'valor': c.num_entrenos, 'unidad': 'entrenos'})
-    except Exception as e:
-        logger.error(f"Error al generar leaderboard: {e}")
-        leaderboard_data = [{'nombre': 'Error', 'valor': 0, 'unidad': 'datos no disponibles'}]
-    leaderboard_json = json.dumps(leaderboard_data, cls=CustomJSONEncoder, ensure_ascii=False)
+        # Calcular estadísticas clave del entreno
+        stats_actual = series_actuales.aggregate(
+            total_series=Count('id'),
+            series_completadas=Count('id', filter=F('completado')),
+            volumen_total=Sum(ExpressionWrapper(F('repeticiones') * F('peso_kg'), output_field=fields.DecimalField())),
+            peso_maximo=Max('peso_kg')
+        )
 
-    # --- 7. Lógica para Progreso por Ejercicio ---
-    progreso_por_ejercicio = {}  # Inicialización segura
-    try:
-        # Obtener todos los ejercicios del entreno actual (para filtrar los históricos relevantes)
-        ejercicios_en_entreno_actual = set(serie.ejercicio for serie in series_entreno_actual)
+        entreno_perfecto = (stats_actual['total_series'] > 0 and
+                            stats_actual['total_series'] == stats_actual['series_completadas'])
 
-        for ejercicio in ejercicios_en_entreno_actual:
-            series_historicas = SerieRealizada.objects.filter(
-                entreno__cliente=cliente,
-                ejercicio=ejercicio
-            ).order_by('entreno__fecha').values('entreno__fecha').annotate(
-                peso_promedio=Avg('peso_kg'),
-                reps_promedio=Avg('repeticiones')
+        # --- 3. COMPARATIVA CON EL ENTRENAMIENTO ANTERIOR (de la misma rutina) ---
+        entreno_anterior = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            rutina=entreno_actual.rutina,
+            pk__lt=entreno_actual.pk  # Entrenos anteriores
+        ).order_by('-fecha', '-id').first()
+
+        comparativa = {'disponible': False}
+        if entreno_anterior:
+            stats_anterior = SerieRealizada.objects.filter(entreno=entreno_anterior).aggregate(
+                volumen_total=Sum(
+                    ExpressionWrapper(F('repeticiones') * F('peso_kg'), output_field=fields.DecimalField()))
             )
-            # Asegúrate de que los valores sean floats y enteros, y que las listas no estén vacías
-            if series_historicas:
-                progreso_por_ejercicio[ejercicio.nombre] = {
-                    "labels": [DateFormat(d["entreno__fecha"]).format("d M") for d in series_historicas],
-                    "peso": [round(float(d["peso_promedio"] or 0), 1) for d in series_historicas],
-                    "reps": [int(d["reps_promedio"] or 0) for d in series_historicas]
-                }
-            else:
-                # Si no hay datos históricos para este ejercicio, inicializa con listas vacías
-                progreso_por_ejercicio[ejercicio.nombre] = {
-                    "labels": [], "peso": [], "reps": []
-                }
-    except Exception as e:
-        logger.error(f"Error al generar progreso por ejercicio: {e}")
-        progreso_por_ejercicio = {"error": "No se pudo cargar el progreso de ejercicios.", 'error': True}
-    progreso_por_ejercicio_json = json.dumps(progreso_por_ejercicio, cls=CustomJSONEncoder, ensure_ascii=False)
 
-    # --- Pasa todos los JSON y otros datos al contexto del template ---
-    progreso_semanal = {
-        "peso_total_esta_semana": 19800,
-        "peso_total_anterior": 17500,
-        "rondas_completas": 3
-    }
-    logros = {
-        "ejercicios_mejorados": 2  # valor real desde tu lógica
-    }
-    consistencia = {
-        "entrenos_esta_semana": 4,
-        "historial": [True, True, True, True, False, False, False],
-        "semanas_consecutivas": 6
-    }
-    carga = {
-        "diferencia": 2700  # positivo o negativo, según cálculo real
-    }
-    context = {
-        'entreno_actual': entreno_actual,
-        'entreno': entreno,
-        'entreno_actual_json': entreno_actual_json,
-        'logros_hoy_json': logros_hoy_json,
-        'sugerencias_inteligentes_json': sugerencias_inteligentes_json,
-        'predicciones_progreso_json': predicciones_progreso_json,
-        'medallas_logros_json': medallas_logros_json,
-        'leaderboard_json': leaderboard_json,  # Aquí se usa la variable correcta
-        'entreno_perfecto': entreno_perfecto,  # Este es un booleano, no JSON
-        "progreso_por_ejercicio_json": progreso_por_ejercicio_json,
-        "progreso_semanal_json": json.dumps(progreso_semanal, ensure_ascii=False),
-        'logros': logros,
-        "consistencia": consistencia,
-        "carga": carga
-    }
-    return render(request, 'entrenos/resumen_entreno.html', context)
+            vol_actual = stats_actual.get('volumen_total') or 0
+            vol_anterior = stats_anterior.get('volumen_total') or 0
+
+            if vol_anterior > 0:
+                diferencia_vol = vol_actual - vol_anterior
+                porcentaje_vol = round((diferencia_vol / vol_anterior) * 100, 1)
+                comparativa = {
+                    'disponible': True,
+                    'volumen_actual': round(vol_actual, 1),
+                    'volumen_anterior': round(vol_anterior, 1),
+                    'diferencia_porcentual': porcentaje_vol
+                }
+
+        # --- 4. LOGROS Y MEDALLAS ---
+        # Lógica simple de ejemplo, puedes expandirla mucho más
+        medallas = []
+        if entreno_perfecto:
+            medallas.append(
+                {'icono': '🎯', 'nombre': 'Precisión Absoluta', 'desc': 'Completaste todas las series al 100%.'})
+
+        if stats_actual.get('peso_maximo', 0) > 100:
+            medallas.append(
+                {'icono': '🏋️', 'nombre': 'Club de los 100kg', 'desc': 'Levantaste más de 100kg en un ejercicio.'})
+
+        if comparativa.get('diferencia_porcentual', 0) > 10:
+            medallas.append({'icono': '🚀', 'nombre': 'Salto Cuántico', 'desc': 'Aumentaste tu volumen más de un 10%.'})
+
+        # --- 5. GRÁFICO DE PROGRESO DE VOLUMEN ---
+        ultimos_entrenos = EntrenoRealizado.objects.filter(
+            cliente=cliente,
+            rutina=entreno_actual.rutina
+        ).order_by('fecha', 'id').values('fecha').annotate(
+            volumen=Sum(
+                ExpressionWrapper(F('series__repeticiones') * F('series__peso_kg'), output_field=fields.DecimalField()))
+        )
+
+        progreso_chart_data = {
+            "labels": [DateFormat(e['fecha']).format("d M") for e in ultimos_entrenos],
+            "data": [float(e['volumen'] or 0) for e in ultimos_entrenos]
+        }
+
+        # --- 6. CONTEXTO PARA LA PLANTILLA ---
+        context = {
+            'entreno': entreno_actual,
+            'cliente': cliente,
+            'ejercicios_realizados': dict(ejercicios_realizados),
+            'stats': {
+                'volumen_total': round(stats_actual.get('volumen_total') or 0, 1),
+                'peso_maximo': round(stats_actual.get('peso_maximo') or 0, 1),
+                'total_series': stats_actual.get('total_series', 0),
+                'series_completadas': stats_actual.get('series_completadas', 0),
+                'duracion': entreno_actual.duracion_minutos,
+            },
+            'entreno_perfecto': entreno_perfecto,
+            'comparativa': comparativa,
+            'medallas': medallas,
+            'progreso_chart_data_json': json.dumps(progreso_chart_data, cls=CustomJSONEncoder)
+        }
+
+        return render(request, 'entrenos/resumen_entreno.html', context)
+
+    except Exception as e:
+        logger.error(f"Error al generar el resumen del entreno {pk}: {e}")
+        messages.error(request, "Ocurrió un error al generar el resumen. Por favor, intenta de nuevo.")
+        return redirect('entrenos:historial_entrenos')
 
 
 # Archivo: entrenos/views_liftin_adicionales.py - VISTAS ADICIONALES PARA LIFTIN
@@ -3237,7 +3181,7 @@ from django.db.models import Avg
 from datetime import timedelta
 from .models import RegistroWhoop
 from clientes.models import Cliente
-from .utils import analizar_entreno_whoop  # Asegúrate de tener esta función en utils
+from entrenos.utils.utils import analizar_entreno_whoop  # Asegúrate de tener esta función en utils
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
@@ -3246,7 +3190,6 @@ from django.db.models import Avg
 from datetime import timedelta
 from .models import RegistroWhoop
 from clientes.models import Cliente
-from .utils import analizar_entreno_whoop  # Asegúrate de tener este archivo creado
 
 
 @login_required
@@ -3371,75 +3314,6 @@ def tarjeta_whoop(request):
     })
 
 
-def analizar_entreno_whoop(registro):
-    hrv = registro.hrv
-    rhr = registro.rhr
-    recovery = registro.recovery
-    horas_sueno = registro.horas_sueno.total_seconds() / 3600
-    strain = registro.strain
-
-    # Clasificaciones
-    if hrv >= 90:
-        hrv_estado = "alta"
-    elif hrv >= 70:
-        hrv_estado = "media"
-    else:
-        hrv_estado = "baja"
-
-    if rhr <= 55:
-        rhr_estado = "bajo"
-    elif rhr <= 65:
-        rhr_estado = "estable"
-    else:
-        rhr_estado = "alto"
-
-    # Consejo principal
-    if hrv_estado == "alta" and rhr_estado == "bajo" and recovery >= 66:
-        consejo = "🟢 Entrenamiento intenso recomendado. Tu cuerpo está preparado para darlo todo."
-        color = "green"
-    elif hrv_estado == "media" and rhr_estado == "estable":
-        consejo = "🟡 Entrenamiento moderado. Puedes rendir bien, pero no exijas al máximo."
-        color = "yellow"
-    elif hrv_estado == "baja" and rhr_estado == "alto":
-        consejo = "🔴 Señales de fatiga o estrés. Mejor haz solo movilidad o descansa."
-        color = "red"
-    else:
-        consejo = "⚠️ Revisa cómo te sientes. Hoy podría ser día de recuperación activa."
-        color = "gray"
-
-    # Ajustes adicionales
-    if horas_sueno < 6:
-        consejo += " 💤 Dormiste poco. Ajusta el entreno o enfócate en movilidad."
-    if strain > 15:
-        consejo += " ⚠️ Ayer tuviste un día exigente. Considera reducir intensidad hoy."
-
-    # Análisis explicativo RHR
-    if rhr > 60:
-        explicacion_rhr = "🔴 RHR alto → Puede indicar fatiga, falta de sueño, estrés o enfermedad."
-    else:
-        explicacion_rhr = "🟢 RHR bajo → Buen estado de forma y recuperación."
-
-    # Análisis explicativo HRV
-    if hrv > 69:
-        explicacion_hrv = "🧠 HRV alto → Sistema nervioso relajado y listo."
-    else:
-        explicacion_hrv = "⚠️ HRV bajo → Sistema estresado o exigido."
-
-    # Comparativa cruzada
-    if hrv > 69 and rhr <= 60:
-        mensaje_cruce = "🔵 HRV alto + RHR bajo → Entrenamiento intenso OK"
-    elif 60 < rhr <= 65 and 50 < hrv <= 69:
-        mensaje_cruce = "🟡 HRV medio + RHR estable → Entrenamiento moderado"
-    elif hrv <= 50 and rhr > 65:
-        mensaje_cruce = "🔴 HRV bajo + RHR alto → Mejor descanso o solo movilidad"
-    else:
-        mensaje_cruce = "⚪ Estado mixto → Escucha a tu cuerpo y ajusta según te sientas"
-
-    # Junta todo
-    consejo_detallado = f"{consejo}\n\n{explicacion_rhr}\n{explicacion_hrv}\n{mensaje_cruce}"
-    return consejo_detallado, color
-
-
 def gestionar_ejercicios_base(request):
     # Lógica para AÑADIR un nuevo ejercicio
     # Usamos un nombre único para el botón de submit para diferenciar acciones
@@ -3489,3 +3363,644 @@ def gestionar_ejercicios_base(request):
     }
     # Asegúrate de que la ruta al template sea correcta
     return render(request, 'entrenos/gestionar_ejercicios_base.html', context)
+
+
+# entrenos/views.py
+
+# ... (otros imports que ya tengas) ...
+from django.shortcuts import render
+from clientes.models import Cliente
+# entrenos/views.py
+
+# entrenos/views.py
+
+# ... (tus otros imports) ...
+import json
+from datetime import datetime  # Asegúrate de que este import esté presente
+
+
+# en entrenos/views.py
+
+@login_required
+def vista_entrenamiento_activo(request, cliente_id):
+    """
+    Muestra el formulario interactivo para que el usuario registre
+    las series de su entrenamiento del día.
+    VERSIÓN MEJORADA para incluir el peso recomendado.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    try:
+        fecha_str = request.GET.get('fecha')
+        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        fecha_para_template = fecha_obj.strftime('%Y-%m-%d')
+
+        rutina_nombre = request.GET.get('rutina_nombre')
+        ejercicios_planificados_json = request.GET.get('ejercicios', '[]')
+        ejercicios_planificados = json.loads(ejercicios_planificados_json)
+        leyenda_rpe = {
+            "10": "Máximo esfuerzo, no podrías hacer ni una repetición más.",
+            "9": "Muy intenso, podrías hacer 1 repetición más como máximo.",
+            "8": "Intenso, podrías hacer 2-3 repeticiones más.",
+            "7": "Moderado, podrías hacer 3-4 repeticiones más.",
+            "6": "Fácil, podrías hacer muchas repeticiones más.",
+        }
+        # --- INICIO DE LA CORRECCIÓN ---
+        # Preparamos los datos para la plantilla, asegurando que los valores existan
+        for i, ejercicio in enumerate(ejercicios_planificados):
+            ejercicio['form_id'] = f'ejercicio_{i}'
+
+            # Obtener repeticiones objetivo (el valor más bajo del rango)
+            try:
+                reps_str = str(ejercicio.get('repeticiones', '8'))
+                ejercicio['reps_objetivo'] = int(reps_str.split('-')[0].strip())
+            except:
+                ejercicio['reps_objetivo'] = 8  # Fallback
+
+            # Obtener peso recomendado
+            # Usamos .get() para evitar errores si la clave no existe
+            ejercicio['peso_recomendado_kg'] = ejercicio.get('peso_kg', 0.0)
+            ejercicio['rpe_objetivo'] = ejercicio.get('rpe_objetivo', 8)
+            ejercicio['tempo'] = ejercicio.get('tempo', '2-0-X-0')  # Valor por defecto
+            ejercicio['descanso_minutos'] = ejercicio.get('descanso_minutos', 2)  # Valor por defecto
+    except Exception as e:
+        messages.error(request, f"Error al cargar los datos del entrenamiento: {e}")
+        return redirect('entrenos:vista_plan_anual', cliente_id=cliente.id)
+
+    context = {
+        'cliente': cliente,
+        'fecha': fecha_para_template,
+        'rutina_nombre': rutina_nombre,
+        'ejercicios_planificados': ejercicios_planificados,
+        'leyenda_rpe': leyenda_rpe,
+    }
+
+    return render(request, 'entrenos/entrenamiento_activo.html', context)
+
+
+# en entrenos/views.py
+# en entrenos/views.py
+
+# --- Asegúrate de tener estas importaciones al principio del archivo ---
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.db import transaction
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+
+from .models import EntrenoRealizado, EjercicioRealizado
+from rutinas.models import Rutina
+from clientes.models import Cliente
+from analytics.monitor_adherencia import MonitorAdherencia, SesionEntrenamiento
+
+
+# --------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["POST"])
+@transaction.atomic
+def guardar_entrenamiento_activo(request, cliente_id):
+    """
+    VERSIÓN FINAL: Guarda el entrenamiento en EjercicioRealizado, calcula
+    métricas y registra la sesión en el MonitorAdherencia.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    print("\n--- INICIANDO GUARDADO DE ENTRENAMIENTO ACTIVO ---")
+
+    try:
+        # --- 1. Crear el objeto EntrenoRealizado principal ---
+        fecha_str = request.POST.get('fecha')
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        rutina_nombre = request.POST.get('rutina_nombre')
+        rutina_obj, _ = Rutina.objects.get_or_create(nombre=rutina_nombre)
+
+        entreno = EntrenoRealizado.objects.create(
+            cliente=cliente,
+            fecha=fecha,
+            rutina=rutina_obj,
+            fuente_datos='manual',
+            duracion_minutos=request.POST.get('duracion_minutos') or None,
+            calorias_quemadas=request.POST.get('calorias_quemadas') or None,
+            notas_liftin=request.POST.get('notas_liftin', '').strip()
+        )
+        print(f"-> Creado EntrenoRealizado ID: {entreno.id}")
+
+        # --- 2. Procesar y guardar ejercicios ---
+        volumen_total_entreno = Decimal('0.0')
+        ejercicios_procesados_count = 0
+        ejercicio_form_ids = [k.replace('_nombre', '') for k in request.POST if k.endswith('_nombre')]
+
+        for form_id in ejercicio_form_ids:
+            ejercicio_nombre = request.POST.get(f'{form_id}_nombre', '').strip().title()
+            if not ejercicio_nombre:
+                continue
+
+            print(f"-> Procesando ejercicio: {ejercicio_nombre}")
+
+            series_validas = 0
+            reps_totales = 0
+            peso_total_sumado = Decimal('0.0')
+            series_completadas = 0
+            volumen_ejercicio = Decimal('0.0')
+
+            for i in range(1, 11):
+                peso_key = f"{form_id}_peso_{i}"
+                reps_key = f"{form_id}_reps_{i}"
+                if peso_key not in request.POST or reps_key not in request.POST:
+                    break
+                try:
+                    peso_str = request.POST.get(peso_key, '0').replace(',', '.')
+                    reps_str = request.POST.get(reps_key, '0')
+                    completado = request.POST.get(f"{form_id}_completado_{i}") == "1"
+                    peso = Decimal(peso_str) if peso_str else Decimal('0')
+                    reps = int(reps_str) if reps_str else 0
+                    if peso > 0 or reps > 0:
+                        series_validas += 1
+                        reps_totales += reps
+                        peso_total_sumado += peso
+                        volumen_ejercicio += (peso * reps)
+                        if completado:
+                            series_completadas += 1
+                except (ValueError, TypeError, InvalidOperation) as e:
+                    print(f"   ⚠️ Error en datos de serie {i}: {e}")
+                    continue
+
+            if series_validas > 0:
+                peso_promedio = peso_total_sumado / series_validas
+                repeticiones_promedio = reps_totales // series_validas
+                ejercicio_completado = series_completadas == series_validas
+                EjercicioRealizado.objects.create(
+                    entreno=entreno, nombre_ejercicio=ejercicio_nombre, grupo_muscular="Otros",
+                    peso_kg=float(peso_promedio), series=series_validas,
+                    repeticiones=repeticiones_promedio, completado=ejercicio_completado,
+                    fuente_datos='manual'
+                )
+                print(f"   -> Creado EjercicioRealizado: {ejercicio_nombre} ({series_validas} series)")
+                volumen_total_entreno += volumen_ejercicio
+                ejercicios_procesados_count += 1
+
+        # --- 3. Actualizar el EntrenoRealizado con los totales finales ---
+        entreno.volumen_total_kg = volumen_total_entreno
+        entreno.numero_ejercicios = ejercicios_procesados_count
+        entreno.save(update_fields=['volumen_total_kg', 'numero_ejercicios'])
+        print("-> Entrenamiento guardado y actualizado con éxito.")
+
+        # --- 4. Integración con el Monitor de Adherencia ---
+        try:
+            monitor = MonitorAdherencia(cliente_id=cliente.id)
+            # NOTA: En una implementación real, aquí cargarías el historial del monitor desde la BD.
+            # Por ahora, creamos una nueva sesión para registrar.
+
+            sesion = SesionEntrenamiento(
+                fecha=timezone.make_aware(datetime.combine(fecha, datetime.min.time())),
+                completada=True
+            )
+            monitor.registrar_sesion(sesion)
+
+            # Opcional: Guardar el estado del monitor en la sesión del usuario o en la BD.
+            # request.session['monitor_adherencia'] = monitor.obtener_reporte_adherencia()
+            print(f"📈 Reporte de adherencia generado: {monitor.obtener_reporte_adherencia()}")
+        except Exception as e:
+            print(f"⚠️ No se pudo actualizar el monitor de adherencia: {e}")
+
+        # --- 5. Redirección al Dashboard de Analíticas ---
+        messages.success(request, "¡Entrenamiento guardado! Analizando tu progreso...")
+        return redirect('analytics:dashboard_cliente', cliente_id=cliente.id)
+
+    except Exception as e:
+        print(f"\n--- ❌ ERROR CRÍTICO DURANTE EL GUARDADO: {e} ---")
+        import traceback
+        traceback.print_exc()
+        if 'entreno' in locals() and entreno.pk:
+            entreno.delete()
+        messages.error(request, f"Hubo un error crítico al guardar: {e}")
+        return redirect('entrenos:vista_plan_anual', cliente_id=cliente_id)
+
+
+# en entrenos/views.py
+
+# --- Asegúrate de tener todas estas importaciones al principio del archivo ---
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from clientes.models import Cliente
+from analytics.planificador_helms_completo import PlanificadorHelms, crear_perfil_desde_cliente
+from analytics.views import CalculadoraEjerciciosTabla
+from analytics.validador_jerarquia_helms import validar_adherencia_basica
+from analytics.sistema_educacion_helms import agregar_educacion_a_plan
+from datetime import date, datetime, timedelta
+from decimal import Decimal, InvalidOperation
+import json
+import calendar
+
+
+# --------------------------------------------------------------------------
+
+
+def vista_plan_anual(request, cliente_id):
+    """
+    Vista para generar y mostrar el plan anual de Helms.
+    VERSIÓN FINAL CON VALIDACIÓN Y SISTEMA EDUCATIVO INTEGRADO.
+    """
+    try:
+        # --- PASO 1: Obtener cliente y datos de navegación del calendario ---
+        cliente_obj = get_object_or_404(Cliente, id=cliente_id)
+        año_actual = int(request.GET.get('año', date.today().year))
+        mes_actual = int(request.GET.get('mes', date.today().month))
+
+        # --- PASO 2: Calcular 1RM ---
+        maximos_actuales = {}
+        try:
+            calculadora_rm = CalculadoraEjerciciosTabla(cliente_obj)
+            ejercicios_con_rm = calculadora_rm.obtener_ejercicios_tabla()
+            for e in ejercicios_con_rm:
+                try:
+                    nombre_limpio = e.get('nombre', '').strip().lower()
+                    peso_str = str(e.get('peso', '0')).replace(',', '.')
+                    reps_valor = e.get('repeticiones', '0')
+                    reps_str = str(reps_valor).split('-')[0].strip() if isinstance(reps_valor, str) else str(reps_valor)
+                    if nombre_limpio and peso_str.replace('.', '', 1).isdigit() and reps_str.isdigit():
+                        peso, reps = Decimal(peso_str), int(reps_str)
+                        if peso > 0 and reps > 0:
+                            rm_estimado = peso * (1 + Decimal(reps) / Decimal(30))
+                            if nombre_limpio not in maximos_actuales or rm_estimado > maximos_actuales[nombre_limpio]:
+                                maximos_actuales[nombre_limpio] = float(rm_estimado)
+                except (ValueError, TypeError, InvalidOperation):
+                    continue
+        except Exception:
+            maximos_actuales = {'press_banca': 80.0, 'sentadilla': 100.0}
+        print(f"✅ Máximos calculados: {len(maximos_actuales)} ejercicios")
+
+        # --- PASO 3: Crear perfil y VALIDAR ADHERENCIA ---
+        perfil = crear_perfil_desde_cliente(cliente_obj)
+        one_rm_normalizados = {str(k).lower().strip(): v for k, v in maximos_actuales.items()}
+        # 2. Inyectamos el diccionario NORMALIZADO en el perfil
+        perfil.maximos_actuales = one_rm_normalizados
+
+        validacion_adherencia = validar_adherencia_basica(perfil)
+
+        if not validacion_adherencia.puede_avanzar:
+            context = {
+                'cliente': cliente_obj, 'error': True, 'validacion_fallida': True,
+                'validacion': validacion_adherencia,
+            }
+            print(f"❌ Validación de Adherencia fallida: {validacion_adherencia.recomendaciones}")
+            return render(request, 'entrenos/vista_plan_calendario.html', context)
+
+        print("✅ Validación de Adherencia superada.")
+
+        # --- PASO 4: Generar y Enriquecer el Plan ---
+        planificador = PlanificadorHelms(perfil)
+        plan_original = planificador.generar_plan_anual()
+        print(f"✅ Plan original generado.")
+
+        plan = agregar_educacion_a_plan(plan_original)
+        print("📚 Plan enriquecido con datos educativos.")
+
+        if not plan or not isinstance(plan, dict):
+            raise Exception("El plan generado está vacío o tiene un formato incorrecto.")
+
+        # --- PASO 5: Preparar el contexto para la plantilla ---
+        matriz_mes = calendar.monthcalendar(año_actual, mes_actual)
+        hoy = date.today()
+        primer_dia_mes = date(año_actual, mes_actual, 1)
+        mes_anterior = primer_dia_mes - timedelta(days=1)
+        mes_siguiente = (primer_dia_mes + timedelta(days=31)).replace(day=1)
+        semanas_calendario = []
+        entrenos_del_plan = plan.get('entrenos_por_fecha', {})
+
+        for semana_matriz in matriz_mes:
+            dias_semana = []
+            for dia_num in semana_matriz:
+                if dia_num == 0:
+                    dias_semana.append(None)
+                else:
+                    fecha_actual = date(año_actual, mes_actual, dia_num)
+                    fecha_str = fecha_actual.isoformat()
+                    entrenamiento_dia = entrenos_del_plan.get(fecha_str)
+                    if entrenamiento_dia:
+                        try:
+                            fase_nombre = entrenamiento_dia['nombre_rutina'].split(' - ')[1].lower().strip()
+                            entrenamiento_dia['fase_css'] = f"fase-{fase_nombre}"
+                        except (IndexError, AttributeError):
+                            entrenamiento_dia['fase_css'] = "fase-default"
+                    dias_semana.append({
+                        "numero": dia_num, "es_hoy": fecha_actual == hoy,
+                        "entrenamiento": entrenamiento_dia
+                    })
+            semanas_calendario.append(dias_semana)
+
+        context = {
+            'cliente': cliente_obj,
+            'calendario': {
+                'semanas': semanas_calendario, 'nombre_mes': calendar.month_name[mes_actual],
+                'año': año_actual, 'mes_num': mes_actual
+            },
+            'nav': {
+                'anterior': {'año': mes_anterior.year, 'mes': mes_anterior.month},
+                'siguiente': {'año': mes_siguiente.year, 'mes': mes_siguiente.month}
+            },
+            'entrenos_por_fecha_data': json.dumps(entrenos_del_plan)
+        }
+
+        return render(request, 'entrenos/vista_plan_calendario.html', context)
+
+    except Exception as e:
+        print(f"❌ Error general en vista_plan_anual: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        error_context = {
+            'error': True, 'error_message': str(e), 'error_type': type(e).__name__,
+            'cliente': cliente_obj if 'cliente_obj' in locals() else None,
+        }
+        return render(request, 'entrenos/vista_plan_calendario.html', error_context)
+
+
+# views.py - Actualizar tu vista existente
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from analytics.planificador_integrado import PlanificadorIntegrado
+
+
+@login_required
+def vista_plan_calendario(request, cliente_id):
+    """
+    Vista principal del plan - ahora con integración Helms
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id, usuario=request.user)
+
+    try:
+        # Usar el planificador integrado
+        planificador = PlanificadorIntegrado(cliente_id)
+        plan = planificador.generar_plan_anual()
+        estadisticas = planificador.obtener_estadisticas_integracion()
+
+        # Preparar contexto para el template
+        contexto = {
+            'cliente': cliente,
+            'plan': plan,
+            'estadisticas_helms': estadisticas,
+            'tiene_datos_helms': 'datos_helms' in plan,
+            'generado_por_helms': plan.get('metadata', {}).get('generado_por') == 'helms',
+
+            # Información educativa sobre Helms
+            'info_rpe': {
+                6: "Muy fácil - Podrías hacer muchas repeticiones más",
+                7: "Moderado - Podrías hacer 3-4 repeticiones más",
+                8: "Intenso - Podrías hacer 2-3 repeticiones más",
+                9: "Muy intenso - Podrías hacer 1-2 repeticiones más",
+                10: "Máximo esfuerzo - Al fallo muscular"
+            },
+
+            'info_tempo': {
+                'descripcion': 'Formato: Excéntrica-Pausa-Concéntrica-Pausa',
+                'ejemplo': '2-0-X-0 = 2 seg bajada, sin pausa, explosiva subida, sin pausa'
+            }
+        }
+
+        return render(request, 'entrenos/vista_plan_calendario.html', contexto)
+
+    except Exception as e:
+        # Log del error y fallback
+        print(f"❌ Error en vista_plan_calendario: {str(e)}")
+
+        # Fallback a tu sistema actual
+        from .analytics.planificador import PlanificadorAnualIA
+        planificador_fallback = PlanificadorAnualIA(cliente_id)
+        plan_fallback = planificador_fallback.generar_plan()
+
+        contexto = {
+            'cliente': cliente,
+            'plan': plan_fallback,
+            'error_helms': True,
+            'mensaje_error': 'Usando planificador de respaldo'
+        }
+
+        return render(request, 'entrenos/vista_plan_calendario.html', contexto)
+
+
+@login_required
+def api_regenerar_plan_helms(request, cliente_id):
+    """
+    API endpoint para regenerar plan con configuración específica
+    """
+    if request.method == 'POST':
+        cliente = get_object_or_404(Cliente, id=cliente_id, usuario=request.user)
+
+        # Obtener configuración del request
+        usar_helms = request.POST.get('usar_helms', 'true') == 'true'
+        incluir_validacion = request.POST.get('incluir_validacion', 'true') == 'true'
+
+        try:
+            planificador = PlanificadorIntegrado(cliente_id)
+            planificador.usar_helms_como_principal = usar_helms
+            planificador.incluir_validacion_helms = incluir_validacion
+
+            plan = planificador.generar_plan_anual()
+            estadisticas = planificador.obtener_estadisticas_integracion()
+
+            return JsonResponse({
+                'success': True,
+                'plan_id': plan.get('id'),
+                'generado_por': plan.get('metadata', {}).get('generado_por'),
+                'estadisticas': estadisticas,
+                'mensaje': '✅ Plan regenerado exitosamente'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e),
+                'mensaje': '❌ Error al regenerar el plan'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def dashboard_comparacion_planificadores(request, cliente_id):
+    """
+    Dashboard para comparar tu planificador actual vs Helms
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id, usuario=request.user)
+
+    try:
+        # Generar plan con ambos sistemas
+        planificador_integrado = PlanificadorIntegrado(cliente_id)
+
+        # Plan con Helms
+        planificador_integrado.usar_helms_como_principal = True
+        plan_helms = planificador_integrado.generar_plan_anual()
+
+        # Plan con tu sistema actual
+        planificador_integrado.usar_helms_como_principal = False
+        plan_actual = planificador_integrado.generar_plan_anual()
+
+        # Comparar métricas
+        comparacion = {
+            'volumen_total': {
+                'helms': sum(plan_helms.get('datos_helms', {}).get('volumen_semanal', {}).values()),
+                'actual': _calcular_volumen_plan(plan_actual)
+            },
+            'ejercicios_por_semana': {
+                'helms': len(plan_helms.get('ejercicios_por_semana', {}).get('1', [])),
+                'actual': len(plan_actual.get('ejercicios_por_semana', {}).get('1', []))
+            },
+            'tiempo_estimado': {
+                'helms': _calcular_tiempo_plan(plan_helms),
+                'actual': _calcular_tiempo_plan(plan_actual)
+            }
+        }
+
+        contexto = {
+            'cliente': cliente,
+            'plan_helms': plan_helms,
+            'plan_actual': plan_actual,
+            'comparacion': comparacion
+        }
+
+        return render(request, 'dashboard_comparacion.html', contexto)
+
+    except Exception as e:
+        return render(request, 'error.html', {'error': str(e)})
+
+
+def _calcular_volumen_plan(plan: Dict) -> int:
+    """Calcula volumen total de un plan"""
+    volumen_total = 0
+    for ejercicios in plan.get('ejercicios_por_semana', {}).values():
+        for ejercicio in ejercicios:
+            volumen_total += ejercicio.get('series', 0)
+    return volumen_total
+
+
+def _calcular_tiempo_plan(plan: Dict) -> int:
+    """Calcula tiempo estimado de un plan en minutos"""
+    tiempo_total = 0
+    for ejercicios in plan.get('ejercicios_por_semana', {}).values():
+        for ejercicio in ejercicios:
+            series = ejercicio.get('series', 0)
+            descanso = ejercicio.get('descanso_minutos', 3)
+            tiempo_ejercicio = series * 2 + (series - 1) * descanso  # 2 min por serie + descansos
+            tiempo_total += tiempo_ejercicio
+    return tiempo_total // 7  # Promedio por día
+
+
+# views.py - Uso del convertidor
+from .utils.convertidor_formatos import ConvertidorFormatos, convertir_plan_para_vista, extraer_datos_educativos
+
+
+@login_required
+def vista_plan_calendario_con_conversion(request, cliente_id):
+    """
+    Vista que usa el convertidor para mantener compatibilidad
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id, usuario=request.user)
+
+    try:
+        # Generar plan con el sistema integrado
+        planificador = PlanificadorIntegrado(cliente_id)
+        plan_helms = planificador.generar_plan_anual()
+
+        # Convertir a formato actual si es necesario
+        if plan_helms.get('metadata', {}).get('generado_por') == 'helms':
+            resultado_conversion = convertir_plan_para_vista(plan_helms)
+            plan = resultado_conversion['plan']
+            validacion = resultado_conversion['validacion']
+        else:
+            plan = plan_helms
+            validacion = {'exitosa': True}
+
+        # Extraer datos educativos
+        datos_educativos = extraer_datos_educativos(plan)
+
+        # Preparar contexto
+        contexto = {
+            'cliente': cliente,
+            'plan': plan,
+            'validacion_conversion': validacion,
+            'datos_educativos': datos_educativos,
+            'tiene_datos_helms': 'datos_helms' in plan,
+            'generado_por_helms': plan.get('metadata', {}).get('generado_por') == 'helms'
+        }
+
+        return render(request, 'entrenos/vista_plan_calendario.html', contexto)
+
+    except Exception as e:
+        # Manejo de errores con logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error en vista_plan_calendario: {str(e)}")
+
+        return render(request, 'error.html', {
+            'error': 'Error al generar el plan',
+            'detalle': str(e) if settings.DEBUG else 'Contacta al soporte'
+        })
+
+
+# en entrenos/views.py
+
+# --- Asegúrate de que estas importaciones estén al principio del archivo ---
+from .models import EntrenoRealizado, EjercicioRealizado
+from clientes.models import Cliente
+from analytics.planificador_helms_completo import PlanificadorHelms, crear_perfil_desde_cliente  # <-- ¡USA ESTE!
+from analytics.views import CalculadoraEjerciciosTabla
+from decimal import Decimal, InvalidOperation
+
+
+# ... (otras importaciones que ya tengas)
+
+def vista_resumen_anual(request, cliente_id):
+    """
+    Muestra una vista de alto nivel de todo el plan anual,
+    organizado por mesociclos o bloques.
+    VERSIÓN CORREGIDA para usar el planificador unificado.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # --- PASO 1: Calcular 1RM (Lógica idéntica a la vista del calendario) ---
+    maximos_actuales = {}
+    try:
+        calculadora_rm = CalculadoraEjerciciosTabla(cliente)
+        ejercicios_con_rm = calculadora_rm.obtener_ejercicios_tabla()
+        for e in ejercicios_con_rm:
+            try:
+                nombre_limpio = e.get('nombre', '').strip().lower()
+                peso_str = str(e.get('peso', '0')).replace(',', '.')
+                reps_valor = e.get('repeticiones', '0')
+                reps_str = str(reps_valor).split('-')[0].strip() if isinstance(reps_valor, str) else str(reps_valor)
+                if nombre_limpio and peso_str.replace('.', '', 1).isdigit() and reps_str.isdigit():
+                    peso, reps = Decimal(peso_str), int(reps_str)
+                    if peso > 0 and reps > 0:
+                        rm_estimado = peso * (1 + Decimal(reps) / Decimal(30))
+                        if nombre_limpio not in maximos_actuales or rm_estimado > maximos_actuales[nombre_limpio]:
+                            maximos_actuales[nombre_limpio] = float(rm_estimado)
+            except (ValueError, TypeError, InvalidOperation):
+                continue
+    except Exception:
+        maximos_actuales = {'press_banca': 80.0, 'sentadilla': 100.0}
+
+    # --- PASO 2: Crear perfil y generar plan con el planificador correcto ---
+    perfil = crear_perfil_desde_cliente(cliente)
+    perfil.maximos_actuales = maximos_actuales
+
+    # ¡Usamos el PlanificadorHelms que ya hemos corregido!
+    planificador = PlanificadorHelms(perfil)
+    plan_completo = planificador.generar_plan_anual()
+
+    # --- PASO 3: Preparar el contexto para la plantilla ---
+    plan_por_bloques = plan_completo.get('plan_por_bloques', [])
+
+    # Calcular el total de semanas sumando la duración de cada bloque
+    total_semanas = sum(bloque.get('duracion', 0) for bloque in plan_por_bloques)
+
+    context = {
+        'cliente': cliente,
+        'plan_por_bloques': plan_por_bloques,
+        'total_semanas': total_semanas  # Ahora esto debería ser 52
+    }
+
+    return render(request, 'entrenos/vista_resumen_anual.html', context)
