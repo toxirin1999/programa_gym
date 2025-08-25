@@ -37,33 +37,10 @@ def asignar_programa_a_cliente(request, programa_id):
     return render(request, 'clientes/asignar_programa.html', {'programa': programa, 'clientes': clientes})
 
 
-def asignar_programa(request, programa_id):
-    programa = get_object_or_404(Programa, id=programa_id)
-
-    if request.method == 'POST':
-        cliente_id = request.POST.get('cliente_id')
-        cliente = get_object_or_404(Cliente, id=cliente_id)
-        cliente.programa = programa  # Asigna el programa al cliente
-        cliente.save()
-        messages.success(request, f'Programa "{programa.nombre}" asignado a {cliente.nombre} correctamente.')
-        return redirect('detalle_programa', programa_id=programa.id)
-
-    # Si alguien accede por GET, lo redirigimos al detalle del programa
-    return redirect('detalle_programa', programa_id=programa.id)
-
-
 def detalle_programa(request, programa_id):
     programa = get_object_or_404(Programa, id=programa_id)
     rutinas = Rutina.objects.filter(programa=programa)
     clientes = Cliente.objects.all()  # 👈 Aquí cargamos todos los clientes
-
-    if request.method == 'POST':
-        cliente_id = request.POST.get('cliente_id')
-        cliente = get_object_or_404(Cliente, id=cliente_id)
-        cliente.programa = programa
-        cliente.save()
-        messages.success(request, f"Programa '{programa.nombre}' asignado a {cliente.nombre}")
-        return redirect('programas/detalle_programa', programa_id=programa_id)
 
     return render(request, 'programas/detalle_programa.html', {
         'programa': programa,

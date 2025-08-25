@@ -40,9 +40,10 @@ class EjercicioEnRutina(models.Model):
 
 
 class EjercicioBase(models.Model):
-    nombre = models.CharField(max_length=100)
+    # Este es el modelo CORRECTO. No se toca.
+    nombre = models.CharField(max_length=100, unique=True)  # <-- Es buena práctica añadir unique=True
     grupo_muscular = models.CharField(max_length=100)
-    equipo = models.CharField(max_length=100)
+    equipo = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
@@ -51,8 +52,9 @@ class EjercicioBase(models.Model):
 class Rutina(models.Model):
     programa = models.ForeignKey('Programa', on_delete=models.CASCADE, null=True, blank=True)
     nombre = models.CharField(max_length=100)
-    # CORRECCIÓN: Apunta a 'entrenos.EjercicioBase'
-    ejercicios = models.ManyToManyField('entrenos.EjercicioBase', through='RutinaEjercicio')
+
+    ejercicios = models.ManyToManyField(EjercicioBase, through='RutinaEjercicio')
+
     orden = models.PositiveIntegerField(default=0)
 
     def __str__(self):
@@ -60,9 +62,10 @@ class Rutina(models.Model):
 
 
 class RutinaEjercicio(models.Model):
-    rutina = models.ForeignKey('Rutina', on_delete=models.CASCADE)
-    # CORRECCIÓN: Apunta a 'entrenos.EjercicioBase'
-    ejercicio = models.ForeignKey('entrenos.EjercicioBase', on_delete=models.CASCADE)
+    rutina = models.ForeignKey(Rutina, on_delete=models.CASCADE)
+
+    ejercicio = models.ForeignKey(EjercicioBase, on_delete=models.CASCADE)
+
     series = models.PositiveIntegerField()
     repeticiones = models.PositiveIntegerField()
     peso_kg = models.DecimalField(max_digits=5, decimal_places=2, default=0)

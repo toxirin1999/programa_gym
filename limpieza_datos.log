@@ -1,0 +1,7 @@
+2025-05-23 17:08:00,348 - ERROR - Error al importar modelos: cannot import name 'RutinaEjercicio' from 'entrenos.models' (C:\Users\kure_\Desktop\python\pycharm\django\gymproject\entrenos\models.py)
+2025-05-23 17:14:06,991 - INFO - Modelos disponibles en entrenos: ['EntrenoRealizado', 'DetalleEjercicioRealizado', 'Rutina', 'Programa', 'SerieRealizada', 'PlanPersonalizado']
+2025-05-23 17:14:06,992 - INFO - Modelos importados correctamente
+2025-05-23 17:14:06,992 - INFO - === INICIANDO PROCESO DE LIMPIEZA DE DATOS ===
+2025-05-23 17:14:06,993 - INFO - Iniciando limpieza de SerieRealizada.peso_kg
+2025-05-23 17:14:07,015 - INFO - Total de series a procesar: 704
+2025-05-23 17:14:07,021 - ERROR - Error durante el proceso de limpieza: [<class 'decimal.InvalidOperation'>]

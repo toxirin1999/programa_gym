@@ -3,6 +3,13 @@
 import os
 import sys
 
+# 👇 INICIO DEL CÓDIGO QUE DEBES AÑADIR 👇
+# Añade el directorio del proyecto al PYTHONPATH
+# Esto asegura que las apps como 'clientes' puedan ser importadas.
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+
+# 👆 FIN DEL CÓDIGO QUE DEBES AÑADIR 👆
 
 def main():
     """Run administrative tasks."""
