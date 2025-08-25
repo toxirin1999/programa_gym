@@ -73,7 +73,7 @@ def calcular_metricas_dia(cliente, fecha):
         duracion_total = sum([e.duracion_minutos or 0 for e in entrenamientos_dia])
 
         # Calcular volumen usando datos de ejercicios parseados
-        from entrenos.utils import parsear_ejercicios
+        from entrenos.utils.utils import parsear_ejercicios
 
         for entreno in entrenamientos_dia:
             if entreno.notas_liftin:
@@ -91,7 +91,10 @@ def calcular_metricas_dia(cliente, fecha):
         intensidad_promedio = volumen_total / duracion_total if duracion_total > 0 else 0
 
         # Calcular frecuencia cardíaca promedio
-        fc_promedio = sum([e.fc_promedio or 0 for e in entrenamientos_dia]) / len(entrenamientos_dia)
+        fc_promedios_validos = [getattr(e, 'fc_promedio', 0) or 0 for e in entrenamientos_dia]
+        fc_promedio = sum(fc_promedios_validos) / len(fc_promedios_validos) if fc_promedios_validos else 0
+
+        # --- FIN DE LA CORRECCIÓN ---
 
         # Crear o actualizar métrica del día
         metrica, created = MetricaRendimiento.objects.update_or_create(
@@ -103,7 +106,8 @@ def calcular_metricas_dia(cliente, fecha):
                 'calorias_totales': calorias_totales,
                 'duracion_total': duracion_total,
                 'fc_promedio': fc_promedio,
-                'entrenamientos_realizados': entrenamientos_dia.count()
+                'entrenamientos_dia': entrenamientos_dia.count()
+
             }
         )
 
@@ -119,7 +123,7 @@ def actualizar_analisis_ejercicio_especifico(cliente, nombre_ejercicio, fecha):
     """
     try:
         # Obtener todos los ejercicios de este tipo para el cliente
-        from entrenos.utils import parsear_ejercicios
+        from entrenos.utils.utils import parsear_ejercicios
 
         entrenamientos = EntrenoRealizado.objects.filter(
             cliente=cliente
@@ -293,6 +297,8 @@ def generar_predicciones_ejercicio(cliente, nombre_ejercicio, tendencia):
         logger.error(f"Error generando predicciones para {nombre_ejercicio}: {e}")
 
 
+# En analytics/signals.py
+
 def generar_recomendaciones_automaticas(cliente):
     """
     Genera recomendaciones automáticas basadas en el análisis de datos
@@ -324,7 +330,9 @@ def generar_recomendaciones_automaticas(cliente):
                 titulo="Aumentar Frecuencia de Entrenamiento",
                 descripcion=f"Has entrenado solo {entrenamientos_mes} veces este mes. Intenta entrenar al menos 3-4 veces por semana para mejores resultados.",
                 tipo="frecuencia",
-                prioridad="alta",
+                # --- CORRECCIÓN AQUÍ ---
+                prioridad=1,  # Cambiado de "alta" a 1
+                # -----------------------
                 expires_at=timezone.now() + timedelta(days=30)
             )
 
@@ -340,14 +348,16 @@ def generar_recomendaciones_automaticas(cliente):
                     titulo="Volumen de Entrenamiento Bajo",
                     descripcion="Tu volumen de entrenamiento ha disminuido recientemente. Considera aumentar el peso o las repeticiones gradualmente.",
                     tipo="volumen",
-                    prioridad="media",
+                    # --- CORRECCIÓN AQUÍ ---
+                    prioridad=2,  # Cambiado de "media" a 2
+                    # -----------------------
                     expires_at=timezone.now() + timedelta(days=30)
                 )
 
         # Análisis de ejercicios estancados
         ejercicios_estancados = TendenciaProgresion.objects.filter(
             cliente=cliente,
-            estado='estancado',
+            tipo_tendencia='estable',  # Corregido: 'estado' -> 'tipo_tendencia' y 'estancado' -> 'estable'
             fecha_fin__gte=timezone.now().date() - timedelta(days=30)
         )
 
@@ -358,7 +368,9 @@ def generar_recomendaciones_automaticas(cliente):
                 titulo="Ejercicios Estancados Detectados",
                 descripcion=f"Los ejercicios {ejercicios_nombres} muestran poco progreso. Considera cambiar la rutina o técnica.",
                 tipo="progresion",
-                prioridad="media",
+                # --- CORRECCIÓN AQUÍ ---
+                prioridad=2,  # Cambiado de "media" a 2
+                # -----------------------
                 expires_at=timezone.now() + timedelta(days=30)
             )
 
@@ -420,7 +432,7 @@ def recalcular_todas_las_metricas(cliente=None):
             calcular_metricas_dia(cliente, fecha)
 
         # Recalcular análisis de ejercicios
-        from entrenos.utils import parsear_ejercicios
+        from entrenos.utils.utils import parsear_ejercicios
 
         entrenamientos = EntrenoRealizado.objects.filter(
             cliente=cliente

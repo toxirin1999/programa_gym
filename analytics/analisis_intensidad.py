@@ -7,7 +7,7 @@ from django.db.models import Sum, Avg, Max, Min, Count
 from datetime import datetime, timedelta, date
 import json
 import numpy as np
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parse_reps_and_series
 from clientes.models import Cliente
 from entrenos.models import EntrenoRealizado
 from entrenos.models import EjercicioRealizado

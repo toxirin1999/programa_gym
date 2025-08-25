@@ -108,7 +108,6 @@ class TendenciaProgresion(models.Model):
     peso_maximo = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     sesiones_totales = models.IntegerField(default=0)
 
-    created_at = models.DateTimeField(auto_now_add=True)
     # Tendencia calculada
     tipo_tendencia = models.CharField(max_length=20, choices=[
         ('creciente', 'Creciente'),
@@ -349,3 +348,57 @@ class CacheAnalisis(models.Model):
     @property
     def esta_vigente(self):
         return datetime.now() <= self.expires_at
+
+
+# analytics/models.py
+from django.db import models
+from clientes.models import Cliente  # Asegúrate de importar Cliente
+from django.utils import timezone
+
+
+# ... tus otros modelos (MetricaRendimiento, etc.)
+
+class MetaRendimiento(models.Model):
+    """
+    Representa una meta que un cliente se establece para un ejercicio específico.
+    """
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='metas')
+    nombre_ejercicio = models.CharField(max_length=100)
+    fecha_objetivo = models.DateField()
+    valor_objetivo = models.DecimalField(max_digits=7, decimal_places=2)  # Ej: 100.00 kg
+    creada_en = models.DateTimeField(auto_now_add=True)
+    alcanzada = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Meta de {self.cliente.nombre}: {self.nombre_ejercicio} - {self.valor_objetivo}kg para {self.fecha_objetivo}"
+
+    class Meta:
+        ordering = ['-fecha_objetivo']
+
+
+class AnotacionEntrenamiento(models.Model):
+    """
+    Representa un evento o nota importante en una fecha específica para un cliente.
+    """
+    TIPO_ANOTACION = [
+        ('PR', 'Récord Personal'),
+        ('INICIO', 'Inicio de Programa'),
+        ('FIN', 'Fin de Programa'),
+        ('LESION', 'Lesión o Molestia'),
+        ('DESCANSO', 'Semana de Descarga'),
+        ('EVENTO', 'Evento o Competición'),
+        ('OTRO', 'Otro'),
+    ]
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='anotaciones')
+    fecha = models.DateField()
+    tipo = models.CharField(max_length=10, choices=TIPO_ANOTACION, default='OTRO')
+    descripcion = models.CharField(max_length=255)
+    ejercicio_asociado = models.CharField(max_length=100, blank=True, null=True,
+                                          help_text="Opcional: asociar a un ejercicio específico")
+    creada_en = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Anotación de {self.cliente.nombre} en {self.fecha}: {self.get_tipo_display()}"
+
+    class Meta:
+        ordering = ['-fecha']

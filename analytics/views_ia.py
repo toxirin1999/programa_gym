@@ -1,7 +1,11 @@
 # VISTA CORREGIDA QUE FUNCIONA CON LOS MODELOS REALES
 # Soluciona el problema de datos no detectados
-
-
+from analytics.ia_modelos_predictivos import ModelosPredictivosIA
+import json
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from django.db import transaction  # <-- AÑADIMOS ESTA IMPORTACIÓN
+from clientes.models import Cliente
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -14,7 +18,7 @@ import logging
 
 from django.contrib import messages
 from clientes.models import Cliente
- # <== IMPORTANTE
+from analytics.ia_recomendaciones_inteligentes import SistemaRecomendacionesIA  # <== IMPORTANTE
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -735,8 +739,6 @@ def crear_cliente_fallback(cliente_id, nombre="Usuario"):
 
 def dashboard_ia_principal(request, cliente_id):
     """Dashboard principal de IA con todos los sistemas integrados"""
-    from analytics.ia_recomendaciones_inteligentes import SistemaRecomendacionesIA 
-    from analytics.ia_modelos_predictivos import ModelosPredictivosIA
     try:
         # ✅ OBTENER CLIENTE REAL O FALLBACK
         try:
@@ -2262,3 +2264,356 @@ def vista_intensidad_avanzado(request, cliente_id):
 
     # 6. Renderizar el template con el contexto
     return render(request, 'analytics/intensidad_avanzado.html', context)
+
+
+# analytics/views_ia.py
+
+# --- Importaciones necesarias para la nueva vista ---
+from django.shortcuts import render, get_object_or_404
+from clientes.models import Cliente
+# CORRECCIÓN DEFINITIVA: Apuntamos a 'rutinas.models'
+from rutinas.models import Asignacion
+from .ia_analizador_programas import AnalizadorProgramaIA
+
+
+# ... (el resto de tus importaciones y vistas existentes) ...
+
+
+# ============================================================================
+# === VISTA PARA ANÁLISIS DE PROGRAMAS ASIGNADOS ===
+# ============================================================================
+
+def vista_optimizacion_programa(request, cliente_id):
+    """
+    Analiza el PROGRAMA ASIGNADO a un cliente y lo muestra en el
+    template de optimización.
+    """
+    # =================================================================
+    # ### AÑADE ESTA LÍNEA AL PRINCIPIO DE TODO ###
+    print("✅✅✅ ¡ÉXITO! La URL está llamando a 'vista_optimizacion_programa views_ia' correctamente. ✅✅✅")
+    # =================================================================
+
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    try:
+        # Buscamos el programa a través del modelo de Asignación.
+        asignacion = Asignacion.objects.get(cliente=cliente)
+        programa_asignado = asignacion.programa
+    except Asignacion.DoesNotExist:
+        # Manejo de error si el cliente no tiene un programa.
+        return render(request, 'error.html',
+                      {'message': 'Este cliente no tiene un programa de entrenamiento asignado.'})
+
+    # Obtenemos el objetivo del selector del template o usamos el del cliente como fallback.
+    # Asumimos que tu modelo Cliente tiene un campo `objetivo_principal`.
+    objetivo_actual = request.GET.get('objetivo', cliente.objetivo_principal)
+    if objetivo_actual not in ['hipertrofia', 'fuerza', 'resistencia']:
+        objetivo_actual = cliente.objetivo_principal
+
+    # Creamos la instancia del analizador con el programa y el objetivo.
+    analizador = AnalizadorProgramaIA(programa_asignado, objetivo_actual)
+
+    # Con un solo método, obtenemos todo el contexto que el template necesita.
+    contexto_ia = analizador.analizar_y_generar_contexto()
+
+    # Preparamos el contexto final para el template.
+    context = {
+        'cliente': cliente,
+        'objetivo_actual': objetivo_actual,
+        **contexto_ia  # Desempaquetamos el diccionario de la IA aquí.
+    }
+    print(contexto_ia)
+    # Renderizamos el template que ya conoces.
+    return render(request, 'analytics/optimizacion_entrenamientos.html', context)
+
+
+# analytics/views_ia.py
+
+# --- Asegúrate de que estas importaciones están al principio del archivo ---
+import json
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from clientes.models import Cliente
+from rutinas.models import Programa, Rutina, RutinaEjercicio, Asignacion
+from .ia_analizador_programas import AnalizadorProgramaIA
+
+
+# -------------------------------------------------------------------------
+
+
+def vista_optimizacion_programa(request, cliente_id):
+    """
+    Analiza el PROGRAMA ASIGNADO a un cliente y lo muestra en el
+    template de optimización.
+    """
+    print("✅✅✅ ¡ÉXITO! La URL está llamando a 'vista_optimizacion_programa' correctamente. ✅✅✅")
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    try:
+        asignacion = Asignacion.objects.get(cliente=cliente)
+        programa_asignado = asignacion.programa
+    except Asignacion.DoesNotExist:
+        return render(request, 'error.html',
+                      {'message': 'Este cliente no tiene un programa de entrenamiento asignado.'})
+
+    objetivo_actual = request.GET.get('objetivo', cliente.objetivo_principal)
+    if objetivo_actual not in ['hipertrofia', 'fuerza', 'resistencia', 'general']:
+        objetivo_actual = cliente.objetivo_principal
+
+    analizador = AnalizadorProgramaIA(programa_asignado, objetivo_actual)
+
+    contexto_ia = analizador.analizar_y_generar_contexto()
+
+    # =================================================================
+    # ### CORRECCIÓN FINAL ###
+    # Añadimos 'programa_modificado' al contexto para que el template
+    # pueda acceder a él y rellenar el campo oculto del formulario.
+    # =================================================================
+    context = {
+        'cliente': cliente,
+        'objetivo_actual': objetivo_actual,
+        'programa_modificado': analizador.programa_modificado,  # <-- ¡ESTA ES LA LÍNEA CLAVE!
+        **contexto_ia
+    }
+    # =================================================================
+
+    return render(request, 'analytics/optimizacion_entrenamientos.html', context)
+
+
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+from django.utils.safestring import mark_safe
+from .utils.diff_match_patch import diff_match_patch  # Necesitaremos esto
+
+import json
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from django.db import transaction  # <-- AÑADIMOS ESTA IMPORTACIÓN
+from clientes.models import Cliente
+from entrenos.utils.utils import parse_reps_and_series
+
+from rutinas.models import Programa, Rutina, RutinaEjercicio, Asignacion
+
+from entrenos.models import EjercicioBase
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+from django.utils.html import escape  # <-- Asegúrate de que esta importación existe
+
+# analytics/views_ia.py
+
+# ... (todas tus importaciones y vistas existentes, como vista_optimizacion_programa y guardar_programa_optimizado) ...
+
+
+# ============================================================================
+# ### AÑADE ESTA VISTA COMPLETA AL FINAL DEL ARCHIVO ###
+# ============================================================================
+
+from django.utils.safestring import mark_safe
+from .utils.diff_match_patch import diff_match_patch  # Asumiendo que tienes este archivo
+
+
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+
+def vista_comparacion_programa(request, cliente_id):
+    """
+    Muestra una comparación lado a lado y AHORA TAMBIÉN un resumen
+    de los cambios realizados por la IA.
+    """
+    if request.method != 'POST':
+        messages.error(request, "No hay datos para comparar. Por favor, analiza un programa primero.")
+        return redirect('clientes:detalle_cliente', cliente_id=cliente_id)
+
+    programa_original_json = request.POST.get('programa_original_json')
+    programa_modificado_json = request.POST.get('programa_modificado_json')
+
+    if not programa_original_json or not programa_modificado_json:
+        messages.error(request, "Faltan datos para la comparación.")
+        return redirect('clientes:detalle_cliente', cliente_id=cliente_id)
+
+    original = json.loads(programa_original_json)
+    modificado = json.loads(programa_modificado_json)
+
+    # =================================================================
+    # ### LÓGICA MEJORADA PARA DETECTAR Y RESUMIR CAMBIOS ###
+    # =================================================================
+
+    # 1. Creamos un diccionario para buscar ejercicios originales rápidamente.
+    original_ejercicios = {}
+    for rutina in original.get('rutinas', []):
+        for ejercicio in rutina.get('ejercicios', []):
+            clave = ejercicio['nombre'].strip().lower()
+            original_ejercicios[clave] = ejercicio
+
+    # 2. Inicializamos la lista donde guardaremos el resumen de cambios.
+    resumen_cambios = []
+
+    # 3. Iteramos sobre el programa modificado para comparar y construir el resumen.
+    for rutina in modificado.get('rutinas', []):
+        for ejercicio in rutina.get('ejercicios', []):
+            clave_busqueda = ejercicio['nombre'].strip().lower()
+            original_ej = original_ejercicios.get(clave_busqueda)
+
+            if original_ej:
+                # Comparamos series
+                if int(original_ej['series']) != int(ejercicio['series']):
+                    ejercicio['modificado'] = True
+                    resumen_cambios.append(
+                        f"<strong>{ejercicio['nombre']}:</strong> Series ajustadas de {original_ej['series']} a {ejercicio['series']}."
+                    )
+
+                # Comparamos repeticiones
+                if int(original_ej['repeticiones']) != int(ejercicio['repeticiones']):
+                    ejercicio['modificado'] = True
+                    # Evitamos duplicar la descripción si ya se añadió por las series
+                    if not any(ejercicio['nombre'] in s for s in resumen_cambios):
+                        resumen_cambios.append(
+                            f"<strong>{ejercicio['nombre']}:</strong> Repeticiones ajustadas de {original_ej['repeticiones']} a {ejercicio['repeticiones']}."
+                        )
+            else:
+                # Si el ejercicio es completamente nuevo
+                ejercicio['modificado'] = True
+                resumen_cambios.append(
+                    f"<strong>Ejercicio Añadido:</strong> {ejercicio['nombre']} ({ejercicio['series']}x{ejercicio['repeticiones']})."
+                )
+    # =================================================================
+
+    context = {
+        'cliente': get_object_or_404(Cliente, id=cliente_id),
+        'programa_original': original,
+        'programa_modificado': modificado,
+        'resumen_de_cambios': resumen_cambios,  # <-- Pasamos la nueva lista al contexto
+        'programa_modificado_json_escaped': escape(json.dumps(modificado))
+    }
+
+    return render(request, 'analytics/comparacion_programa.html', context)
+
+
+def vista_optimizacion_programa(request, cliente_id):
+    """
+    Analiza el PROGRAMA ASIGNADO a un cliente y lo muestra en el
+    template de optimización.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    try:
+        asignacion = Asignacion.objects.get(cliente=cliente)
+        programa_asignado = asignacion.programa
+    except Asignacion.DoesNotExist:
+        return render(request, 'error.html',
+                      {'message': 'Este cliente no tiene un programa de entrenamiento asignado.'})
+
+    objetivo_actual = request.GET.get('objetivo', cliente.objetivo_principal)
+    if objetivo_actual not in ['hipertrofia', 'fuerza', 'resistencia', 'general']:
+        objetivo_actual = cliente.objetivo_principal
+
+    analizador = AnalizadorProgramaIA(programa_asignado, objetivo_actual)
+    contexto_ia = analizador.analizar_y_generar_contexto()
+
+    # =================================================================
+    # ### CORRECCIÓN FINAL Y DEFINITIVA ###
+    # Aquí preparamos los datos JSON que el formulario necesita para
+    # enviarlos a la siguiente vista (la de comparación).
+    # =================================================================
+
+    # 1. Clonamos el programa original a un diccionario
+    programa_original_dict = analizador._clonar_programa_a_diccionario()
+
+    # 2. Convertimos ambos diccionarios (original y modificado) a cadenas JSON
+    programa_original_json_string = json.dumps(programa_original_dict)
+    programa_modificado_json_string = json.dumps(analizador.programa_modificado)
+
+    # 3. Construimos el contexto final, añadiendo las versiones "escapadas"
+    #    de los JSON para que sean seguras en el HTML.
+    context = {
+        'cliente': cliente,
+        'objetivo_actual': objetivo_actual,
+
+        # Datos para el formulario
+        'programa_original_json_escaped': escape(programa_original_json_string),
+        'programa_modificado_json_escaped': escape(programa_modificado_json_string),
+
+        # Desempaquetamos el resto de datos de la IA (rutina_optimizada, etc.)
+        **contexto_ia
+    }
+    # =================================================================
+
+    return render(request, 'analytics/optimizacion_entrenamientos.html', context)
+
+
+@transaction.atomic
+def guardar_programa_optimizado(request, cliente_id):
+    if request.method != 'POST':
+        return redirect('clientes:detalle_cliente', cliente_id=cliente_id)
+
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    programa_json_str = request.POST.get('programa_modificado_json')
+
+    try:
+        if not programa_json_str or programa_json_str == '{}':
+            raise ValueError("No se recibieron datos JSON válidos del programa.")
+
+        programa_data = json.loads(programa_json_str)
+
+        # =================================================================
+        # ### LÓGICA PARA CONSTRUIR EL NUEVO NOMBRE DINÁMICO ###
+        # =================================================================
+
+        # 1. Obtenemos los componentes para el nombre
+        nombre_original = programa_data.get('nombre', 'Programa')
+        nombre_cliente = cliente.nombre
+        fecha_actual_str = datetime.now().strftime('%d-%m-%Y')  # Formato DD-MM-YYYY
+
+        # 2. Construimos el nombre final
+        nuevo_nombre_programa = f"{nombre_original} (IA {nombre_cliente} {fecha_actual_str})"
+
+        # =================================================================
+
+        # PASO 2: Crear el nuevo programa usando el nombre dinámico
+        nuevo_programa = Programa.objects.create(
+            nombre=nuevo_nombre_programa,  # <-- Usamos la nueva variable
+            tipo="Optimizado por IA"
+        )
+
+        # PASO 3: Crear las rutinas y ejercicios (esta lógica no cambia)
+        for rutina_data in programa_data.get('rutinas', []):
+            nueva_rutina = Rutina.objects.create(
+                programa=nuevo_programa,
+                nombre=rutina_data['nombre']
+            )
+
+            for ejercicio_data in rutina_data.get('ejercicios', []):
+                ejercicio_base, created = EjercicioBase.objects.get_or_create(
+                    nombre=ejercicio_data['nombre'].strip(),
+                    defaults={'grupo_muscular': ejercicio_data.get('grupo_muscular', 'General')}
+                )
+
+                RutinaEjercicio.objects.create(
+                    rutina=nueva_rutina,
+                    ejercicio=ejercicio_base,
+                    series=ejercicio_data['series'],
+                    repeticiones=ejercicio_data['repeticiones']
+                )
+
+        # PASO 4: Actualizar la asignación del cliente (esta lógica no cambia)
+        asignacion, created = Asignacion.objects.get_or_create(cliente=cliente)
+        asignacion.programa = nuevo_programa
+        asignacion.save()
+
+        messages.success(request, f"¡El programa '{nuevo_programa.nombre}' se ha guardado y asignado correctamente!")
+
+    except Exception as e:
+        messages.error(request, f"Error al guardar el programa: {e}")
+
+    return redirect('clientes:detalle_cliente', cliente_id=cliente_id)

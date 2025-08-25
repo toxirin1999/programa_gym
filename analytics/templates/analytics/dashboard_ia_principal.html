@@ -473,9 +473,9 @@
                     🔍 Analizar Patrones Detallados
                 </a>
 
-                <a href="{% url 'analytics:vista_optimizacion_entrenamientos' cliente.id %}" class="accion-btn btn-optimizacion">
-                    ⚡ Ver Optimizaciones
-                </a>
+                <a href="{% url 'analytics:vista_optimizacion_programa' cliente.id %}" class="accion-btn btn-optimizacion">
+    ⚡ Analizar Programa Asignado
+</a>
             {% else %}
                 <!-- Fallback cuando no hay cliente.id válido -->
                 <div class="accion-btn btn-predicciones" style="opacity: 0.6; cursor: not-allowed;">

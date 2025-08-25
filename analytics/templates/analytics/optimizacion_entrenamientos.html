@@ -1,189 +1,39 @@
 {% extends "base.html" %}
 {% load static %}
-{% load analytics_extras %}
+{% load ia_filters %}
 
-{% block title %}Optimización IA de Entrenamiento{% endblock %}
+{% block title %}Optimización IA de Programa{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ================================================================== */
-    /* ESTILOS VISUALES DEL DASHBOARD IA PRINCIPAL APLICADOS */
-    /* ================================================================== */
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px 0;
-    }
-
-    .ia-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        color: #2c3e50; /* Color de texto principal */
-    }
-
-    .ia-header h1 {
-        color: #2c3e50;
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: 700;
-    }
-
-    .ia-header .client-name {
-        color: #7f8c8d;
-        font-size: 1.1rem;
-    }
-
-    .ia-card {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        border-left: 5px solid #27ae60; /* Verde de Optimización */
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .ia-card-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #ecf0f1;
-    }
-
-    .ia-card-header .icon {
-        font-size: 1.8rem;
-        margin-right: 15px;
-        color: #27ae60; /* Verde de Optimización */
-    }
-
-    .ia-card-header h5 {
-        margin: 0;
-        font-weight: bold;
-        color: #2c3e50;
-    }
-
-    .data-point {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #f2f2f2;
-    }
+    /* Tus estilos CSS se mantienen exactamente igual */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 0; }
+    .ia-container { max-width: 1200px; margin: 0 auto; background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); color: #2c3e50; }
+    .ia-header h1 { color: #2c3e50; font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; }
+    .ia-header .client-name { color: #7f8c8d; font-size: 1.1rem; }
+    .ia-card { background: white; border-radius: 15px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); border-left: 5px solid #27ae60; height: 100%; display: flex; flex-direction: column; }
+    .ia-card-header { display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ecf0f1; }
+    .ia-card-header .icon { font-size: 1.8rem; margin-right: 15px; color: #27ae60; }
+    .ia-card-header h5 { margin: 0; font-weight: bold; color: #2c3e50; }
+    .data-point { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f2; }
     .data-point:last-child { border-bottom: none; }
     .data-point .label { color: #7f8c8d; }
     .data-point .value { font-weight: 600; color: #2c3e50; }
-
     .exercise-list { list-style: none; padding-left: 0; }
-    .exercise-list li {
-        background-color: #f8f9fa;
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-    }
-    .exercise-list .group {
-        font-size: 0.8em;
-        background-color: #27ae60; /* Verde */
-        color: white;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-    }
-
-    .progress-bar-container {
-        background-color: #e9ecef;
-        border-radius: 20px;
-        padding: 4px;
-        border: 1px solid #dee2e6;
-    }
-    .progress-bar-fill {
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
-        height: 24px;
-        border-radius: 18px;
-        color: white;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        transition: width 0.5s ease-in-out;
-    }
-
-    .focus-banner {
-        background: #d4edda; /* Fondo verde claro */
-        border: 1px solid #c3e6cb;
-        border-left: 5px solid #155724;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 30px;
-        color: #155724; /* Texto verde oscuro */
-    }
-
-    .goal-selector-wrapper {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #dee2e6;
-    }
-    .form-select-dark { /* Renombrado a form-select-custom */
-        background-color: #ffffff;
-        color: #2c3e50;
-        border: 1px solid #ced4da;
-    }
-    .form-select-dark:focus {
-        border-color: #27ae60;
-        box-shadow: 0 0 0 0.25rem rgba(39, 174, 96, 0.25);
-    }
-
-    .copy-btn {
-        background: linear-gradient(135deg, #27ae60, #229954);
-        color: white;
-        border: none;
-        width: 100%;
-        margin-top: 20px;
-        padding: 12px;
-        border-radius: 8px;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    .copy-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
-    }
-
-    .chart-container {
-        position: relative;
-        height: 350px;
-        width: 100%;
-    }
-
-    .btn-custom-outline {
-        border: 2px solid #667eea;
-        color: #667eea;
-        font-weight: bold;
-    }
-    .btn-custom-outline:hover {
-        background-color: #667eea;
-        color: white;
-    }
-    .btn-custom-filled {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        font-weight: bold;
-        border: none;
-    }
-    .btn-custom-filled:hover {
-        opacity: 0.9;
-    }
+    .exercise-list li { background-color: #f8f9fa; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; }
+    .exercise-list .group { font-size: 0.8em; background-color: #27ae60; color: white; padding: 4px 10px; border-radius: 12px; font-weight: bold; }
+    .progress-bar-container { background-color: #e9ecef; border-radius: 20px; padding: 4px; border: 1px solid #dee2e6; }
+    .progress-bar-fill { background: linear-gradient(135deg, #27ae60, #2ecc71); height: 24px; border-radius: 18px; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: width 0.5s ease-in-out; }
+    .focus-banner { background: #d4edda; border: 1px solid #c3e6cb; border-left: 5px solid #155724; border-radius: 8px; padding: 20px; margin-bottom: 30px; color: #155724; }
+    .goal-selector-wrapper { background-color: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #dee2e6; }
+    .form-select-dark { background-color: #ffffff; color: #2c3e50; border: 1px solid #ced4da; }
+    .form-select-dark:focus { border-color: #27ae60; box-shadow: 0 0 0 0.25rem rgba(39, 174, 96, 0.25); }
+    .copy-btn { background: linear-gradient(135deg, #27ae60, #229954); color: white; border: none; width: 100%; margin-top: 20px; padding: 12px; border-radius: 8px; font-weight: bold; transition: all 0.3s ease; }
+    .copy-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3); }
+    .btn-custom-outline { border: 2px solid #667eea; color: #667eea; font-weight: bold; }
+    .btn-custom-outline:hover { background-color: #667eea; color: white; }
+    .btn-custom-filled { background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-weight: bold; border: none; }
+    .btn-custom-filled:hover { opacity: 0.9; }
 </style>
 {% endblock %}
 
@@ -192,24 +42,29 @@
 
     <!-- ENCABEZADO -->
     <div class="ia-header text-center">
-        <h1>⚡ Optimización de Entrenamiento IA</h1>
-        <p class="lead client-name">Análisis inteligente para {{ cliente.nombre }}</p>
+        <h1>⚡ Optimización de Programa IA</h1>
+        <p class="lead client-name">Análisis del programa asignado a {{ cliente.nombre }}</p>
         <div class="row justify-content-center align-items-center mt-4">
             <div class="col-md-5">
-                <label class="form-label fw-bold">Mejora Potencial Estimada</label>
+                <label class="form-label fw-bold">Potencial de Optimización</label>
                 <div class="progress-bar-container">
                     <div class="progress-bar-fill" style="width: {{ mejora_estimada|default:0 }}%;">
                         {{ mejora_estimada|floatformat:1 }}%
                     </div>
                 </div>
             </div>
+                   <!-- ================================================================= -->
+        <!-- ### AÑADE ESTA LÍNEA PARA DEPURAR ### -->
+        <h2 style="color: red; background: yellow;">VERSIÓN NUEVA DEL TEMPLATE - 20/07/2025</h2>
+        <!-- ================================================================= -->
             <div class="col-md-4">
                 <div class="goal-selector-wrapper">
                     <form id="goal-form" method="get">
                         <label for="goal-selector" class="form-label fw-bold">
-                            <i class="fas fa-bullseye"></i> Cambiar Objetivo del Plan
+                            <i class="fas fa-bullseye"></i> Analizar para Objetivo
                         </label>
                         <select id="goal-selector" name="objetivo" class="form-select form-select-dark" onchange="document.getElementById('goal-form').submit();">
+                            <option value="general" {% if objetivo_actual == 'general' %}selected{% endif %}>Salud General</option>
                             <option value="hipertrofia" {% if objetivo_actual == 'hipertrofia' %}selected{% endif %}>Hipertrofia Muscular</option>
                             <option value="fuerza" {% if objetivo_actual == 'fuerza' %}selected{% endif %}>Fuerza Máxima</option>
                             <option value="resistencia" {% if objetivo_actual == 'resistencia' %}selected{% endif %}>Resistencia</option>
@@ -222,10 +77,10 @@
 
     <!-- BANNER DE FOCO DINÁMICO -->
     {% if focus_message %}
-    <div class="row justify-content-center">
+    <div class="row justify-content-center mt-4">
         <div class="col-lg-10">
             <div class="focus-banner">
-                <h5 class="mb-1"><i class="fas fa-lightbulb"></i> Foco Principal del Plan ({{ objetivo_actual|capfirst }})</h5>
+                <h5 class="mb-1"><i class="fas fa-lightbulb"></i> Foco Principal de la Optimización ({{ objetivo_actual|capfirst }})</h5>
                 <p class="mb-0">{{ focus_message }}</p>
             </div>
         </div>
@@ -233,22 +88,22 @@
     {% endif %}
 
     <!-- CONTENIDO PRINCIPAL -->
-    <div class="row">
+    <div class="row mt-4">
         <!-- COLUMNA IZQUIERDA -->
         <div class="col-lg-7 d-flex flex-column">
             <!-- Tarjeta de Rutina Optimizada -->
             <div class="ia-card flex-grow-1">
                 <div class="ia-card-header">
                     <span class="icon"><i class="fas fa-calendar-alt"></i></span>
-                    <h5>Plan de Rutina Semanal</h5>
+                    <h5>Plan Optimizado (Resumen)</h5>
                 </div>
                 {% if rutina_optimizada %}
                 <div class="data-point"><span class="label">Frecuencia Semanal</span><span class="value">{{ rutina_optimizada.frecuencia_semanal }} días</span></div>
-                <div class="data-point"><span class="label">Ejercicios por Día</span><span class="value">{{ rutina_optimizada.ejercicios_por_dia }}</span></div>
-                <div class="data-point"><span class="label">Rango de Repeticiones</span><span class="value">{{ rutina_optimizada.repeticiones }}</span></div>
-                <div class="data-point"><span class="label">Descanso entre Series</span><span class="value">{{ rutina_optimizada.descanso_series }}</span></div>
+                <div class="data-point"><span class="label">Ejercicios por Día (Promedio)</span><span class="value">{{ rutina_optimizada.ejercicios_por_dia }}</span></div>
+                <div class="data-point"><span class="label">Rango de Repeticiones Ideal</span><span class="value">{{ rutina_optimizada.repeticiones }}</span></div>
+                <div class="data-point"><span class="label">Descanso Ideal entre Series</span><span class="value">{{ rutina_optimizada.descanso_series }}</span></div>
                 {% else %}
-                <p class="text-muted text-center mt-auto">No se pudo generar la rutina.</p>
+                <p class="text-muted text-center mt-auto">No se pudo generar el resumen del plan.</p>
                 {% endif %}
             </div>
 
@@ -256,7 +111,7 @@
             <div class="ia-card flex-grow-1">
                 <div class="ia-card-header">
                     <span class="icon"><i class="fas fa-dumbbell"></i></span>
-                    <h5>Sesión de Ejemplo del Día</h5>
+                    <h5>Ejemplo de Sesión Optimizada</h5>
                 </div>
                 {% if sesion_individual and sesion_individual.ejercicios_recomendados %}
                     <ul class="exercise-list">
@@ -275,10 +130,10 @@
                         {% endfor %}
                     </ul>
                     <button id="copy-session-btn" class="btn copy-btn">
-                        <i class="fas fa-copy"></i> Copiar Sesión del Día
+                        <i class="fas fa-copy"></i> Copiar Sesión Optimizada
                     </button>
                 {% else %}
-                    <p class="text-muted text-center mt-auto">No se generaron ejercicios específicos.</p>
+                    <p class="text-muted text-center mt-auto">No se generaron ejercicios de ejemplo.</p>
                 {% endif %}
             </div>
         </div>
@@ -291,10 +146,10 @@
                     <span class="icon"><i class="fas fa-chart-line"></i></span>
                     <h5>Periodización Sugerida</h5>
                 </div>
-                {% if periodizacion and periodizacion.fases_planificadas %}
-                    <div class="data-point"><span class="label">Fase Actual Detectada</span><span class="value">{{ periodizacion.fase_actual }}</span></div>
+                {% if periodizacion %}
+                    <div class="data-point"><span class="label">Fase Actual del Plan</span><span class="value">{{ periodizacion.fase_actual }}</span></div>
                     <div class="data-point"><span class="label">Duración Sugerida</span><span class="value">{{ periodizacion.duracion_fase }}</span></div>
-                    <p class="text-muted mt-3 mb-2">Próximas Fases:</p>
+                    <p class="text-muted mt-3 mb-2">Próxima Fase Sugerida:</p>
                     <ul class="exercise-list">
                         {% for f in periodizacion.fases_planificadas %}
                         <li><span>{{ f.nombre }}</span><span class="group">{{ f.duracion }}</span></li>
@@ -312,7 +167,7 @@
                     <h5>Recuperación Inteligente</h5>
                 </div>
                 {% if recuperacion %}
-                <div class="data-point"><span class="label">Descanso entre Entrenamientos</span><span class="value">{{ recuperacion.descanso_entre_entrenamientos }}</span></div>
+                <div class="data-point"><span class="label">Descanso Ideal entre Series</span><span class="value">{{ recuperacion.descanso_entre_entrenamientos }}</span></div>
                 <div class="data-point"><span class="label">Días de Descanso Semanal</span><span class="value">{{ recuperacion.dias_descanso_semanal }}</span></div>
                 {% else %}
                 <p class="text-muted text-center mt-auto">Protocolo de recuperación no disponible.</p>
@@ -321,17 +176,70 @@
         </div>
     </div>
 
-    <!-- BOTONES DE NAVEGACIÓN -->
-    <div class="row mt-3">
+    <!-- BLOQUE DE SUGERENCIAS -->
+    {% if sugerencias_raw %}
+    <div class="row justify-content-center mt-2">
+        <div class="col-lg-12">
+            <div class="ia-card" style="border-left-color: #667eea;">
+                <div class="ia-card-header">
+                    <span class="icon" style="color: #667eea;"><i class="fas fa-tasks"></i></span>
+                    <h5>Ajustes Realizados por la IA</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for sug in sugerencias_raw %}
+                        <li class="list-group-item">
+                            <strong style="color: #667eea;">{{ sug.tipo }}:</strong> {{ sug.descripcion }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- BOTONES DE NAVEGACIÓN UNIFICADOS -->
+    <div class="row mt-4">
         <div class="col-12 text-center">
             <a href="{% url 'analytics:dashboard_ia_principal' cliente.id %}" class="btn btn-custom-outline btn-lg me-3">
                 <i class="fas fa-arrow-left"></i> Volver al Dashboard
             </a>
-            <a href="{% url 'analytics:predicciones_avanzadas' cliente.id %}" class="btn btn-custom-filled btn-lg">
-                Ver Predicciones <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
+
+            <form action="{% url 'analytics:guardar_programa_optimizado' cliente.id %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="programa_modificado_json" value="{{ programa_modificado_json_escaped }}">
+                <button type="submit" class="btn btn-lg me-3" style="background: linear-gradient(135deg, #1abc9c, #16a085); color: white; font-weight: bold; border: none;">
+                    <i class="fas fa-save"></i> Guardar Programa Optimizado
+                </button>
+            </form>
+            <form action="{% url 'analytics:vista_comparacion_programa' cliente.id %}" method="post" style="display: inline;">
+    {% csrf_token %}
+
+    <div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{% url 'analytics:dashboard_ia_principal' cliente.id %}" class="btn btn-custom-outline btn-lg me-3">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+
+        <!-- El formulario ahora apunta a la vista de COMPARACIÓN -->
+        <form action="{% url 'analytics:vista_comparacion_programa' cliente.id %}" method="post" style="display: inline;">
+            {% csrf_token %}
+
+            <!-- AÑADIMOS AMBOS JSONs que la siguiente vista necesita -->
+            <input type="hidden" name="programa_original_json" value="{{ programa_original_json_escaped }}">
+            <input type="hidden" name="programa_modificado_json" value="{{ programa_modificado_json_escaped }}">
+
+            <button type="submit" class="btn btn-lg me-3" style="background: linear-gradient(135deg, #1abc9c, #16a085); color: white; font-weight: bold; border: none;">
+                <i class="fas fa-eye"></i> Previsualizar Cambios
+            </button>
+        </form>
+
+        <a href="{% url 'analytics:predicciones_avanzadas' cliente.id %}" class="btn btn-custom-filled btn-lg">
+            Ver Predicciones <i class="fas fa-arrow-right"></i>
+        </a>
     </div>
+
+
+
 </div>
 {% endblock %}
 
@@ -339,11 +247,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function( ) {
-    // Funcionalidad del Botón de Copiar
     const copyButton = document.getElementById('copy-session-btn');
     if (copyButton) {
         copyButton.addEventListener('click', function() {
-            let sessionText = "📋 Mi Sesión de Hoy (Objetivo: {{ objetivo_actual|capfirst }})\n\n";
+            let sessionText = "📋 Mi Sesión Optimizada (Objetivo: {{ objetivo_actual|capfirst }})\n\n";
             {% if sesion_individual and sesion_individual.ejercicios_recomendados %}
                 {% for ejercicio in sesion_individual.ejercicios_recomendados %}
                     sessionText += "• {{ ejercicio.nombre }} ({{ ejercicio.series }} de {{ ejercicio.repeticiones }} reps)\n";

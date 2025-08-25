@@ -2,23 +2,33 @@
 # Archivo: analytics/views.py (VERSIÓN COMPLETA)
 from django.shortcuts import render, get_object_or_404
 import json
+from decimal import Decimal
+
+from .analisis_progresion import AnalisisProgresionAvanzado
+from .analisis_intensidad import AnalisisIntensidadAvanzado
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.db.models import Sum, Avg, Max, Min, Count, Q, F
 from django.utils import timezone
 from datetime import datetime, timedelta
+import json
+from analytics.planificador import PlanificadorAvanzadoHelms
 from decimal import Decimal
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parse_reps_and_series
 from clientes.models import Cliente
 from entrenos.models import EntrenoRealizado, EjercicioLiftinDetallado
 from .models import (
     MetricaRendimiento, AnalisisEjercicio, TendenciaProgresion,
-    PrediccionRendimiento, RecomendacionEntrenamiento, ComparativaRendimiento
+    PrediccionRendimiento, RecomendacionEntrenamiento, ComparativaRendimiento, MetaRendimiento, AnotacionEntrenamiento
 )
 
 from entrenos.models import EntrenoRealizado, EjercicioRealizado
+from clientes.models import Cliente
+import logging
 
+logger = logging.getLogger(__name__)
 
 
 class CalculadoraEjerciciosTabla:
@@ -50,58 +60,102 @@ class CalculadoraEjerciciosTabla:
             'entrenamientos_unicos': 0
         }
 
+    # Archivo: analytics/views.py
+    # Clase: CalculadoraEjerciciosTabla
+
+    def calcular_1rm_estimado_por_ejercicio(self):
+        """
+        Calcula el 1RM estimado. VERSIÓN FINAL CORREGIDA.
+        """
+        todos_los_ejercicios = self.obtener_ejercicios_tabla()
+        if not todos_los_ejercicios:
+            return {}
+
+        ejercicios_agrupados = {}
+        for e in todos_los_ejercicios:
+            nombre = e['nombre'].strip().title()
+            if nombre not in ejercicios_agrupados:
+                ejercicios_agrupados[nombre] = []
+
+            try:
+                peso = float(e.get('peso', 0))
+
+                # --- INICIO DE LA CORRECCIÓN FINAL ---
+                # La depuración nos mostró que 'repeticiones' ya es un número.
+                # No necesitamos la función de parseo. Usamos el valor directamente.
+                reps = int(e.get('repeticiones', 0))
+                # --- FIN DE LA CORRECCIÓN FINAL ---
+
+                if peso > 0 and reps > 0:
+                    ejercicios_agrupados[nombre].append({'peso': peso, 'repeticiones': reps})
+            except (ValueError, TypeError):
+                continue
+
+        one_rm_finales = {}
+        for nombre_ejercicio, levantamientos in ejercicios_agrupados.items():
+            rm_maximo = 0
+            for levantamiento in levantamientos:
+                peso = levantamiento['peso']
+                reps = levantamiento['repeticiones']
+                rm_estimado = peso * (1 + (reps / 30))
+                if rm_estimado > rm_maximo:
+                    rm_maximo = rm_estimado
+            if rm_maximo > 0:
+                one_rm_finales[nombre_ejercicio] = round(rm_maximo, 2)
+
+        return one_rm_finales
+
     def obtener_ejercicios_tabla(self, fecha_inicio=None, fecha_fin=None):
         """
         Obtiene todos los ejercicios realizados por el cliente con una consulta
         única y optimizada, asegurando que los filtros de fecha se apliquen correctamente.
+        VERSIÓN DE DEPURACIÓN
         """
-        # 1. Construir la consulta base sobre EjercicioRealizado
-        # Usamos 'entreno__cliente' para filtrar por el cliente a través de la relación inversa.
-        query = EjercicioRealizado.objects.filter(entreno__cliente=self.cliente)
+        print("\n--- INICIANDO DEPURACIÓN DE obtener_ejercicios_tabla ---")
 
-        # 2. Aplicar los filtros de fecha directamente sobre el campo 'fecha' del entreno relacionado.
+        # 1. Verificamos el cliente
+        print(f"1. Buscando ejercicios para el cliente: {self.cliente.nombre} (ID: {self.cliente.id})")
+
+        # 2. Construimos la consulta base
+        query = EjercicioRealizado.objects.filter(entreno__cliente=self.cliente)
+        print(f"2. Consulta inicial encontró: {query.count()} registros de EjercicioRealizado para este cliente.")
+
+        # 3. Aplicamos filtros de fecha (si existen)
         if fecha_inicio:
             query = query.filter(entreno__fecha__gte=fecha_inicio)
+            print(f"3. Después de filtro de fecha de inicio ({fecha_inicio}), quedan: {query.count()} registros.")
         if fecha_fin:
             query = query.filter(entreno__fecha__lte=fecha_fin)
+            print(f"3. Después de filtro de fecha de fin ({fecha_fin}), quedan: {query.count()} registros.")
 
-        # 3. Usar select_related para optimizar la consulta.
-        # Esto precarga los datos del 'entreno' relacionado en la misma consulta,
-        # evitando consultas adicionales a la base de datos dentro de un bucle.
-        # También seleccionamos solo los campos que necesitamos con .values()
+        # 4. Seleccionamos los campos
         ejercicios_qs = query.select_related('entreno').values(
-            'nombre_ejercicio',
-            'grupo_muscular',
-            'peso_kg',
-            'series',
-            'repeticiones',
-            'completado',
-            'entreno__fecha',  # Obtenemos la fecha del entreno relacionado
-            'entreno__id'
+            'nombre_ejercicio', 'grupo_muscular', 'peso_kg', 'series', 'repeticiones',
+            'completado', 'entreno__fecha', 'entreno__id'
         )
+        print(f"4. La consulta final con .values() tiene {len(ejercicios_qs)} elementos.")
 
-        # 4. Construir la lista de diccionarios final.
-        # Este paso es ahora mucho más rápido y los datos son más fiables.
+        # 5. Mostramos los primeros 3 registros crudos que se obtuvieron
+        if ejercicios_qs:
+            print("5. Primeros 3 registros crudos de la base de datos:")
+            for e_raw in list(ejercicios_qs)[:3]:
+                print(f"   - {e_raw}")
+
+        # 6. Construimos la lista final
         ejercicios = [
             {
-                'nombre': e['nombre_ejercicio'],
-                'grupo': e['grupo_muscular'],
-                'peso': e['peso_kg'] or 0,
-                'series': e['series'] or 1,
-                'repeticiones': e['repeticiones'] or 1,
-                'completado': bool(e['completado']),
-                'fecha': e['entreno__fecha'],
-                'cliente': self.cliente.nombre,
+                'nombre': e['nombre_ejercicio'], 'grupo': e['grupo_muscular'],
+                'peso': e['peso_kg'] or 0, 'series': e['series'] or 1,
+                'repeticiones': e['repeticiones'] or 1, 'completado': bool(e['completado']),
+                'fecha': e['entreno__fecha'], 'cliente': self.cliente.nombre,
                 'entreno_id': e['entreno__id']
             }
             for e in ejercicios_qs
         ]
+        print(f"6. Se ha construido la lista final 'ejercicios' con {len(ejercicios)} diccionarios.")
+        print("--- FIN DE DEPURACIÓN ---\n")
 
         return ejercicios
-
-    # Archivo: analytics/views.py
-
-    # ... (dentro de la clase CalculadoraEjerciciosTabla)
 
     def calcular_metricas_principales(self, fecha_inicio=None, fecha_fin=None):
         """
@@ -299,18 +353,17 @@ import json
 from .models import RecomendacionEntrenamiento
 from entrenos.models import EntrenoRealizado
 from clientes.models import Cliente
-
+from .analisis_intensidad import AnalisisIntensidadAvanzado
 from datetime import datetime  # Asegúrate de que datetime esté importado
 
 # Archivo: analytics/views.py
 
 # ... (tus imports)
-  # Asegúrate de que esté importado
+from .analisis_intensidad import AnalisisIntensidadAvanzado  # Asegúrate de que esté importado
 
 
 @login_required
 def dashboard(request, cliente_id=None):
-    from .analisis_progresion import AnalisisProgresionAvanzado
     """
     Dashboard principal del centro de análisis con todas las mejoras implementadas.
     """
@@ -421,7 +474,7 @@ def dashboard(request, cliente_id=None):
 # ... (tus otros imports)
 from django.shortcuts import render, get_object_or_404
 from .models import TendenciaProgresion, PrediccionRendimiento
-from .utils import parse_reps  # Asumiendo que tienes esta función en analytics/utils.py
+# Asumiendo que tienes esta función en analytics/utils.py
 import json
 
 
@@ -476,16 +529,21 @@ def analisis_progresion(request, cliente_id):
             for e in ejercicios_filtrados:
                 try:
                     peso = float(e.get('peso', 0)) if e.get('peso') != 'PC' else 0
-                    # Usamos str() para asegurar que el valor sea un string antes de parsear
-                    series, reps = parse_reps(str(e.get('repeticiones', '1x1')))
-                    if peso > 0:
-                        datos_progresion.append({
-                            'fecha': e['fecha'].strftime('%Y-%m-%d'),
-                            'peso': peso,
-                            'series': series,
-                            'repeticiones': reps,
-                            'volumen': peso * series * reps
-                        })
+
+                    # Usamos la función robusta para obtener series y repeticiones
+                    series, reps = parse_reps_and_series(str(e.get('repeticiones', '1x1')))
+
+                    # Calculamos el volumen
+                    volumen = peso * series * reps
+
+                    # --- INICIO DE LA CORRECCIÓN ---
+                    # Añadimos los datos calculados a la lista `datos_progresion`.
+                    # El formato debe coincidir con lo que espera el JavaScript.
+                    datos_progresion.append({
+                        'fecha': e['fecha'].strftime('%Y-%m-%d'),  # Formateamos la fecha
+                        'peso': peso,
+                        'volumen': volumen
+                    })
                 except (ValueError, TypeError):
                     continue
 
@@ -506,7 +564,7 @@ def analisis_progresion(request, cliente_id):
         for e in lista:
             try:
                 peso = float(e['peso']) if e.get('peso') != 'PC' else 0
-                series, reps = parse_reps(str(e.get('repeticiones', '1x1')))
+                series, reps = parse_reps_and_series(str(e.get('repeticiones', '1x1')))
                 if peso > 0 and reps > 0:
                     # Fórmula de Epley para 1RM: peso * (1 + reps / 30)
                     rm = round(peso * (1 + reps / 30), 2)
@@ -526,6 +584,13 @@ def analisis_progresion(request, cliente_id):
     if ejercicio_seleccionado and tabla_1rm_completa:
         fila_1rm = next(
             (fila for fila in tabla_1rm_completa if fila['nombre'].lower() == ejercicio_seleccionado.lower()), None)
+    metas = []
+    anotaciones = []
+    if ejercicio_seleccionado:
+        # Obtenemos las metas y anotaciones para el ejercicio seleccionado
+        metas = MetaRendimiento.objects.filter(cliente=cliente, nombre_ejercicio__iexact=ejercicio_seleccionado)
+        anotaciones = AnotacionEntrenamiento.objects.filter(cliente=cliente,
+                                                            ejercicio_asociado__iexact=ejercicio_seleccionado)
 
     # 7. Construir el contexto final para la plantilla
     context = {
@@ -537,6 +602,9 @@ def analisis_progresion(request, cliente_id):
         'predicciones': predicciones,
         'tabla_1rm': fila_1rm,
         'historial_ejercicio': historial_ejercicio,
+        'metas_json': json.dumps(list(metas.values('fecha_objetivo', 'valor_objetivo')), default=str),
+        'anotaciones_json': json.dumps(list(anotaciones.values('fecha', 'descripcion', 'tipo')), default=str),
+        'tipos_anotacion': AnotacionEntrenamiento.TIPO_ANOTACION,  # Para el formulario
     }
 
     return render(request, 'analytics/progresion.html', context)
@@ -658,119 +726,100 @@ def comparativas(request, cliente_id):
 @login_required
 def recomendaciones(request, cliente_id):
     """
-    Sistema de recomendaciones personalizadas
+    Sistema de recomendaciones personalizadas con prevención de duplicados.
+    VERSIÓN ROBUSTA para evitar MultipleObjectsReturned.
     """
     cliente = get_object_or_404(Cliente, id=cliente_id)
-
-    # Mapeo de prioridad textual a numérica
     PRIORIDADES = {'alta': 1, 'media': 2, 'baja': 3}
 
-    # Obtener recomendaciones activas
+    if request.method == 'POST' and 'generar' in request.POST:
+        calculadora = CalculadoraEjerciciosTabla(cliente)
+        creadas = 0
+        actualizadas = 0
+
+        # --- Lógica de Consistencia ---
+        ejercicios = calculadora.obtener_ejercicios_tabla(fecha_inicio=timezone.now().date() - timedelta(days=30))
+        if ejercicios:
+            completados = len([e for e in ejercicios if e.get('completado', False)])
+            consistencia = (completados / len(ejercicios)) * 100 if len(ejercicios) > 0 else 0
+
+            if consistencia < 70:
+                titulo_rec = 'Mejorar Consistencia'
+                desc_rec = f'Tu consistencia actual es del {consistencia:.1f}%. Intenta completar todos los ejercicios de tus rutinas.'
+
+                # Búsqueda más específica: incluimos la descripción
+                obj, created = RecomendacionEntrenamiento.objects.update_or_create(
+                    cliente=cliente,
+                    tipo='consistencia',
+                    titulo=titulo_rec,
+                    descripcion=desc_rec,  # <-- CRITERIO ADICIONAL
+                    defaults={
+                        'prioridad': PRIORIDADES['alta'],
+                        'expires_at': timezone.now() + timedelta(days=14),
+                        'aplicada': False,
+                    }
+                )
+                if created:
+                    creadas += 1
+                else:
+                    actualizadas += 1
+
+        # --- Lógica de Ejercicios Estancados ---
+        progresiones = calculadora.obtener_ejercicios_progresion(limite=None)
+        estancados = [p['nombre_ejercicio'] for p in progresiones if p['progresion_peso'] < 5]
+
+        if estancados:
+            titulo_rec = 'Ejercicios Estancados Detectados'
+            desc_rec = f'Los siguientes ejercicios muestran poca progresión: {", ".join(sorted(estancados)[:3])}. Considera variar la rutina o la intensidad.'
+
+            # Búsqueda más específica: incluimos la descripción
+            obj, created = RecomendacionEntrenamiento.objects.update_or_create(
+                cliente=cliente,
+                tipo='progresion',
+                titulo=titulo_rec,
+                descripcion=desc_rec,  # <-- CRITERIO ADICIONAL
+                defaults={
+                    'prioridad': PRIORIDADES['media'],
+                    'expires_at': timezone.now() + timedelta(days=30),
+                    'aplicada': False,
+                }
+            )
+            if created:
+                creadas += 1
+            else:
+                actualizadas += 1
+
+        # Mensajes de feedback
+        if creadas > 0 or actualizadas > 0:
+            msg_parts = []
+            if creadas > 0: msg_parts.append(
+                f"{creadas} {'nueva recomendación generada' if creadas == 1 else 'nuevas recomendaciones generadas'}")
+            if actualizadas > 0: msg_parts.append(
+                f"{actualizadas} {'existente actualizada' if actualizadas == 1 else 'existentes actualizadas'}")
+            messages.success(request, f"Análisis completado: {', '.join(msg_parts)}.")
+        else:
+            messages.info(request, "No se encontraron nuevas oportunidades de recomendación en este momento.")
+
+        return redirect('analytics:recomendaciones', cliente_id=cliente.id)
+
+    # --- Lógica para mostrar la página (GET request) ---
     recomendaciones_activas = RecomendacionEntrenamiento.objects.filter(
         cliente=cliente,
-        expires_at__gt=timezone.now()
+        expires_at__gt=timezone.now(),
+        aplicada=False
     ).order_by('prioridad', '-created_at')
 
-    # Obtener recomendaciones aplicadas recientes
     recomendaciones_aplicadas = RecomendacionEntrenamiento.objects.filter(
         cliente=cliente,
         aplicada=True,
         fecha_aplicacion__gte=timezone.now() - timedelta(days=30)
     ).order_by('-fecha_aplicacion')
 
-    # Generar nuevas recomendaciones automáticas basadas en datos de la tabla
-    calculadora = CalculadoraEjerciciosTabla(cliente)
-    ejercicios = calculadora.obtener_ejercicios_tabla()
-    ejercicios = calculadora.obtener_ejercicios_tabla()
-
-
-    recomendaciones_automaticas = []
-
-    # Análisis de consistencia
-    if ejercicios:
-        ejercicios_completados = len([e for e in ejercicios if e.get('completado', False)])
-        consistencia = (ejercicios_completados / len(ejercicios)) * 100
-
-        if consistencia < 70:
-            recomendaciones_automaticas.append({
-                'titulo': 'Mejorar Consistencia',
-                'descripcion': f'Tu consistencia actual es del {consistencia:.1f}%. Intenta completar más ejercicios.',
-                'tipo': 'consistencia',
-                'prioridad': PRIORIDADES['alta']
-            })
-
-    # Análisis de progresión
-    progresiones = calculadora.obtener_ejercicios_progresion(10)
-    # print("🧪 Progresiones:", progresiones)
-
-    ejercicios_estancados = []
-
-    for prog in progresiones:
-        if prog['progresion_peso'] < 5:
-            nombre_normalizado = prog['nombre_ejercicio'].strip().title()
-            ejercicios_estancados.append(nombre_normalizado)
-
-    # Evitar duplicados con diferentes mayúsculas
-    ejercicios_estancados = list(set(ejercicios_estancados))
-
-    if ejercicios_estancados:
-        recomendaciones_automaticas.append({
-            'titulo': 'Ejercicios Estancados Detectados',
-            'descripcion': f'Los ejercicios {", ".join(ejercicios_estancados[:3])} muestran poca progresión.',
-            'tipo': 'progresion',
-            'prioridad': PRIORIDADES['media']
-        })
-
-    # Crear recomendaciones en la base de datos si se presionó el botón
-    mensaje = None
-    if request.method == 'POST' and 'generar' in request.POST:
-        for rec in recomendaciones_automaticas:
-            RecomendacionEntrenamiento.objects.create(
-                cliente=cliente,
-                titulo=rec['titulo'],
-                descripcion=rec['descripcion'],
-                tipo=rec['tipo'],
-                prioridad=rec['prioridad'],
-                expires_at=timezone.now() + timedelta(days=30)
-            )
-
-        mensaje = f"Se generaron {len(recomendaciones_automaticas)} nuevas recomendaciones."
-
     context = {
         'cliente': cliente,
         'recomendaciones_activas': recomendaciones_activas,
         'recomendaciones_aplicadas': recomendaciones_aplicadas,
-        'recomendaciones_automaticas': recomendaciones_automaticas,
-        'mensaje': mensaje,
     }
-
-
-    return render(request, 'analytics/recomendaciones.html', context)
-
-    # Generar nuevas recomendaciones si es necesario
-    mensaje = None
-    if request.method == 'POST' and 'generar' in request.POST:
-        # Crear recomendaciones en la BD basadas en el análisis automático
-        for rec in recomendaciones_automaticas:
-            RecomendacionEntrenamiento.objects.create(
-                cliente=cliente,
-                titulo=rec['titulo'],
-                descripcion=rec['descripcion'],
-                tipo=rec['tipo'],
-                prioridad=rec['prioridad'],
-                expires_at=timezone.now() + timedelta(days=30)
-            )
-
-        mensaje = f"Se generaron {len(recomendaciones_automaticas)} nuevas recomendaciones."
-
-    context = {
-        'cliente': cliente,
-        'recomendaciones_activas': recomendaciones_activas,
-        'recomendaciones_aplicadas': recomendaciones_aplicadas,
-        'recomendaciones_automaticas': recomendaciones_automaticas,
-        'mensaje': mensaje,
-    }
-
     return render(request, 'analytics/recomendaciones.html', context)
 
 
@@ -1067,7 +1116,6 @@ def actualizar_tendencias(request, cliente_id):
 
     # Imports locales para mantener la función organizada
     from .progression import ProgressionAnalyzer  # Asumiendo que está en analytics.progression
-    from .utils import parse_reps  # Asumiendo que está en analytics.utils
 
     cliente = get_object_or_404(Cliente, id=cliente_id)
     calculadora = CalculadoraEjerciciosTabla(cliente)
@@ -1094,7 +1142,8 @@ def actualizar_tendencias(request, cliente_id):
         for e in lista:
             try:
                 peso = float(e['peso']) if e['peso'] != 'PC' else 0
-                series, reps = parse_reps(e.get('repeticiones'))
+                repeticiones_valor = e.get('repeticiones')
+                series, reps = parse_reps_and_series(repeticiones_valor)
 
                 # Este print ahora no dará error, pero la variable 'nombre' no está definida aquí.
                 # Usamos 'nombre_normalizado' que sí existe en este scope.
@@ -1135,6 +1184,7 @@ def actualizar_tendencias(request, cliente_id):
                                                                  periodo_dias=365)  # Usar un período largo
 
             if resultado and resultado.get('tendencia'):
+                nombre_estandarizado = nombre_mostrado.strip().title()
                 tendencia_valor = round(resultado['tendencia'].get('pendiente', 0), 1)
                 simbolo = "↗️" if tendencia_valor > 0 else "↘️"
                 resumen_tendencias.append(f"{nombre_mostrado} {simbolo} {tendencia_valor}%")
@@ -1143,16 +1193,26 @@ def actualizar_tendencias(request, cliente_id):
                 sesiones = len(df)
                 fecha_inicio = df['fecha'].min()
                 fecha_fin = df['fecha'].max()
+                tendencia_valor = round(resultado['tendencia'].get('pendiente', 0), 1)
 
+                # Determinar el tipo de tendencia
+                if tendencia_valor > 1:
+                    tipo = 'creciente'
+                elif tendencia_valor < -1:
+                    tipo = 'decreciente'
+                else:
+                    tipo = 'estable'
                 TendenciaProgresion.objects.update_or_create(
                     cliente=cliente,
-                    nombre_ejercicio=nombre_mostrado,
+                    nombre_ejercicio__iexact=nombre_estandarizado,
                     defaults={
+                        'nombre_ejercicio': nombre_estandarizado,
                         'fecha_inicio': fecha_inicio,
                         'fecha_fin': fecha_fin,
                         'tendencia_general': tendencia_valor,
                         'peso_maximo': peso_maximo,
-                        'sesiones_totales': sesiones
+                        'sesiones_totales': sesiones,
+                        'tipo_tendencia': tipo,
                     }
                 )
                 resultados_guardados += 1
@@ -1190,7 +1250,7 @@ from django.db.models import Sum, Avg, Max, Min, Count
 from datetime import datetime, timedelta
 import json
 import numpy as np
-from entrenos.utils import parsear_ejercicios
+from entrenos.utils.utils import parse_reps_and_series
 from clientes.models import Cliente
 from entrenos.models import EntrenoRealizado
 
@@ -1861,7 +1921,7 @@ from django.db.models import Sum, Avg, Max, Min, Count
 from datetime import datetime, timedelta
 import json
 import numpy as np
-from entrenos.utils import parsear_ejercicios
+
 from clientes.models import Cliente
 from entrenos.models import EntrenoRealizado
 
@@ -2502,3 +2562,628 @@ def dashboard_intensidad_avanzado(request, cliente_id):
     context['datos_graficos'] = json.dumps(datos_graficos)
 
     return render(request, 'analytics/intensidad_avanzado.html', context)
+
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from rutinas.models import Programa, Rutina, RutinaEjercicio, Asignacion
+from django.shortcuts import render, get_object_or_404
+from clientes.models import Cliente
+from entrenos.models import EjercicioBase
+from .ia_analizador_programas import AnalizadorProgramaIA
+import json
+from django.shortcuts import render, get_object_or_404, redirect
+from clientes.models import Cliente
+from rutinas.models import Asignacion, Programa  # ... y otros modelos que necesites
+from django.utils.html import escape
+
+
+def vista_optimizacion_programa(request, cliente_id):
+    """
+    Analiza el PROGRAMA ASIGNADO a un cliente y lo muestra en el
+    template de optimización.
+    """
+    print("✅✅✅ ¡ÉXITO! La URL está llamando a 'vista_optimizacion_programa' correctamente. ✅✅✅")
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # =================================================================
+    # ### CORRECCIÓN CLAVE ###
+    # Nos aseguramos de que 'programa_asignado' se define correctamente
+    # antes de ser usada.
+    # =================================================================
+    try:
+        # Buscamos la asignación para este cliente
+        asignacion = Asignacion.objects.get(cliente=cliente)
+        # Obtenemos el programa a través de la asignación
+        programa_asignado = asignacion.programa
+        print(f"✅ Asignación encontrada. Analizando programa: '{programa_asignado.nombre}'")
+
+    except Asignacion.DoesNotExist:
+        # Si no hay asignación, mostramos un error claro y terminamos.
+        print("❌ No se encontró asignación para este cliente.")
+        return render(request, 'error.html',
+                      {'message': 'Este cliente no tiene un programa de entrenamiento asignado.'})
+
+    # A partir de aquí, la variable 'programa_asignado' SIEMPRE existe.
+    objetivo_actual = request.GET.get('objetivo', cliente.objetivo_principal)
+    if objetivo_actual not in ['hipertrofia', 'fuerza', 'resistencia', 'general']:
+        objetivo_actual = cliente.objetivo_principal
+
+    # Usamos la variable que hemos definido
+    analizador = AnalizadorProgramaIA(programa_asignado, objetivo_actual)
+    contexto_ia = analizador.analizar_y_generar_contexto()
+    # Convertimos el diccionario a una cadena JSON aquí mismo
+    programa_modificado_json_string = json.dumps(analizador.programa_modificado)
+    json_string = json.dumps(analizador.programa_modificado)
+    programa_original_dict = analizador._clonar_programa_a_diccionario(programa_asignado)
+    programa_original_json_string = json.dumps(programa_original_dict)
+    # 2. Escapamos las comillas dobles de la cadena para que sea segura
+    #    dentro de un atributo value="..." del HTML.
+    json_string_escaped = escape(json_string)
+    context = {
+        'cliente': cliente,
+        'objetivo_actual': objetivo_actual,
+        'programa_modificado_json': programa_modificado_json_string,
+        'programa_modificado': analizador.programa_modificado,
+        'programa_modificado_json_escaped': json_string_escaped,
+        'programa_original_json_escaped': escape(programa_original_json_string),
+        **contexto_ia
+    }
+
+    return render(request, 'analytics/optimizacion_entrenamientos.html', context)
+
+
+from django.utils.safestring import mark_safe
+from .utils.diff_match_patch import diff_match_patch  # Necesitaremos esto
+
+# ... (tus otras vistas) ...
+# analytics/views_ia.py
+
+# ... (tus otras importaciones) ...
+from django.utils.html import escape  # <-- Asegúrate de que esta importación existe
+
+
+# ... (tus otras vistas) ...
+
+def vista_optimizacion_programa(request, cliente_id):
+    """
+    Analiza el PROGRAMA ASIGNADO a un cliente y lo muestra en el
+    template de optimización.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    try:
+        asignacion = Asignacion.objects.get(cliente=cliente)
+        programa_asignado = asignacion.programa
+    except Asignacion.DoesNotExist:
+        return render(request, 'error.html',
+                      {'message': 'Este cliente no tiene un programa de entrenamiento asignado.'})
+
+    objetivo_actual = request.GET.get('objetivo', cliente.objetivo_principal)
+    if objetivo_actual not in ['hipertrofia', 'fuerza', 'resistencia', 'general']:
+        objetivo_actual = cliente.objetivo_principal
+
+    analizador = AnalizadorProgramaIA(programa_asignado, objetivo_actual)
+    contexto_ia = analizador.analizar_y_generar_contexto()
+
+    # =================================================================
+    # ### CORRECCIÓN FINAL Y DEFINITIVA ###
+    # Aquí preparamos los datos JSON que el formulario necesita para
+    # enviarlos a la siguiente vista (la de comparación).
+    # =================================================================
+
+    # 1. Clonamos el programa original a un diccionario
+    programa_original_dict = analizador._clonar_programa_a_diccionario(programa_asignado)
+
+    # 2. Convertimos ambos diccionarios (original y modificado) a cadenas JSON
+    programa_original_json_string = json.dumps(programa_original_dict)
+    programa_modificado_json_string = json.dumps(analizador.programa_modificado)
+
+    # 3. Construimos el contexto final, añadiendo las versiones "escapadas"
+    #    de los JSON para que sean seguras en el HTML.
+    context = {
+        'cliente': cliente,
+        'objetivo_actual': objetivo_actual,
+
+        # Datos para el formulario
+        'programa_original_json_escaped': escape(programa_original_json_string),
+        'programa_modificado_json_escaped': escape(programa_modificado_json_string),
+
+        # Desempaquetamos el resto de datos de la IA (rutina_optimizada, etc.)
+        **contexto_ia
+    }
+    # =================================================================
+
+    return render(request, 'analytics/optimizacion_entrenamientos.html', context)
+
+
+# analytics/views.py
+
+# ... (otros imports) ...
+
+def vista_resumen_anual(request, cliente_id):
+    """
+    Muestra una vista de alto nivel de todo el plan anual,
+    organizado por mesociclos o bloques.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Generamos el plan (la lógica es la misma que en la vista del calendario)
+    calculadora = CalculadoraEjerciciosTabla(cliente)
+    one_rm_reales = calculadora.calcular_1rm_estimado_por_ejercicio()
+    if not one_rm_reales:
+        one_rm_reales = {'Press de Banca': 80, 'Sentadilla': 100}
+
+    cliente_data = {"id": cliente.id, "nombre": cliente.nombre, "one_rm_estimados": one_rm_reales}
+    planificador = inicializar_planificador_helms(cliente)
+
+    # El método ahora devuelve un diccionario
+    plan_semanal, plan_por_bloques = planificador.generar_plan_completo()
+
+    context = {
+        'cliente': cliente,
+        'plan_por_bloques': plan_por_bloques,  # Usamos la variable directamente
+        'total_semanas': len(plan_semanal)  # Usamos la otra variable para el conteo
+    }
+
+    return render(request, 'analytics/vista_resumen_anual.html', context)
+
+
+# analytics/views.py
+
+# ... (asegúrate de tener estos imports al principio del archivo)
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+
+import json
+
+# analytics/views.py
+
+# ... (imports) ...
+import re  # Asegúrate de tener este import para las expresiones regulares
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_marcar_entreno_completado(request, cliente_id):
+    """
+    API para marcar una rutina del plan como completada.
+    VERSIÓN CORREGIDA que procesa los datos de repeticiones.
+    """
+    try:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        data = json.loads(request.body)
+
+        fecha_str = data.get('fecha')
+        rutina_nombre = data.get('rutina_nombre')
+        ejercicios = data.get('ejercicios')
+
+        if not all([fecha_str, rutina_nombre, ejercicios]):
+            return JsonResponse({'error': 'Faltan datos en la solicitud.'}, status=400)
+
+        fecha_entreno = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+
+        entreno = EntrenoRealizado.objects.create(
+            cliente=cliente,
+            fecha=fecha_entreno,
+            nombre=rutina_nombre,
+        )
+
+        for ejercicio_data in ejercicios:
+
+            # --- INICIO DE LA CORRECCIÓN ---
+            reps_str = str(ejercicio_data.get('repeticiones', '0'))
+
+            # Usamos una expresión regular para encontrar todos los números en el string
+            numeros = re.findall(r'\d+', reps_str)
+
+            repeticiones_a_guardar = 0
+            if len(numeros) > 0:
+                # Si hay números, los convertimos a entero y calculamos el promedio
+                numeros_int = [int(n) for n in numeros]
+                repeticiones_a_guardar = int(sum(numeros_int) / len(numeros_int))
+            # --- FIN DE LA CORRECCIÓN ---
+
+            EjercicioRealizado.objects.create(
+                entreno=entreno,
+                nombre_ejercicio=ejercicio_data.get('nombre'),
+                series=int(ejercicio_data.get('series', 0)),  # Aseguramos que sea entero
+                repeticiones=repeticiones_a_guardar,  # Usamos el valor procesado
+                peso_kg=float(ejercicio_data.get('peso_recomendado_kg', 0)),  # Aseguramos que sea float
+                completado=True
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Entrenamiento "{rutina_nombre}" del {fecha_str} guardado correctamente.'
+        })
+
+    except Exception as e:
+        # Devolvemos el error específico para facilitar la depuración
+        return JsonResponse({'error': f'Error interno del servidor: {str(e)}'}, status=500)
+
+
+# analytics/views.py
+
+# ... (Asegúrate de tener los imports: json, datetime, timedelta, etc.)
+import pandas as pd  # Usaremos pandas para calcular medias móviles fácilmente. ¡Es muy eficiente!
+
+
+# Si no tienes pandas, instálalo con: pip install pandas
+
+class AnalizadorCargaYFatiga:
+    def __init__(self, cliente, periodo_dias=90):
+        self.cliente = cliente
+        self.fecha_fin = timezone.now().date()
+        self.fecha_inicio = self.fecha_fin - timedelta(days=periodo_dias)
+        self.entrenamientos = EntrenoRealizado.objects.filter(
+            cliente=self.cliente,
+            fecha__gte=self.fecha_inicio,
+            fecha__lte=self.fecha_fin
+        ).order_by('fecha')
+
+    def _calcular_carga_entrenamiento(self, entreno):
+        """
+        Calcula la Carga de Entrenamiento (Training Load) para una sola sesión.
+        Usaremos una fórmula simple basada en el volumen: TRIMP = Volumen / 1000
+        """
+        if entreno.volumen_total_kg and entreno.volumen_total_kg > 0:
+            return round(entreno.volumen_total_kg / 1000, 2)
+        return 0  # Si no hay volumen, la carga es cero
+
+    def _generar_narrativa_dinamica(self, df, acwr_actual, zona_riesgo):
+        """
+        Analiza el DataFrame de carga y genera un resumen textual dinámico.
+        """
+        if df.empty or df['carga_diaria'].sum() == 0:
+            return {
+                'titulo': "Esperando Datos",
+                'resumen': "Aún no hay suficientes datos de entrenamiento en este período para generar un análisis. ¡Es hora de empezar a entrenar!",
+                'puntos_clave': []
+            }
+
+        # 1. Analizar la tendencia general del Fitness (Carga Crónica)
+        # Comparamos el fitness del último tercio del período con el primero
+        tercio = len(df) // 3
+        fitness_inicial = df['carga_cronica'].iloc[:tercio].mean()
+        fitness_final = df['carga_cronica'].iloc[-tercio:].mean()
+
+        tendencia_fitness = "estable."
+        if fitness_final > fitness_inicial * 1.1:  # Si ha aumentado más de un 10%
+            tendencia_fitness = "ascendente, lo cual es excelente."
+        elif fitness_final < fitness_inicial * 0.9:  # Si ha disminuido más de un 10%
+            tendencia_fitness = "descendente, indicando una posible pérdida de forma."
+
+        resumen = f"Durante el último período, tu nivel de fitness (Carga Crónica) ha mostrado una tendencia general {tendencia_fitness}"
+
+        # 2. Identificar puntos clave
+        puntos_clave = []
+
+        # Punto de mayor riesgo
+        riesgo_max = df['acwr'].max()
+        if riesgo_max >= 1.5:
+            fecha_riesgo_max = df['acwr'].idxmax().strftime('%d de %B')
+            puntos_clave.append({
+                'emoji': '🚨',
+                'texto': f"Se detectó un pico de riesgo el <strong>{fecha_riesgo_max}</strong> con un ratio de {riesgo_max:.2f}. Estos son los momentos donde hay que priorizar la recuperación."
+            })
+
+        # Períodos de descarga o baja carga
+        periodos_baja_carga = (df['acwr'] < 0.8).sum()
+        if periodos_baja_carga > 5:  # Si hubo más de 5 días en baja carga
+            puntos_clave.append({
+                'emoji': '🔋',
+                'texto': "Has tenido períodos de baja carga, ideales para la recuperación y supercompensación, o indicativos de una pausa en el entrenamiento."
+            })
+
+        # Estado actual
+        if zona_riesgo == 'optima':
+            puntos_clave.append({
+                'emoji': '✅',
+                'texto': f"Actualmente, con un ratio de <strong>{acwr_actual:.2f}</strong>, te encuentras en la zona óptima para seguir progresando de forma segura."
+            })
+        else:
+            puntos_clave.append({
+                'emoji': '⚠️',
+                'texto': f"Tu estado actual (ratio de <strong>{acwr_actual:.2f}</strong>) sugiere que debes prestar atención a la recomendación para ajustar tu próxima semana."
+            })
+
+        return {
+            'titulo': "Análisis del Período",
+            'resumen': resumen,
+            'puntos_clave': puntos_clave
+        }
+
+    def analizar_acwr(self, periodo_agudo=7, periodo_cronico=28):
+        """
+        MODIFICADO: Ahora también llama al generador de narrativa.
+        """
+        if not self.entrenamientos.exists():
+            # ... (código para cuando no hay datos, se mantiene igual)
+            return {
+                'dataframe_json': pd.DataFrame().to_json(orient='split'),
+                'acwr_actual': 0,
+                'zona_riesgo': 'muy_baja',
+                'recomendacion': 'No hay datos suficientes. ¡A entrenar!',
+                'narrativa': self._generar_narrativa_dinamica(pd.DataFrame(), 0, 'muy_baja')
+            }
+
+        # ... (toda la lógica de creación del DataFrame y cálculo de ACWR se mantiene igual)
+        idx = pd.date_range(start=self.fecha_inicio, end=self.fecha_fin)
+        cargas_diarias = {entreno.fecha: self._calcular_carga_entrenamiento(entreno) for entreno in self.entrenamientos}
+        df = pd.DataFrame(cargas_diarias.items(), columns=['fecha', 'carga_diaria'])
+        df['fecha'] = pd.to_datetime(df['fecha'])
+        df = df.set_index('fecha').reindex(idx, fill_value=0)
+        df['carga_aguda'] = df['carga_diaria'].rolling(window=periodo_agudo, min_periods=1).mean()
+        df['carga_cronica'] = df['carga_diaria'].rolling(window=periodo_cronico, min_periods=1).mean()
+        df['acwr'] = (df['carga_aguda'] / df['carga_cronica']).fillna(0)
+
+        acwr_actual = round(df['acwr'].iloc[-1], 2) if not df.empty else 0
+        # ... (lógica para determinar zona_riesgo y recomendacion se mantiene igual)
+        if 0.8 <= acwr_actual <= 1.3:
+            zona_riesgo = 'optima'
+            recomendacion = "Estás en la 'zona dulce'. La carga es ideal para progresar de forma segura."
+        elif 1.3 < acwr_actual < 1.5:
+            zona_riesgo = 'cuidado'
+            recomendacion = "Estás aumentando la carga. Procede con cuidado y vigila la recuperación."
+        elif acwr_actual >= 1.5:
+            zona_riesgo = 'riesgo_alto'
+            recomendacion = "¡Peligro! El riesgo de lesión es elevado. Considera reducir la intensidad o el volumen."
+        else:  # Cubre acwr < 0.8 y el caso inicial de 0
+            zona_riesgo = 'baja_carga'
+            recomendacion = "La carga es baja, lo que puede llevar a una pérdida de adaptaciones. Ideal para una semana de descarga."
+
+        # --- LLAMADA AL NUEVO MÉTODO ---
+        narrativa = self._generar_narrativa_dinamica(df, acwr_actual, zona_riesgo)
+
+        return {
+            'dataframe_json': df.reset_index().rename(columns={'index': 'fecha'}).to_json(orient='records',
+                                                                                          date_format='iso'),
+            'acwr_actual': acwr_actual,
+            'zona_riesgo': zona_riesgo,
+            'recomendacion': recomendacion,
+            'narrativa': narrativa  # <-- AÑADIMOS LA NARRATIVA AL RESULTADO
+        }
+
+
+# --- AÑADE ESTA NUEVA VISTA ---
+@login_required
+def dashboard_fatiga(request, cliente_id):
+    """
+    Vista para el nuevo Dashboard de Gestión de Fatiga y Recuperación.
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    analizador = AnalizadorCargaYFatiga(cliente)
+
+    # Obtenemos el análisis ACWR
+    analisis_acwr = analizador.analizar_acwr()
+
+    context = {
+        'cliente': cliente,
+        'analisis_acwr': analisis_acwr,
+    }
+    return render(request, 'analytics/dashboard_fatiga.html', context)
+
+
+# analytics/views.py
+# ... (asegúrate de tener los imports de json, JsonResponse, require_http_methods, etc. )
+from .models import MetaRendimiento, AnotacionEntrenamiento  # Importa los nuevos modelos
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_guardar_meta(request, cliente_id):
+    try:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        data = json.loads(request.body)
+
+        MetaRendimiento.objects.create(
+            cliente=cliente,
+            nombre_ejercicio=data['ejercicio'],
+            fecha_objetivo=data['fecha'],
+            valor_objetivo=data['valor']
+        )
+        return JsonResponse({'success': True, 'message': '¡Meta guardada correctamente!'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_guardar_anotacion(request, cliente_id):
+    try:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        data = json.loads(request.body)
+
+        AnotacionEntrenamiento.objects.create(
+            cliente=cliente,
+            fecha=data['fecha'],
+            tipo=data['tipo'],
+            descripcion=data['descripcion'],
+            ejercicio_asociado=data.get('ejercicio')  # .get() para que sea opcional
+        )
+        return JsonResponse({'success': True, 'message': '¡Anotación guardada correctamente!'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# analytics/views.py
+
+# ... (Asegúrate de tener todos los imports necesarios: render, get_object_or_404, Cliente, etc.)
+import json  # Necesario para pasar datos a la plantilla
+
+
+# Puedes colocar esta clase junto a tus otras clases de análisis
+class AnalizadorEquilibrioMuscular:
+    def __init__(self, cliente):
+        self.cliente = cliente
+        # Usaremos la calculadora que ya tienes para obtener los 1RM
+        self.calculadora = CalculadoraEjerciciosTabla(cliente)
+
+    def _calcular_ratio(self, valor1, valor2):
+        """Calcula un ratio de forma segura, evitando divisiones por cero."""
+        if valor1 > 0 and valor2 > 0:
+            return round(valor1 / valor2, 2)
+        return 0
+
+    def analizar_ratios_fuerza(self):
+        """
+        Calcula los ratios de fuerza clave y los compara con estándares óptimos.
+        """
+        # 1. Obtenemos los 1RM estimados de la calculadora que ya existe
+        one_rm_estimados = self.calculadora.calcular_1rm_estimado_por_ejercicio()
+        print("=" * 50)
+        print("🔍 1RMs CALCULADOS POR EL SISTEMA:")
+        # 2. Definimos los ratios y los estándares de referencia
+        # (Estos son valores comúnmente aceptados en la ciencia del deporte)
+        config_ratios = {
+            'Press Banca / Sentadilla': {
+                'numerador': 'Press Banca', 'denominador': 'Sentadilla', 'optimo': 0.75,
+                'descripcion': 'Equilibrio entre empuje de torso y fuerza de piernas.'
+            },
+            'Peso Muerto / Sentadilla': {
+                'numerador': 'Peso Muerto', 'denominador': 'Sentadilla', 'optimo': 1.20,
+                'descripcion': 'Equilibrio entre cadena posterior y anterior.'
+            },
+            'Press Militar / Press Banca': {
+                'numerador': 'Press Militar', 'denominador': 'Press Banca', 'optimo': 0.65,
+                'descripcion': 'Equilibrio entre empuje vertical y horizontal.'
+            },
+            'Remo con Barra / Press Banca': {
+                'numerador': 'Remo Con Barra', 'denominador': 'Press Banca', 'optimo': 1.0,
+                'descripcion': 'Equilibrio entre músculos de empuje y tracción del torso.'
+            }
+        }
+
+        resultados_ratios = []
+        datos_radar = {'labels': [], 'valores_actuales': [], 'valores_optimos': []}
+
+        for nombre_ratio, config in config_ratios.items():
+            # Obtenemos los valores de 1RM para el cálculo
+            # Usamos .get(key, 0) para manejar casos donde un ejercicio no tiene 1RM
+            valor_num = one_rm_estimados.get(config['numerador'], 0)
+            valor_den = one_rm_estimados.get(config['denominador'], 0)
+
+            # Calculamos el ratio actual
+            ratio_actual = self._calcular_ratio(valor_num, valor_den)
+
+            # Determinamos el estado (óptimo, bajo, alto)
+            if ratio_actual == 0:
+                estado = 'incompleto'
+            elif abs(ratio_actual - config['optimo']) < 0.1:  # Margen de +/- 0.1
+                estado = 'optimo'
+            elif ratio_actual < config['optimo']:
+                estado = 'bajo'
+            else:
+                estado = 'alto'
+
+            # Añadimos los datos a nuestras listas
+            resultados_ratios.append({
+                'nombre': nombre_ratio,
+                'valor_actual': ratio_actual,
+                'valor_optimo': config['optimo'],
+                'estado': estado,
+                'descripcion': config['descripcion']
+            })
+
+            datos_radar['labels'].append(nombre_ratio)
+            datos_radar['valores_actuales'].append(ratio_actual)
+            datos_radar['valores_optimos'].append(config['optimo'])
+
+        return resultados_ratios, datos_radar
+
+
+# --- AÑADE ESTA NUEVA VISTA ---
+# Archivo: analytics/views.py
+
+# Archivo: analytics/views.py
+
+# Archivo: analytics/views.py
+
+@login_required
+def dashboard_equilibrio(request, cliente_id):
+    """
+    Vista para el nuevo Dashboard de Equilibrio Muscular.
+    VERSIÓN FINAL Y FUNCIONAL
+    """
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # --- INICIO DE LA SOLUCIÓN ---
+    # En lugar de usar la clase AnalizadorEquilibrioMuscular, que era la
+    # que causaba el problema, replicamos su lógica directamente aquí,
+    # usando la CalculadoraEjerciciosTabla que ya hemos verificado que funciona.
+
+    # 1. Obtenemos los 1RM estimados directamente.
+    calculadora = CalculadoraEjerciciosTabla(cliente)
+    one_rm_estimados = calculadora.calcular_1rm_estimado_por_ejercicio()
+
+    # 2. Definimos los ratios y los estándares de referencia.
+    # ¡¡IMPORTANTE!! Ahora debes corregir los nombres aquí para que coincidan
+    # con la lista que vimos en la consola.
+    config_ratios = {
+        'Press Banca / Sentadilla': {
+            'numerador': 'Press Banca',  # <-- Revisa si este es el nombre correcto
+            'denominador': 'Sentadilla Trasera Con Barra',  # <-- Ejemplo de corrección
+            'optimo': 0.75,
+            'descripcion': 'Equilibrio entre empuje de torso y fuerza de piernas.'
+        },
+        'Peso Muerto / Sentadilla': {
+            'numerador': 'Peso Muerto',  # <-- Revisa este nombre
+            'denominador': 'Sentadilla Trasera Con Barra',  # <-- Ejemplo de corrección
+            'optimo': 1.20,
+            'descripcion': 'Equilibrio entre cadena posterior y anterior.'
+        },
+        'Press Militar / Press Banca': {
+            'numerador': 'Press Militar Con Barra (De Pie)',  # <-- Ejemplo de corrección
+            'denominador': 'Press Banca',  # <-- Revisa este nombre
+            'optimo': 0.65,
+            'descripcion': 'Equilibrio entre empuje vertical y horizontal.'
+        },
+        'Remo / Press Banca': {
+            'numerador': 'Remo En Máquina Hammer',  # <-- Ejemplo de corrección
+            'denominador': 'Press Banca',  # <-- Revisa este nombre
+            'optimo': 1.0,
+            'descripcion': 'Equilibrio entre músculos de empuje y tracción del torso.'
+        }
+    }
+
+    # 3. Calculamos los ratios (esta lógica es segura).
+    resultados_ratios = []
+    datos_radar = {'labels': [], 'valores_actuales': [], 'valores_optimos': []}
+
+    for nombre_ratio, config in config_ratios.items():
+        valor_num = one_rm_estimados.get(config['numerador'], 0)
+        valor_den = one_rm_estimados.get(config['denominador'], 0)
+
+        ratio_actual = 0
+        if valor_num > 0 and valor_den > 0:
+            ratio_actual = round(valor_num / valor_den, 2)
+
+        if ratio_actual == 0:
+            estado = 'incompleto'
+        elif abs(ratio_actual - config['optimo']) < 0.1:
+            estado = 'optimo'
+        elif ratio_actual < config['optimo']:
+            estado = 'bajo'
+        else:
+            estado = 'alto'
+
+        resultados_ratios.append({
+            'nombre': nombre_ratio, 'valor_actual': ratio_actual,
+            'valor_optimo': config['optimo'], 'estado': estado,
+            'descripcion': config['descripcion']
+        })
+        datos_radar['labels'].append(nombre_ratio)
+        datos_radar['valores_actuales'].append(ratio_actual)
+        datos_radar['valores_optimos'].append(config['optimo'])
+
+    # --- FIN DE LA SOLUCIÓN ---
+
+    context = {
+        'cliente': cliente,
+        'ratios': resultados_ratios,
+        'datos_radar_json': json.dumps(datos_radar)
+    }
+    return render(request, 'analytics/dashboard_equilibrio.html', context)
