@@ -262,7 +262,10 @@ class EntrenoRealizado(models.Model):
         blank=True,
         help_text="Número total de ejercicios realizados"
     )
-
+    puntos_ganados = models.PositiveIntegerField(
+        default=0,
+        help_text="Puntos ganados por este entrenamiento"
+    )
     tiempo_total_formateado = models.CharField(
         max_length=20,
         null=True,
@@ -277,6 +280,38 @@ class EntrenoRealizado(models.Model):
     nombre_rutina_liftin = models.CharField(max_length=200, null=True, blank=True)
     notas_liftin = models.TextField(null=True, blank=True)
     fecha_importacion = models.DateTimeField(null=True, blank=True)
+    puntos_ganados = models.PositiveIntegerField(
+        default=0,
+        help_text="Puntos ganados por este entrenamiento"
+    )
+    volumen_total_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Volumen total del entrenamiento en kg"
+    )
+    records_rotos = models.PositiveIntegerField(
+        default=0,
+        help_text="Número de récords personales rotos en este entrenamiento"
+    )
+
+    def calcular_volumen_total(self):
+        '''Calcula el volumen total del entrenamiento'''
+        total = 0
+        for ejercicio in self.ejercicios_liftin_detallados.all():
+            if ejercicio.completado:
+                peso = float(ejercicio.peso_kg or 0)
+                series = int(ejercicio.series or 0)
+                reps = int(ejercicio.repeticiones or 0)
+                total += peso * series * reps
+        return total
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Calcular volumen automáticamente si no está establecido
+        if self.volumen_total_kg == 0:
+            self.volumen_total_kg = self.calcular_volumen_total()
+            super().save(update_fields=['volumen_total_kg'])
 
     @property
     def detalles(self):

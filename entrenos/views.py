@@ -70,7 +70,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import json
 import csv
-
+from .gamificacion_service import EntrenamientoGamificacionService
 from .models import EntrenoRealizado, DatosLiftinDetallados
 # from .forms import ImportarLiftinForm, BuscarEntrenamientosForm, ExportarDatosForm
 from clientes.models import Cliente
@@ -3434,7 +3434,13 @@ def vista_entrenamiento_activo(request, cliente_id):
         'ejercicios_planificados': ejercicios_planificados,
         'leyenda_rpe': leyenda_rpe,
     }
-
+    try:
+        from .gamificacion_service import EntrenamientoGamificacionService
+        resumen_gamificacion = EntrenamientoGamificacionService.obtener_resumen_gamificacion(cliente)
+        context['resumen_gamificacion'] = resumen_gamificacion
+    except Exception as e:
+        print(f"Error obteniendo resumen gamificación: {e}")
+        context['resumen_gamificacion'] = {'tiene_perfil': False}
     return render(request, 'entrenos/entrenamiento_activo.html', context)
 
 
@@ -3468,7 +3474,7 @@ def guardar_entrenamiento_activo(request, cliente_id):
     métricas y registra la sesión en el MonitorAdherencia.
     """
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    print("\n--- INICIANDO GUARDADO DE ENTRENAMIENTO ACTIVO ---")
+    print("\\n--- INICIANDO GUARDADO DE ENTRENAMIENTO ACTIVO ---")
 
     try:
         # --- 1. Crear el objeto EntrenoRealizado principal ---
@@ -3517,6 +3523,7 @@ def guardar_entrenamiento_activo(request, cliente_id):
                     completado = request.POST.get(f"{form_id}_completado_{i}") == "1"
                     peso = Decimal(peso_str) if peso_str else Decimal('0')
                     reps = int(reps_str) if reps_str else 0
+
                     if peso > 0 or reps > 0:
                         series_validas += 1
                         reps_totales += reps
@@ -3548,24 +3555,72 @@ def guardar_entrenamiento_activo(request, cliente_id):
         entreno.save(update_fields=['volumen_total_kg', 'numero_ejercicios'])
         print("-> Entrenamiento guardado y actualizado con éxito.")
 
-        # --- 4. Integración con el Monitor de Adherencia ---
+        # --- 4. PROCESAR GAMIFICACIÓN (CÓDIGO CORREGIDO) ---
         try:
-            monitor = MonitorAdherencia(cliente_id=cliente.id)
-            # NOTA: En una implementación real, aquí cargarías el historial del monitor desde la BD.
-            # Por ahora, creamos una nueva sesión para registrar.
+            from .gamificacion_service import EntrenamientoGamificacionService
 
-            sesion = SesionEntrenamiento(
-                fecha=timezone.make_aware(datetime.combine(fecha, datetime.min.time())),
-                completada=True
+            # Procesar gamificación usando 'entreno' (no 'entreno_realizado')
+            resultado_gamificacion = EntrenamientoGamificacionService.procesar_entrenamiento_completado(
+                entreno  # <-- VARIABLE CORRECTA
             )
-            monitor.registrar_sesion(sesion)
 
-            # Opcional: Guardar el estado del monitor en la sesión del usuario o en la BD.
-            # request.session['monitor_adherencia'] = monitor.obtener_reporte_adherencia()
-            print(f"📈 Reporte de adherencia generado: {monitor.obtener_reporte_adherencia()}")
+            # Verificar si hubo errores
+            if 'error' not in resultado_gamificacion:
+                # Mensaje principal de puntos ganados
+                messages.success(
+                    request,
+                    f"🎉 ¡Entrenamiento guardado! +{resultado_gamificacion['puntos_totales']} puntos ganados"
+                )
+
+                # Desglose de puntos si hay bonus o pruebas
+                if resultado_gamificacion['puntos_bonus'] > 0 or resultado_gamificacion['puntos_pruebas'] > 0:
+                    messages.info(
+                        request,
+                        f"💰 Desglose: {resultado_gamificacion['puntos_base']} base + "
+                        f"{resultado_gamificacion['puntos_bonus']} bonus + "
+                        f"{resultado_gamificacion['puntos_pruebas']} pruebas"
+                    )
+
+                # Mensajes por pruebas completadas
+                for prueba in resultado_gamificacion['pruebas_completadas']:
+                    messages.success(
+                        request,
+                        f"⚔️ ¡Prueba completada: {prueba.nombre}! +{prueba.puntos_recompensa} puntos"
+                    )
+
+                # Mensaje de ascensión si ocurrió
+                if resultado_gamificacion['ascension']:
+                    messages.success(
+                        request,
+                        f"🔥 ¡ASCENSIÓN! Nuevo nivel: {resultado_gamificacion['nivel_nuevo']}"
+                    )
+                    messages.info(
+                        request,
+                        f"🎯 Has evolucionado de {resultado_gamificacion['nivel_anterior']} "
+                        f"a {resultado_gamificacion['nivel_nuevo']}"
+                    )
+
+                # Información de racha si existe
+                racha = EntrenamientoGamificacionService._calcular_racha_actual(cliente)
+                if racha > 1:
+                    messages.info(
+                        request,
+                        f"🔥 ¡Racha de {racha} días consecutivos! Sigue así"
+                    )
+            else:
+                # Si hubo error en gamificación, solo mostrar mensaje básico
+                print(f"Error en gamificación: {resultado_gamificacion['error']}")
+                messages.success(request, "Entrenamiento guardado correctamente")
+
+        except ImportError:
+            # Si no existe el servicio de gamificación
+            print("Servicio de gamificación no encontrado")
+            messages.success(request, "Entrenamiento guardado correctamente")
+
         except Exception as e:
-            print(f"⚠️ No se pudo actualizar el monitor de adherencia: {e}")
-
+            # Cualquier otro error en gamificación
+            print(f"Error procesando gamificación: {e}")
+            messages.success(request, "Entrenamiento guardado correctamente")
         # --- 5. Redirección al Dashboard de Analíticas ---
         messages.success(request, "¡Entrenamiento guardado! Analizando tu progreso...")
         return redirect('analytics:dashboard_cliente', cliente_id=cliente.id)
