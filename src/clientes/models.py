@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from rutinas.models import Rutina
-from dietas.models import Dieta  # asegúrate de tener esto importado
 from django import forms
 # En tu archivo models.py (o donde tengas tus modelos)
 from django.db import models
@@ -101,18 +100,6 @@ class BitacoraDiaria(models.Model):
 
     def __str__(self):
         return f"{self.cliente} - {self.fecha}"
-
-
-class DietaAsignada(models.Model):
-    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='dietas_asignadas_clientes')
-
-    dieta = models.ForeignKey(Dieta, on_delete=models.CASCADE, null=True, blank=True)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField(null=True, blank=True)
-    observaciones = models.TextField(blank=True)
-
-    def __str__(self):
-        return f"{self.cliente.nombre} - {self.dieta.nombre} ({self.fecha_inicio})"
 
 
 class ObjetivoCliente(models.Model):

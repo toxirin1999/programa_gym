@@ -6,12 +6,10 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
         ('clientes', '0001_initial'),
-        ('dietas', '__first__'),
         ('rutinas', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -20,33 +18,27 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='cliente',
             name='programa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='rutinas.programa'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='rutinas.programa'),
         ),
         migrations.AddField(
             model_name='cliente',
             name='rutina_actual',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='rutinas.rutina'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='rutinas.rutina'),
         ),
         migrations.AddField(
             model_name='cliente',
             name='user',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='cliente_perfil', to=settings.AUTH_USER_MODEL),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                       related_name='cliente_perfil', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name='bitacoradiaria',
             name='cliente',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='clientes.cliente'),
         ),
-        migrations.AddField(
-            model_name='dietaasignada',
-            name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dietas_asignadas_clientes', to='clientes.cliente'),
-        ),
-        migrations.AddField(
-            model_name='dietaasignada',
-            name='dieta',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='dietas.dieta'),
-        ),
+
         migrations.AddField(
             model_name='estadosemanal',
             name='cliente',
@@ -60,27 +52,32 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='objetivocliente',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='objetivos', to='clientes.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='objetivos',
+                                    to='clientes.cliente'),
         ),
         migrations.AddField(
             model_name='objetivopeso',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='objetivos_peso', to='clientes.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='objetivos_peso',
+                                    to='clientes.cliente'),
         ),
         migrations.AddField(
             model_name='pesodiario',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_peso', to='clientes.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_peso',
+                                    to='clientes.cliente'),
         ),
         migrations.AddField(
             model_name='plannutricional',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='planes_nutricionales', to='clientes.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='planes_nutricionales',
+                                    to='clientes.cliente'),
         ),
         migrations.AddField(
             model_name='revisionprogreso',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisiones', to='clientes.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisiones',
+                                    to='clientes.cliente'),
         ),
         migrations.AddField(
             model_name='sugerenciaaceptada',
@@ -90,7 +87,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userprofile',
             name='user',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='user_profile', to=settings.AUTH_USER_MODEL),
+            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='user_profile',
+                                       to=settings.AUTH_USER_MODEL),
         ),
         migrations.AlterUniqueTogether(
             name='objetivocliente',

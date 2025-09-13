@@ -4,7 +4,6 @@ from .models import RevisionProgreso
 from django.db import models
 from .models import ObjetivoCliente
 from django import forms
-from .models import DietaAsignada
 
 from django import forms
 
@@ -309,17 +308,6 @@ class DatosNutricionalesForm(forms.Form):
     # Puedes añadir más campos para preferencias dietéticas si lo deseas
     # comidas_dia = forms.IntegerField(label="Número de comidas al día deseadas", min_value=2, max_value=6, required=False)
     # restricciones_dieteticas = forms.CharField(label="Restricciones o preferencias dietéticas (ej. vegetariano, sin lactosa)", widget=forms.Textarea, required=False)
-
-
-class DietaAsignadaForm(forms.ModelForm):
-    class Meta:
-        model = DietaAsignada
-        fields = ['dieta', 'fecha_inicio', 'fecha_fin', 'observaciones']
-        widgets = {
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
-            'observaciones': forms.Textarea(attrs={'rows': 3}),
-        }
 
 
 class ObjetivoClienteForm(forms.ModelForm):

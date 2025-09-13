@@ -47,7 +47,7 @@ from rutinas.models import Programa, Rutina
 
 # Local App Imports
 from .forms import (BitacoraDiariaForm, CheckinDiarioForm, ClienteForm,
-                    DatosNutricionalesForm, DietaAsignadaForm, MedidaForm,
+                    DatosNutricionalesForm, MedidaForm,
                     ObjetivoClienteForm, ObjetivoPesoForm, PesoDiarioForm,
                     RevisionProgresoForm, SugerenciaForm)
 from .models import (BitacoraDiaria, Cliente, EstadoSemanal, Medida,
@@ -1629,22 +1629,6 @@ def datos_graficas(request, cliente_id):
     }
 
     return JsonResponse(data)
-
-
-def asignar_dieta_directo(request, cliente_id):
-    cliente = get_object_or_404(Cliente, id=cliente_id)
-
-    if request.method == 'POST':
-        form = DietaAsignadaForm(request.POST)
-        if form.is_valid():
-            asignacion = form.save(commit=False)
-            asignacion.cliente = cliente
-            asignacion.save()
-            return redirect('detalle_cliente', cliente_id=cliente.id)
-    else:
-        form = DietaAsignadaForm()
-
-    return render(request, 'clientes/asignar_dieta.html', {'form': form, 'cliente': cliente})
 
 
 def lista_revisiones(request, cliente_id):

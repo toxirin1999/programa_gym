@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'clientes.apps.ClientesConfig',
     'rutinas',
-    'dietas',
     'entrenos',
     'widget_tweaks',
     'joi',

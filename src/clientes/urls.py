@@ -52,7 +52,6 @@ urlpatterns = [
     path('cliente/<int:cliente_id>/revisiones/', views.lista_revisiones, name='lista_revisiones'),
     path('cliente/<int:cliente_id>/revisiones/agregar/', views.agregar_revision, name='agregar_revision'),
     path('historial/exportar/<int:cliente_id>/', views.exportar_historial, name='exportar_historial'),
-    path('cliente/<int:cliente_id>/asignar_dieta/', views.asignar_dieta_directo, name='asignar_dieta_directo'),
 
     # Paneles
     path('panel/', clientes_views.dashboard, name='dashboard'),

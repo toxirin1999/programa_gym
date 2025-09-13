@@ -22,7 +22,7 @@ urlpatterns = [
     path('mi-panel/', clientes_views.panel_cliente, name='panel_cliente'),  # Considera mover esto a clientes.urls
 
     path('rutinas/', include('rutinas.urls')),
-    path('dietas/', include('dietas.urls')),
+
     path('entrenos/', include('entrenos.urls')),
     path('logros/', include('logros.urls')),  # <-- ÚNICA INCLUSIÓN
     path('joi/', include('joi.urls')),
