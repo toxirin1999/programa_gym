@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('clientes', '0001_initial'),
+        ('dietas', '0001_initial'),
     ]
 
     operations = [
