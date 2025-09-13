@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tu Plan Nutricional{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Tu Plan Nutricional Personalizado</h2>
+
+    <div class="af-card mb-4">
+        <h3>Datos Introducidos:</h3>
+        <ul>
+            <li><strong>Edad:</strong> {{ form_data.edad }}</li>
+            <li><strong>Género:</strong> {{ form_data.genero }}</li>
+            <li><strong>Altura:</strong> {{ form_data.altura_cm }} cm</li>
+            <li><strong>Peso:</strong> {{ form_data.peso_kg }} kg</li>
+            <li><strong>Nivel de Actividad:</strong> {{ form_data.get_nivel_actividad_display }}</li>
+            <li><strong>Objetivo:</strong> {{ form_data.get_objetivo_display }}</li>
+        </ul>
+    </div>
+
+    <div class="af-card mb-4">
+        <h3>Resumen del Plan:</h3>
+        <p><strong>Objetivo:</strong> {{ objetivo|title }}</p>
+        <p><strong>Calorías diarias estimadas:</strong> {{ calorias_objetivo|floatformat:"0" }} kcal</p>
+        <p><strong>Proteínas:</strong> {{ gramos_proteinas|floatformat:"0" }} gramos</p>
+        <p><strong>Grasas:</strong> {{ gramos_grasas|floatformat:"0" }} gramos</p>
+        <p><strong>Carbohidratos:</strong> {{ gramos_carbohidratos|floatformat:"0" }} gramos</p>
+    </div>
+
+    <div class="af-card mb-4">
+        <h3>Detalles del Plan Nutricional Recomendado:</h3>
+        <div class="plan-content">
+            {{ plan_generado|linebreaksbr }} {# Esto interpreta los saltos de línea del texto #}
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 mt-4">
+        
+        {# Puedes añadir un botón para guardar el plan si no lo hiciste automáticamente #}
+        {#
+        <button type="button" class="btn btn-primary">Guardar Plan</button>
+        #}
+    </div>
+</div>
+{% endblock %}
