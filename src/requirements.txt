@@ -1,0 +1,16 @@
+# Framework y Base de Datos
+Django==5.2
+psycopg2-binary
+dj-database-url
+
+# Servidor de Producción
+uvicorn
+whitenoise
+
+# Tareas en segundo plano
+celery==5.5.3
+# Nota: Celery puede necesitar otras dependencias como 'redis' o 'amqp'
+# Si las usas, añádelas aquí. Por ahora, lo dejamos simple.
+
+# Utilidades
+requests==2.32.5
