@@ -6,9 +6,9 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from entrenos.models import EntrenoRealizado
 
-# --- IMPORTAMOS LOS DOS SIGNALS PROBLEMÁTICOS ---
+# --- IMPORTAMOS LOS DOS SIGNALS CON SUS NOMBRES REALES ---
 from estoico.signals import crear_perfiles_asociados
-from analytics.signals import actualizar_metricas_entreno # <-- ¡EL NOMBRE REAL!
+from analytics.signals import actualizar_metricas_entreno # <-- ¡EL NOMBRE REAL Y CORRECTO!
 
 class Command(BaseCommand):
     help = 'Importa datos desactivando TODOS los signals conflictivos.'
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         post_save.disconnect(crear_perfiles_asociados, sender=User)
         self.stdout.write(self.style.SUCCESS('Signal de creación de perfiles de usuario: DESCONECTADO'))
         
-        # Desconectamos el signal de actualización de métricas de entreno
+        # --- USAMOS EL NOMBRE REAL PARA DESCONECTAR ---
         post_save.disconnect(actualizar_metricas_entreno, sender=EntrenoRealizado)
         self.stdout.write(self.style.SUCCESS('Signal de métricas de entreno: DESCONECTADO'))
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
         
         finally:
             self.stdout.write(self.style.WARNING('\n--- RECONECTANDO SIGNALS ---'))
-            # Volvemos a conectar ambos signals
+            # Volvemos a conectar ambos signals con sus nombres reales
             post_save.connect(crear_perfiles_asociados, sender=User)
             post_save.connect(actualizar_metricas_entreno, sender=EntrenoRealizado)
             self.stdout.write(self.style.SUCCESS('Signals reconectados. Proceso finalizado.'))
