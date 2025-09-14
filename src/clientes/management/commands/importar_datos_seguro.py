@@ -4,12 +4,12 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
-from entrenos.models import EntrenoRealizado # <-- IMPORTANTE: Importar el modelo del sender
+from entrenos.models import EntrenoRealizado # ¡NUEVA IMPORTACIÓN!
 
 # --- IMPORTA AQUÍ TODOS TUS SIGNALS PROBLEMÁTICOS ---
 from estoico.signals import crear_perfiles_asociados
-# Asumiendo que el nuevo signal está en 'logros/signals.py' y se llama 'procesar_entreno_gamificacion'
-from logros.signals import procesar_entreno_gamificacion 
+# Asumiendo que el nuevo signal está en 'analytics/signals.py' y se llama 'procesar_entreno_gamificacion'
+from analytics.signals import procesar_entreno_gamificacion # ¡NUEVA IMPORTACIÓN!
 
 class Command(BaseCommand):
     help = 'Importa datos desactivando TODOS los signals conflictivos.'
@@ -21,11 +21,10 @@ class Command(BaseCommand):
         fixture_path = options['fixture_path']
 
         self.stdout.write(self.style.WARNING('--- DESCONECTANDO SIGNALS ---'))
-        # Desconectamos el PRIMER signal
         post_save.disconnect(crear_perfiles_asociados, sender=User)
         self.stdout.write(self.style.SUCCESS('Signal de creación de perfiles de usuario: DESCONECTADO'))
         
-        # --- AÑADE LA DESCONEXIÓN DEL SEGUNDO SIGNAL ---
+        # --- DESCONECTAMOS EL SEGUNDO SIGNAL ---
         post_save.disconnect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
         self.stdout.write(self.style.SUCCESS('Signal de gamificación de entrenos: DESCONECTADO'))
 
@@ -39,7 +38,6 @@ class Command(BaseCommand):
         
         finally:
             self.stdout.write(self.style.WARNING('\n--- RECONECTANDO SIGNALS ---'))
-            # Volvemos a conectar AMBOS signals
             post_save.connect(crear_perfiles_asociados, sender=User)
             post_save.connect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
             self.stdout.write(self.style.SUCCESS('Signals reconectados. Proceso finalizado.'))
