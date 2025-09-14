@@ -1,5 +1,5 @@
 # Framework y Base de Datos
-Django==5.2
+Django
 psycopg2-binary
 dj-database-url
 
@@ -8,9 +8,18 @@ uvicorn
 whitenoise
 
 # Tareas en segundo plano
-celery==5.5.3
-# Nota: Celery puede necesitar otras dependencias como 'redis' o 'amqp'
-# Si las usas, añádelas aquí. Por ahora, lo dejamos simple.
+celery
+django-celery-beat
+redis # Celery necesita esto para comunicarse
 
 # Utilidades
-requests==2.32.5
+requests
+django-widget-tweaks
+
+# LIBRERÍAS DE ANÁLISIS Y REPORTES (NECESARIAS)
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+reportlab
