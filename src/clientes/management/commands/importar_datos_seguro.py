@@ -4,12 +4,11 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
-from entrenos.models import EntrenoRealizado # ¡NUEVA IMPORTACIÓN!
+from entrenos.models import EntrenoRealizado
 
-# --- IMPORTA AQUÍ TODOS TUS SIGNALS PROBLEMÁTICOS ---
+# --- IMPORTAMOS LOS DOS SIGNALS PROBLEMÁTICOS ---
 from estoico.signals import crear_perfiles_asociados
-# Asumiendo que el nuevo signal está en 'analytics/signals.py' y se llama 'procesar_entreno_gamificacion'
-from analytics.signals import procesar_entreno_gamificacion # ¡NUEVA IMPORTACIÓN!
+from analytics.signals import actualizar_metricas_entreno # <-- ¡EL NOMBRE REAL!
 
 class Command(BaseCommand):
     help = 'Importa datos desactivando TODOS los signals conflictivos.'
@@ -21,12 +20,14 @@ class Command(BaseCommand):
         fixture_path = options['fixture_path']
 
         self.stdout.write(self.style.WARNING('--- DESCONECTANDO SIGNALS ---'))
+        
+        # Desconectamos el signal de creación de perfiles de usuario
         post_save.disconnect(crear_perfiles_asociados, sender=User)
         self.stdout.write(self.style.SUCCESS('Signal de creación de perfiles de usuario: DESCONECTADO'))
         
-        # --- DESCONECTAMOS EL SEGUNDO SIGNAL ---
-        post_save.disconnect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
-        self.stdout.write(self.style.SUCCESS('Signal de gamificación de entrenos: DESCONECTADO'))
+        # Desconectamos el signal de actualización de métricas de entreno
+        post_save.disconnect(actualizar_metricas_entreno, sender=EntrenoRealizado)
+        self.stdout.write(self.style.SUCCESS('Signal de métricas de entreno: DESCONECTADO'))
 
         try:
             self.stdout.write(self.style.WARNING(f'\n--- INICIANDO LOADDATA PARA {fixture_path} ---'))
@@ -38,6 +39,7 @@ class Command(BaseCommand):
         
         finally:
             self.stdout.write(self.style.WARNING('\n--- RECONECTANDO SIGNALS ---'))
+            # Volvemos a conectar ambos signals
             post_save.connect(crear_perfiles_asociados, sender=User)
-            post_save.connect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
+            post_save.connect(actualizar_metricas_entreno, sender=EntrenoRealizado)
             self.stdout.write(self.style.SUCCESS('Signals reconectados. Proceso finalizado.'))
