@@ -6,28 +6,25 @@ from django.contrib.auth.models import User
 from .models import PerfilEstoico, EstadisticaUsuario, ConfiguracionNotificacion
 from clientes.models import Cliente  # ¡Importante! También importamos el modelo Cliente
 
-
 @receiver(post_save, sender=User)
 def crear_perfiles_asociados(sender, instance, created, **kwargs):
-    """
-    Esta función se ejecuta automáticamente DESPUÉS de que un User es creado.
-    Se encarga de crear todos los perfiles necesarios en las diferentes apps.
+    # Si la función se llama durante loaddata (raw=True), no hagas nada.
+    if kwargs.get('raw', False):
+        return
 
-    'created' es un booleano que es True solo la primera vez que se guarda el objeto.
-    """
     if created:
-        # 1. Crear el PerfilEstoico.
-        #    Ya no pasamos argumentos extra, Django usará los 'default' del modelo.
-        PerfilEstoico.objects.create(usuario=instance)
+        # Usamos get_or_create para más seguridad, aunque con la condición 'raw' ya no sería estrictamente necesario.
+        PerfilEstoico.objects.get_or_create(usuario=instance)
+        EstadisticaUsuario.objects.get_or_create(usuario=instance)
+        ConfiguracionNotificacion.objects.get_or_create(usuario=instance)
+        
+        # Para Cliente, también usamos get_or_create
+        cliente, created_cliente = Cliente.objects.get_or_create(
+            user=instance,
+            defaults={'nombre': instance.username, 'email': instance.email}
+        )
 
-        # 2. Crear las EstadisticasUsuario.
-        EstadisticaUsuario.objects.create(usuario=instance)
+        if created_cliente:
+            print(f"✅ Perfil de Cliente creado para el nuevo usuario: {instance.username}")
 
-        # 3. Crear la ConfiguracionNotificacion.
-        ConfiguracionNotificacion.objects.create(usuario=instance)
 
-        # 4. Crear el Cliente.
-        #    Esto es crucial para que la vista 'panel_cliente' funcione.
-        Cliente.objects.create(user=instance, nombre=instance.username, email=instance.email)
-
-        print(f"✅ Perfiles creados para el nuevo usuario: {instance.username}")
