@@ -4,15 +4,15 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
+from entrenos.models import EntrenoRealizado # <-- IMPORTANTE: Importar el modelo del sender
 
-# ¡IMPORTANTE! Debemos importar la función del signal para poder desconectarla.
-# Ajusta la ruta de importación según dónde esté tu archivo de signals.
-# Si está en 'estoico/signals.py', sería:
+# --- IMPORTA AQUÍ TODOS TUS SIGNALS PROBLEMÁTICOS ---
 from estoico.signals import crear_perfiles_asociados
-
+# Asumiendo que el nuevo signal está en 'logros/signals.py' y se llama 'procesar_entreno_gamificacion'
+from logros.signals import procesar_entreno_gamificacion 
 
 class Command(BaseCommand):
-    help = 'Importa datos desde un fixture desactivando temporalmente los signals de creación de perfiles.'
+    help = 'Importa datos desactivando TODOS los signals conflictivos.'
 
     def add_arguments(self, parser):
         parser.add_argument('fixture_path', type=str, help='La ruta al archivo de fixture JSON.')
@@ -20,21 +20,26 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         fixture_path = options['fixture_path']
 
-        self.stdout.write(self.style.WARNING('Desconectando el signal crear_perfiles_asociados...'))
-        # Desconectamos el signal del modelo User
+        self.stdout.write(self.style.WARNING('--- DESCONECTANDO SIGNALS ---'))
+        # Desconectamos el PRIMER signal
         post_save.disconnect(crear_perfiles_asociados, sender=User)
+        self.stdout.write(self.style.SUCCESS('Signal de creación de perfiles de usuario: DESCONECTADO'))
+        
+        # --- AÑADE LA DESCONEXIÓN DEL SEGUNDO SIGNAL ---
+        post_save.disconnect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
+        self.stdout.write(self.style.SUCCESS('Signal de gamificación de entrenos: DESCONECTADO'))
 
         try:
-            self.stdout.write(self.style.SUCCESS(f'Signal desconectado. Iniciando loaddata para {fixture_path}...'))
-            # Ejecutamos loaddata. Django se encargará de las migraciones.
+            self.stdout.write(self.style.WARNING(f'\n--- INICIANDO LOADDATA PARA {fixture_path} ---'))
             call_command('loaddata', fixture_path)
-            self.stdout.write(self.style.SUCCESS('¡loaddata completado con éxito!'))
+            self.stdout.write(self.style.SUCCESS('\n¡LOADDATA COMPLETADO CON ÉXITO!'))
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ocurrió un error durante loaddata: {e}'))
-
+            self.stdout.write(self.style.ERROR(f'\nOcurrió un error durante loaddata: {e}'))
+        
         finally:
-            self.stdout.write(self.style.WARNING('Reconectando el signal crear_perfiles_asociados...'))
-            # Volvemos a conectar el signal para que la app funcione normalmente
+            self.stdout.write(self.style.WARNING('\n--- RECONECTANDO SIGNALS ---'))
+            # Volvemos a conectar AMBOS signals
             post_save.connect(crear_perfiles_asociados, sender=User)
-            self.stdout.write(self.style.SUCCESS('Signal reconectado. Proceso finalizado.'))
+            post_save.connect(procesar_entreno_gamificacion, sender=EntrenoRealizado)
+            self.stdout.write(self.style.SUCCESS('Signals reconectados. Proceso finalizado.'))
