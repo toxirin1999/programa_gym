@@ -14,7 +14,7 @@ class LogrosConfig(AppConfig):
         """
         try:
             # Importar signals para registrarlos automáticamente
-            import logros.services
+            #import logros.services
 
             # Configurar logger
             logger = logging.getLogger('gamificacion')
