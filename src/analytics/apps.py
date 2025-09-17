@@ -12,4 +12,4 @@ class AnalyticsConfig(AppConfig):
             return
 
         # Si no, importa los signals como siempre.
-        import analytics.signals
+        #import analytics.signals
