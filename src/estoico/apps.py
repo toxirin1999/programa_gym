@@ -12,4 +12,4 @@ class EstoicoConfig(AppConfig):
             return
         
         # Si no, importa los signals como siempre.
-        import estoico.signals 
+        #import estoico.signals 
